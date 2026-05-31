@@ -883,12 +883,15 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 
         <!-- Controles avanzados imagen -->
         <div class="crow" id="rowImgLayout" style="display:none">
-          <label>Layout imagen</label>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <label>Posición de la imagen</label>
+            <button onclick="sugerirLayoutIA()" style="border:1px solid var(--UI-A);background:rgba(56,182,255,.1);color:var(--UI-A);padding:3px 8px;border-radius:3px;font-size:8px;font-weight:700;cursor:pointer;letter-spacing:.03em">✨ IA ideal</button>
+          </div>
           <div class="img-ctrl-grid">
             <button class="img-layout-btn on" id="lbg"    onclick="setImgLayout('bg-full')">🖼 Fondo completo</button>
             <button class="img-layout-btn"    id="linset" onclick="setImgLayout('inset')">⬜ Recuadro</button>
-            <button class="img-layout-btn"    id="lsplitl" onclick="setImgLayout('split-left')">◧ Img izq</button>
-            <button class="img-layout-btn"    id="lsplitr" onclick="setImgLayout('split-right')">◨ Img der</button>
+            <button class="img-layout-btn"    id="lsplitl" onclick="setImgLayout('split-left')">◧ Img izquierda</button>
+            <button class="img-layout-btn"    id="lsplitr" onclick="setImgLayout('split-right')">◨ Img derecha</button>
             <button class="img-layout-btn"    id="ltop"   onclick="setImgLayout('top-half')">⬆ Img arriba</button>
             <button class="img-layout-btn"    id="lbottom" onclick="setImgLayout('bottom-half')">⬇ Img abajo</button>
           </div>
@@ -1458,18 +1461,23 @@ function usarMedia(id){
     }
   } else {
     // Slide es de tipo texto — convertirlo a "foto" automáticamente
-    // conservando el texto que ya tiene
     d.tipo = 'foto';
     d.overlay = 'dark';
     d.imgFondo = id;
-    // Actualizar selector de tipo en el panel
     const sel = document.getElementById('cTipo');
     if(sel) sel.value = 'foto';
     show(cur);
     refreshThumb(cur);
     sincronizarPanelImg(d);
-    toast2('✓ Slide convertido a Foto fondo + texto');
+    toast2('✓ Foto asignada — ajusta posición en el panel →');
   }
+
+  // Saltar al tab Editar y mostrar los controles de imagen
+  abrirTabEditar();
+  setTimeout(()=>{
+    const row = document.getElementById('rowImgLayout');
+    if(row && row.style.display!=='none') row.scrollIntoView({behavior:'smooth',block:'center'});
+  }, 120);
 }
 
 function abrirAsignador(target){
@@ -1508,6 +1516,83 @@ function setImgLayout(layout){
   const btn = document.getElementById('l'+(map[layout]||'bg'));
   if(btn) btn.classList.add('on');
   show(cur); refreshThumb(cur);
+}
+
+/* ═══════════════════════════════════════════
+   IA: SUGERIR UBICACIÓN IDEAL DE LA IMAGEN
+   Heurística según contenido del slide
+   ═══════════════════════════════════════════ */
+function sugerirLayoutIA(){
+  if(!SLIDES.length) return;
+  const d = SLIDES[cur];
+  if(!['foto','fototxt','autoridad'].includes(d.tipo)){
+    toast2('Este slide no usa foto');
+    return;
+  }
+
+  const headLen = (d.head||'').length;
+  const bodyLen = (d.body||'').length;
+  const totalTxt = headLen + bodyLen;
+  const esRetrato = d.tipo === 'autoridad';
+  const nombreFoto = (MEDIA.find(m=>m.id===d.imgFondo)?.name || '').toLowerCase();
+
+  let layout, overlay, txtPos, imgX=50, imgY=50, zoom=110, razon;
+
+  // ── Reglas de decisión ──
+  if(esRetrato || /perfil|retrato|rosa|maria|portrait|persona|mujer|hombre|face/.test(nombreFoto)){
+    // Foto de persona → split, cara a un lado, texto al otro
+    layout = 'split-right';
+    overlay = 'none';
+    txtPos = 'center';
+    imgX = 50; imgY = 30; // enfocar parte superior (cara)
+    zoom = 115;
+    razon = 'Retrato → foto a un lado, texto al otro. Enfoque en la cara.';
+  }
+  else if(/grafic|chart|dashboard|ads|analytic|datos|stats|result|pantalla|laptop|screen/.test(nombreFoto)){
+    // Gráficas/datos → recuadro limpio para que se lean
+    layout = 'inset';
+    overlay = 'dark';
+    txtPos = 'top';
+    zoom = 100;
+    razon = 'Gráfica/datos → recuadro limpio para que se lea bien.';
+  }
+  else if(totalTxt > 120){
+    // Mucho texto → imagen a media altura, texto tiene espacio
+    layout = 'top-half';
+    overlay = 'dark';
+    txtPos = 'center';
+    zoom = 115;
+    razon = 'Texto largo → imagen arriba, texto con espacio abajo.';
+  }
+  else if(totalTxt < 50){
+    // Poco texto → foto a sangre completa, máximo impacto
+    layout = 'bg-full';
+    overlay = 'dark';
+    txtPos = 'bottom';
+    zoom = 115;
+    razon = 'Texto corto → foto completa a sangre, máximo impacto.';
+  }
+  else{
+    // Equilibrado → fondo completo con texto centrado
+    layout = 'bg-full';
+    overlay = 'dark';
+    txtPos = 'center';
+    zoom = 112;
+    razon = 'Equilibrado → fondo completo con overlay y texto centrado.';
+  }
+
+  // Aplicar todo
+  d.imgLayout = layout;
+  d.overlay   = overlay;
+  d.txtPos    = txtPos;
+  d.imgX      = imgX;
+  d.imgY      = imgY;
+  d.imgZoom   = zoom;
+
+  show(cur);
+  refreshThumb(cur);
+  sincronizarPanelImg(d);
+  toast2('✨ ' + razon);
 }
 
 function sincronizarPanelImg(d){
@@ -1788,6 +1873,14 @@ function switchTab(id, btn){
   document.querySelectorAll('.rpanel').forEach(p=>p.classList.remove('on'));
   btn.classList.add('on');
   document.getElementById('tab-'+id).classList.add('on');
+}
+
+function abrirTabEditar(){
+  document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.rpanel').forEach(p=>p.classList.remove('on'));
+  const tab = document.querySelector('.rtab');
+  if(tab) tab.classList.add('on');
+  document.getElementById('tab-editar').classList.add('on');
 }
 
 /* ═══════════════════════════════════════════
