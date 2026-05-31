@@ -767,7 +767,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <div class="tb-mono">RM</div>
     <div>
       <div class="tb-name">Rosa María Studio</div>
-      <div class="tb-sub">Generador de contenido · v8</div>
+      <div class="tb-sub">Generador de contenido · v9</div>
     </div>
   </div>
 
@@ -979,6 +979,20 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
             <span id="iaFondo2Lbl" style="flex:1;font-size:9px">Sin imagen</span>
             <div class="ia-none" id="iaFondo2Prev"></div>
           </div>
+          <label style="margin-top:6px">Disposición de las fotos</label>
+          <div class="img-ctrl-grid" style="grid-template-columns:1fr 1fr">
+            <button class="img-layout-btn on" id="duoH" onclick="setDuo('duoDir','h')">◧◨ Lado a lado</button>
+            <button class="img-layout-btn" id="duoV" onclick="setDuo('duoDir','v')">⊟ Apiladas</button>
+          </div>
+          <label style="margin-top:6px">Texto</label>
+          <div class="img-ctrl-grid" style="grid-template-columns:1fr 1fr">
+            <button class="img-layout-btn on" id="duoTxtB" onclick="setDuo('duoTxt','bottom')">⬇ Texto abajo</button>
+            <button class="img-layout-btn" id="duoTxtT" onclick="setDuo('duoTxt','top')">⬆ Texto arriba</button>
+          </div>
+          <label style="margin-top:6px;color:var(--UI-A)">Enfoque foto 2</label>
+          <div class="rrow"><span style="font-size:8px;color:var(--UI-M);min-width:12px">H</span><input type="range" id="rImgX2" min="0" max="100" value="50" oninput="ed('imgX2',this.value);document.getElementById('vImgX2').textContent=this.value+'%'"><span class="rval" id="vImgX2">50%</span></div>
+          <div class="rrow"><span style="font-size:8px;color:var(--UI-M);min-width:12px">V</span><input type="range" id="rImgY2" min="0" max="100" value="50" oninput="ed('imgY2',this.value);document.getElementById('vImgY2').textContent=this.value+'%'"><span class="rval" id="vImgY2">50%</span></div>
+          <div class="rrow"><span style="font-size:8px;color:var(--UI-M);min-width:12px">Z</span><input type="range" id="rImgZ2" min="100" max="200" value="110" oninput="ed('imgZoom2',this.value);document.getElementById('vImgZ2').textContent=this.value+'%'"><span class="rval" id="vImgZ2">110%</span></div>
         </div>
 
         <div class="crow" id="rowImgPos" style="display:none">
@@ -1818,6 +1832,16 @@ function sincronizarPanelImg(d){
     const p2=document.getElementById('iaFondo2Prev'); const u2=getImgUrl(d.imgFondo2);
     if(p2){ if(u2){ p2.outerHTML=`<img class="ia-prev" id="iaFondo2Prev" src="${u2}">`; document.getElementById('iaFondo2Lbl').textContent='Foto asignada ✓'; }
             else if(p2.tagName==='IMG'){ p2.outerHTML='<div class="ia-none" id="iaFondo2Prev"></div>'; document.getElementById('iaFondo2Lbl').textContent='Sin imagen'; } }
+    // Sliders y botones del modo dúo
+    const x2=document.getElementById('rImgX2'); if(x2){x2.value=d.imgX2??50; document.getElementById('vImgX2').textContent=(d.imgX2??50)+'%'}
+    const y2=document.getElementById('rImgY2'); if(y2){y2.value=d.imgY2??50; document.getElementById('vImgY2').textContent=(d.imgY2??50)+'%'}
+    const z2=document.getElementById('rImgZ2'); if(z2){z2.value=d.imgZoom2??110; document.getElementById('vImgZ2').textContent=(d.imgZoom2??110)+'%'}
+    const dd=d.duoDir||'h';
+    document.getElementById('duoH')?.classList.toggle('on', dd==='h');
+    document.getElementById('duoV')?.classList.toggle('on', dd==='v');
+    const dt=d.duoTxt||'bottom';
+    document.getElementById('duoTxtB')?.classList.toggle('on', dt==='bottom');
+    document.getElementById('duoTxtT')?.classList.toggle('on', dt==='top');
     // Botones layout
     const layout=d.imgLayout||'bg-full';
     const map={'bg-full':'bg','inset':'inset','split-left':'splitl','split-right':'splitr','top-half':'top','bottom-half':'bottom'};
@@ -1989,14 +2013,23 @@ function rFoto(d,n){
   }
 
   if(layout === 'duo'){
-    // Dos fotos apiladas arriba + texto abajo sobre fondo de marca
+    // Dos fotos + texto. Cada foto con su propio enfoque/zoom.
     const bgSlide = isDark ? '#1A1A1A' : '#F5F1EA';
-    return `<div class="slide ${slideH()}" style="display:flex;flex-direction:column;overflow:hidden;background:${bgSlide}">
-  <div style="height:46%;display:flex;flex-shrink:0">
-    <div style="flex:1;position:relative;overflow:hidden;border-right:3px solid ${bgSlide}">${bgImgTag(d.imgFondo,'',d)}</div>
-    <div style="flex:1;position:relative;overflow:hidden">${bgImgTag(d.imgFondo2,'',{imgX:d.imgX,imgY:d.imgY,imgZoom:d.imgZoom})}</div>
-  </div>
-  <div class="SP" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px 90px">
+    const dir = d.duoDir || 'h';        // 'h' lado a lado | 'v' apiladas
+    const zonaTxt = d.duoTxt || 'bottom'; // dónde va el texto: 'bottom' | 'top'
+    // Foto 2 usa sus propios valores (con fallback a los de foto 1)
+    const d2 = {imgX: d.imgX2 ?? 50, imgY: d.imgY2 ?? 50, imgZoom: d.imgZoom2 ?? 110};
+    // Bloque de las dos fotos
+    const dosFotos = dir==='v'
+      ? `<div style="height:46%;display:flex;flex-direction:column;flex-shrink:0">
+           <div style="flex:1;position:relative;overflow:hidden;border-bottom:3px solid ${bgSlide}">${bgImgTag(d.imgFondo,'',d)}</div>
+           <div style="flex:1;position:relative;overflow:hidden">${bgImgTag(d.imgFondo2,'',d2)}</div>
+         </div>`
+      : `<div style="height:46%;display:flex;flex-shrink:0">
+           <div style="flex:1;position:relative;overflow:hidden;border-right:3px solid ${bgSlide}">${bgImgTag(d.imgFondo,'',d)}</div>
+           <div style="flex:1;position:relative;overflow:hidden">${bgImgTag(d.imgFondo2,'',d2)}</div>
+         </div>`;
+    const bloqueTxt = `<div class="SP" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px 90px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div class="abar"></div><span class="TEye" style="font-size:${T.eye}px;color:${subColor}">${p(d.eye)}</span></div>
     <h1 class="TDlg" style="font-size:${Math.round(T.head*.82)}px;color:${txtColor}">${pK(d.head)}</h1>
     ${d.body?`<p class="TBdy" style="font-size:${T.body}px;color:${subColor};margin-top:18px">${p(d.body)}</p>`:''}
@@ -2004,7 +2037,9 @@ function rFoto(d,n){
       <span class="TCap" style="font-size:${T.cta}px;color:${subColor}">${HANDLE}</span>
       <span class="TCap" style="font-size:${T.cta}px;color:${acColor}">${p(d.cta)}</span>
     </div>
-  </div>
+  </div>`;
+    return `<div class="slide ${slideH()}" style="display:flex;flex-direction:column;overflow:hidden;background:${bgSlide}">
+  ${zonaTxt==='top' ? bloqueTxt+dosFotos : dosFotos+bloqueTxt}
 </div>`;
   }
 
@@ -3019,6 +3054,9 @@ function ed(f,v){
   if(f==='txtScale')  d.txtScale=parseInt(v);
   if(f==='txtDX')     d.txtDX=parseInt(v);
   if(f==='txtDY')     d.txtDY=parseInt(v);
+  if(f==='imgX2')     d.imgX2=parseInt(v);
+  if(f==='imgY2')     d.imgY2=parseInt(v);
+  if(f==='imgZoom2')  d.imgZoom2=parseInt(v);
   show(cur);
   refreshThumb(cur);
 }
@@ -3071,6 +3109,21 @@ function renderItemsList(){
     </div>`).join('');
 }
 function setV(k,v){document.documentElement.style.setProperty(k,v);show(cur);buildThumbs()}
+
+/* ── Controles del modo dos fotos ── */
+function setDuo(prop, val){
+  if(!SLIDES.length) return;
+  SLIDES[cur][prop] = val;
+  if(prop==='duoDir'){
+    document.getElementById('duoH')?.classList.toggle('on', val==='h');
+    document.getElementById('duoV')?.classList.toggle('on', val==='v');
+  }
+  if(prop==='duoTxt'){
+    document.getElementById('duoTxtB')?.classList.toggle('on', val==='bottom');
+    document.getElementById('duoTxtT')?.classList.toggle('on', val==='top');
+  }
+  show(cur); refreshThumb(cur);
+}
 
 /* ── Controles de texto por slide ── */
 function setTxtAlign(a){
