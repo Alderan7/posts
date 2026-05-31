@@ -766,9 +766,24 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     </div>
   </div>
 
-  <div class="mode-row">
-    <button class="mode-btn" id="mPost" onclick="setModo('post')">📄 Post</button>
-    <button class="mode-btn on" id="mCarr" onclick="setModo('carrusel')">🗂 Carrusel</button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="mode-row">
+      <button class="mode-btn" id="mPost" onclick="setModo('post')">📄 Post</button>
+      <button class="mode-btn on" id="mCarr" onclick="setModo('carrusel')">🗂 Carrusel</button>
+    </div>
+    <div id="slidesPicker" style="display:flex;align-items:center;gap:5px">
+      <span style="font-size:9px;color:var(--UI-M);letter-spacing:.06em">Slides</span>
+      <select id="cNumSlidesTop" onchange="cambiarNumSlides(this.value)" style="background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:5px 7px;border-radius:4px;font-size:10px;font-family:'Montserrat',sans-serif;cursor:pointer">
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7" selected>7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+      </select>
+    </div>
   </div>
 
   <div class="tb-right">
@@ -2439,7 +2454,7 @@ async function generar(){
   sEls[2].classList.add('ok');
   await delay(250);
 
-  const numSlides = parseInt(document.getElementById('cNumSlides').value)||7;
+  const numSlides = parseInt(document.getElementById('cNumSlidesTop')?.value || document.getElementById('cNumSlides')?.value)||7;
   const nuevo = modo==='post' ? buildPost(angulo,aiData) : buildCarrusel(angulo,aiData,numSlides);
   SLIDES.length=0;
   nuevo.forEach(s=>SLIDES.push(s));
@@ -2544,6 +2559,22 @@ function buildCarrusel(angulo,ai,numSlides=7){
       body: ai?ai.cta_body:`Sin rodeos. Te cuento cómo lo haría para tu empresa de reformas.`,
       items:[], cta:ai?`Escríbeme ${ai.cta_word} →`:`${cta} →`},
   ];
+
+  // Slides extra para carruseles largos (8-10): insertar antes del CTA
+  if(numSlides > 7){
+    const cta2 = todos.pop(); // sacar CTA
+    const extras = [
+      {tipo:'servicio', fondo:'dark', eye:'Lo que incluye',
+        head:'Cómo trabajo contigo', body:'', items:rnd(BANCO.servicios), cta:`${cta} →`},
+      {tipo:'proceso', fondo:'light', eye:'Paso a paso',
+        head:'El proceso, sin humo', body:'', items:rnd(BANCO.procesos), cta:`${cta} →`},
+      {tipo:'frase', fondo:'blue', eye:'Para que lo pienses',
+        head:rnd(BANCO.frases), body:'', items:[], cta:'Guarda esto →'},
+    ];
+    for(let i=0; i<numSlides-7 && i<extras.length; i++) todos.push(extras[i]);
+    todos.push(cta2);
+  }
+
   return todos.slice(0, numSlides);
 }
 
@@ -2866,9 +2897,10 @@ function setModo(m){
   modo = m;
   document.getElementById('mPost').classList.toggle('on', m==='post');
   document.getElementById('mCarr').classList.toggle('on', m==='carrusel');
-  // En modo post: ocultar miniaturas y navegación (un solo slide)
+  // En modo post: ocultar miniaturas, navegación y selector de slides
   document.getElementById('sideL').style.display = m==='post' ? 'none' : '';
   document.getElementById('navRow').style.display = m==='post' ? 'none' : 'flex';
+  const sp=document.getElementById('slidesPicker'); if(sp) sp.style.display = m==='post' ? 'none' : 'flex';
   // Si pasamos a post y hay varios slides, quedarnos solo con el actual
   if(m==='post' && SLIDES.length>1){
     const actual = SLIDES[cur];
@@ -2879,6 +2911,46 @@ function setModo(m){
   buildThumbs();
   show(cur);
   scaleStage();
+}
+
+// Cambiar nº de slides del carrusel actual al vuelo
+function cambiarNumSlides(n){
+  n = parseInt(n);
+  // Sincronizar con el selector del tab Generar
+  const gen=document.getElementById('cNumSlides'); if(gen) gen.value = (n>=5&&n<=7)?n:7;
+  if(modo==='post' || !SLIDES.length) return;
+
+  const actual = SLIDES.length;
+  if(n === actual) return;
+
+  if(n < actual){
+    // Recortar: mantener hook (primero) y CTA (último), quitar intermedios
+    const primero = SLIDES[0];
+    const ultimo  = SLIDES[actual-1];
+    const medios  = SLIDES.slice(1, actual-1).slice(0, n-2);
+    SLIDES.length = 0;
+    SLIDES.push(primero, ...medios, ultimo);
+  } else {
+    // Añadir slides nuevos antes del último (CTA)
+    const ultimo = SLIDES.pop();
+    const tiposExtra = ['frase','lista','stats','servicio','debate','proceso'];
+    const fondos = ['dark','light','blue'];
+    while(SLIDES.length < n-1){
+      const t = rnd(tiposExtra);
+      SLIDES.push({
+        tipo: t, fondo: rnd(fondos),
+        eye: rnd(BANCO.eyebrows),
+        head: t==='frase' ? rnd(BANCO.frases) : 'Edita este slide',
+        body: '', items: t==='lista'||t==='servicio' ? rnd(BANCO.listas.default) : (t==='stats'?rnd(BANCO.stats):[]),
+        cta: rnd(BANCO.ctas)+' →'
+      });
+    }
+    SLIDES.push(ultimo);
+  }
+  cur = Math.min(cur, SLIDES.length-1);
+  buildThumbs();
+  show(cur);
+  toast2(`Carrusel ajustado a ${n} slides`);
 }
 
 /* ═══════════════════════════════════════════
