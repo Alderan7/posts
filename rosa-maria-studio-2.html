@@ -1237,8 +1237,8 @@ const ANGULO_LABELS = {
 const BANCO = {
   angulos: {
     bocaboca:   "dependencia del boca a boca y por qué destruye la estabilidad de una empresa de reformas",
-    regateo:    "clientes que solo piden precio, visitas perdidas y tiempo robado al reformista",
-    saturacion: "saturación del dueño de reformas que vive atrapado entre obra, presupuestos y familia",
+    regateo:    "clientes que solo te piden precio, visitas perdidas y tiempo que te roban",
+    saturacion: "tu saturación: vives atrapado entre obra, presupuestos y familia",
     autoridad:  "por qué una empresa peor puede captar más obras solo por comunicar mejor",
     sistema:    "cómo un sistema de captación predecible cambia la vida de una empresa de reformas",
     tiempo:     "recuperar tiempo, cenar con la familia y dejar de ser esclavo del propio negocio",
@@ -1256,7 +1256,7 @@ const BANCO = {
       "Llevas 15 años haciendo reformas perfectas.\n\nY el mes que viene no sabes si tendrás obras.",
       "El boca a boca no es una estrategia.\n\nEs rezar para que alguien te recomiende antes de que se acabe el mes.",
       "Tu empresa funciona por recomendación.\n\nEl problema es que no puedes encenderlo cuando lo necesitas.",
-      "Una empresa de reformas me dijo: «Tengo 20 años de experiencia y este mes solo 2 presupuestos.»\n\nEsto fue lo que cambió.",
+      "Llevas 20 años de experiencia.\n\nY este mes solo te han entrado 2 presupuestos.\n\nEsto es lo que puede cambiarlo.",
       "5 señales de que tu empresa de reformas depende demasiado del boca a boca.",
     ],
     regateo:[
@@ -1288,7 +1288,7 @@ const BANCO = {
       "La estabilidad no llega sola.\n\nSe construye.",
     ],
     tiempo:[
-      "El verdadero lujo para un reformista no es un coche mejor.\n\nEs poder apagar el móvil a las 19:00.",
+      "El verdadero lujo no es un coche mejor.\n\nEs poder apagar el móvil a las 19:00.",
       "Construiste una empresa para vivir mejor.\n\nNo para vivir estresado.",
       "¿Cuántas tardes más vas a cambiar por visitas que no valen la pena?",
       "Tu tiempo vale demasiado como para regalarlo en presupuestos que no se cierran.",
@@ -1299,7 +1299,7 @@ const BANCO = {
       "Tu familia no necesita más dinero.\n\nNecesita más de ti presente.",
       "Construiste una empresa para darles una vida mejor.\n\nNo para perderte la suya.",
       "El verdadero coste de no tener sistema no aparece en la facturación.\n\nAparece en casa.",
-      "Hay reformistas que trabajan 60 horas a la semana y ganan menos que los que trabajan 40 con sistema.",
+      "Puedes trabajar 60 horas a la semana y ganar menos que quien trabaja 40 con un sistema que funciona.",
     ],
     premium:[
       "No necesitas más clientes.\n\nNecesitas mejores clientes.",
@@ -1309,7 +1309,7 @@ const BANCO = {
       "Lo que mira un cliente de alto ticket antes de pedirte presupuesto.",
     ],
     objecion:[
-      "«Ya probé publicidad y no funcionó.»\n\nEsa frase me la dicen casi todos los reformistas que luego tienen los mejores resultados.",
+      "«Ya probé publicidad y no funcionó.»\n\nQuizá tú también lo has pensado.\n\nY suele decirlo quien luego tiene los mejores resultados.",
       "No probaste publicidad.\n\nProbaste visibilidad sin estrategia de cualificación. Son cosas muy distintas.",
       "«Instagram no funciona para reformas.»\n\nNo. Instagram sin estrategia no funciona. Con estrategia, es otra historia.",
       "«No tengo tiempo para esto.»\n\nPrecisamente por eso necesitas que funcione sin depender de tu tiempo.",
@@ -2481,9 +2481,13 @@ async function generar(){
 
 async function fetchAI(angulo){
   const desc=BANCO.angulos[angulo]||BANCO.angulos.sistema;
-  const prompt=`Eres Rosa María, media buyer estratégica especializada en Meta Ads y Google Ads para empresas de reformas en España. Tu cliente ideal es Javier Moreno Castillo: 43 años, Valencia, gerente de empresa de reformas, saturado, escéptico con el marketing, dependiente del boca a boca, con familia que espera en casa.
+  const prompt=`Eres Rosa María, media buyer estratégica especializada en Meta Ads y Google Ads para empresas de reformas en España.
 
-Tu tono: elegante, directo, lenguaje de negocio. NUNCA tecnicismos (CTR, CPL, funnel, pixel). Habla de: obras rentables, agenda cubierta, clientes de calidad, estabilidad, tiempo, familia, autoridad, control.
+Escribes DIRIGIÉNDOTE EN SEGUNDA PERSONA (tú/tu) directamente al lector: un gerente o dueño de empresa de reformas (40-55 años), saturado, escéptico con el marketing, dependiente del boca a boca, con familia que le espera en casa. Le hablas de TÚ, como si lo tuvieras delante.
+
+REGLA CRÍTICA: NUNCA uses nombres propios (nada de "Javier" ni similares). NUNCA hables del lector en tercera persona ("el reformista", "el dueño", "una empresa me dijo"). SIEMPRE en segunda persona: "tú", "tu empresa", "tu agenda", "tus obras", "te pasa", "llevas años...".
+
+Tu tono: elegante, directo, lenguaje de negocio. NUNCA tecnicismos (CTR, CPL, funnel, pixel). Habla de: tus obras rentables, tu agenda cubierta, tus clientes de calidad, tu estabilidad, tu tiempo, tu familia, tu autoridad, tu control.
 
 Genera copy para un carrusel de Instagram sobre: "${desc}".
 
