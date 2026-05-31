@@ -2372,6 +2372,9 @@ function actualizarPromptsMJ(angulo){
 /* ═══════════════════════════════════════════
    PEXELS API
    ═══════════════════════════════════════════ */
+// API Key de Pexels por defecto (gratuita, sin coste — solo rate limit 200/h)
+const PEXELS_KEY_DEFAULT = 'DQlg4GAqeCIIF3CkZpcFQBopg7PztGO8uKcVXHi8XnYCyWDSEo1QvyqC';
+
 function guardarKeyPexels(val){
   localStorage.setItem('pexels_key', val);
 }
@@ -2379,8 +2382,9 @@ function guardarKeyPexels(val){
 function getPexelsKey(){
   const saved = localStorage.getItem('pexels_key');
   const input = document.getElementById('pexelsKey');
-  if(input && saved) input.value = saved;
-  return saved || (input ? input.value : '');
+  const key = saved || PEXELS_KEY_DEFAULT;
+  if(input) input.value = key;
+  return key;
 }
 
 function esLocalhost(){
@@ -2423,26 +2427,8 @@ async function buscarPexelsTermino(q){
   const lib = document.getElementById('mediaLib');
   if(lib.classList.contains('hidden')) toggleMedia();
 
-  // Comprobar si estamos en servidor local
-  if(!esLocalhost()){
-    const grid = document.getElementById('pexelsGrid');
-    const res  = document.getElementById('pexelsResults');
-    if(res) res.style.display = 'flex';
-    if(grid) grid.innerHTML = `<div class="mlib-empty" style="color:#ff9f43;line-height:1.8">
-      ⚠️ Abre con <b style="color:var(--UI-T)">iniciar.bat</b><br>
-      para activar Pexels.<br><br>
-      <span style="font-size:8px;color:var(--UI-M)">Doble clic en la carpeta POSTS</span>
-    </div>`;
-    return;
-  }
-
   const keyInput = document.getElementById('pexelsKey');
-  const key = (keyInput?.value?.trim()) || localStorage.getItem('pexels_key') || '';
-  if(!key){
-    toast2('Pega tu API Key de Pexels');
-    document.getElementById('pexelsKey')?.focus();
-    return;
-  }
+  const key = (keyInput?.value?.trim()) || localStorage.getItem('pexels_key') || PEXELS_KEY_DEFAULT;
 
   const resultsBox = document.getElementById('pexelsResults');
   const grid = document.getElementById('pexelsGrid');
@@ -2470,7 +2456,17 @@ async function buscarPexelsTermino(q){
         <button class="mlib-use" onclick="importarFotoPexels('${(ph.src.large2x||ph.src.large).replace(/'/g,'%27')}','${ph.photographer.replace(/['"]/g,'')}')">Usar</button>
       </div>`).join('');
   }catch(e){
-    grid.innerHTML = `<div class="mlib-empty" style="color:#ff6b6b">Error: ${e.message}</div>`;
+    // Falló el fetch — casi seguro CORS desde file://
+    if(!esLocalhost()){
+      grid.innerHTML = `<div class="mlib-empty" style="color:#ff9f43;line-height:1.8">
+        ⚠️ Tu navegador bloquea Pexels<br>al abrir el archivo directo.<br><br>
+        <b style="color:var(--UI-T)">Solución:</b> doble clic en<br>
+        <b style="color:#38B6FF">iniciar.bat</b> (carpeta POSTS)<br><br>
+        <span style="font-size:8px;color:var(--UI-M)">Abre el generador en localhost<br>y Pexels funciona al instante</span>
+      </div>`;
+    } else {
+      grid.innerHTML = `<div class="mlib-empty" style="color:#ff6b6b">Error: ${e.message}</div>`;
+    }
   }
 }
 
@@ -2943,9 +2939,9 @@ async function expPPTX(){
    ═══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded',async()=>{
   actualizarAngulos();
-  // Restaurar API key guardada
-  const savedKey = localStorage.getItem('pexels_key');
-  if(savedKey){ const ki=document.getElementById('pexelsKey'); if(ki) ki.value=savedKey; }
+  // Restaurar API key (guardada o por defecto)
+  const ki=document.getElementById('pexelsKey');
+  if(ki) ki.value = localStorage.getItem('pexels_key') || PEXELS_KEY_DEFAULT;
   const angulo=rnd(Object.keys(BANCO.angulos));
   const slides=buildCarrusel(angulo,null,7);
   slides.forEach(s=>SLIDES.push(s));
