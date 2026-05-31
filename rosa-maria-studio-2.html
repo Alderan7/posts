@@ -1,0 +1,2994 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rosa María Studio — Generador de Contenido</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════
+   MANUAL DE BRANDING — PALETA EXACTA
+   Negro carbón : #1A1A1A
+   Blanco roto  : #F5F1EA
+   Azul marca   : #38B6FF
+   DM Sans      : PRINCIPAL — headlines, cuerpo, eyebrow, CTA, UI
+   Cormorant    : SECUNDARIO/acento — números, comillas, monograma RM
+   ═══════════════════════════════════════════════════ */
+:root {
+  --C-DARK:  #1A1A1A;
+  --C-LIGHT: #F5F1EA;
+  --C-BLUE:  #38B6FF;
+  --C-BLUE2: #1A9AE8;
+  --C-BLUE-D: rgba(56,182,255,.14);
+
+  --F-SER: 'Playfair Display', Georgia, serif;
+  --F-SAN: 'Montserrat', system-ui, sans-serif;
+
+  --UI:    #0E0E0E;
+  --UI-P:  #141414;
+  --UI-B:  #202020;
+  --UI-B2: #2A2A2A;
+  --UI-T:  #E8E6E0;
+  --UI-M:  #505050;
+  --UI-A:  #38B6FF;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
+
+/* ═══════════ TOPBAR ═══════════ */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:52px;z-index:200;
+  background:var(--UI-P);border-bottom:1px solid var(--UI-B);
+  display:flex;align-items:center;
+  justify-content:space-between;
+  padding:0 16px;gap:10px;
+}
+.tb-left{display:flex;align-items:center;gap:12px}
+.tb-mono{
+  width:32px;height:32px;border-radius:50%;
+  border:1.5px solid var(--UI-A);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--F-SER);font-size:14px;font-style:italic;
+  color:var(--UI-A);letter-spacing:.02em;flex-shrink:0;
+}
+.tb-name{font-size:13px;font-weight:600;color:var(--UI-T)}
+.tb-sub{font-size:9px;color:var(--UI-M);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+
+.mode-row{display:flex;align-items:center;gap:4px;background:var(--UI-B);border-radius:5px;padding:3px}
+.mode-btn{
+  padding:5px 14px;border-radius:3px;border:none;cursor:pointer;
+  font-size:10px;font-family:var(--F-SAN);font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;
+  background:transparent;color:var(--UI-M);transition:all .15s;
+}
+.mode-btn.on{background:var(--UI-A);color:#fff}
+
+.tb-right{display:flex;gap:6px;align-items:center}
+
+/* ═══════════ BOTONES ═══════════ */
+.btn{
+  padding:7px 14px;border-radius:4px;border:none;cursor:pointer;
+  font-size:10px;font-family:var(--F-SAN);font-weight:600;
+  letter-spacing:.05em;text-transform:uppercase;
+  transition:all .18s;white-space:nowrap;
+}
+.btn-gen{
+  background:var(--UI-A);color:#fff;
+  box-shadow:0 2px 14px rgba(56,182,255,.25);
+  display:flex;align-items:center;gap:6px;
+}
+.btn-gen:hover{background:#50c4ff;box-shadow:0 2px 22px rgba(56,182,255,.4)}
+.btn-gen .spinner{
+  width:12px;height:12px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;
+  animation:spin .7s linear infinite;display:none;
+}
+.btn-gen.loading .spinner{display:block}
+.btn-gen.loading .btn-gen-ico{display:none}
+.btn-out{background:transparent;border:1px solid var(--UI-B2);color:var(--UI-T)}
+.btn-out:hover{border-color:var(--UI-A);color:var(--UI-A)}
+.btn-gh{background:transparent;border:1px solid var(--UI-B2);color:var(--UI-M);font-size:9px}
+.btn-gh:hover,.btn-gh.on{border-color:var(--UI-A);color:var(--UI-A)}
+
+/* Dropdown exportar */
+.exp-wrap{position:relative}
+.exp-trigger{color:var(--UI-A)!important;border-color:var(--UI-A)!important;font-weight:700!important}
+.exp-menu{
+  display:none;position:absolute;top:calc(100% + 6px);right:0;
+  background:var(--UI-P);border:1px solid var(--UI-B2);border-radius:5px;
+  min-width:210px;z-index:999;overflow:hidden;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+}
+.exp-menu.on{display:block}
+.exp-menu button{
+  display:block;width:100%;padding:10px 14px;
+  background:transparent;border:none;color:var(--UI-T);
+  text-align:left;font-size:11px;font-family:'Montserrat',sans-serif;
+  font-weight:500;cursor:pointer;transition:background .15s;
+  border-bottom:1px solid var(--UI-B);
+}
+.exp-menu button:last-child{border-bottom:none}
+.exp-menu button:hover{background:var(--UI-B);color:var(--UI-A)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══════════ LAYOUT ═══════════ */
+#app{
+  position:fixed;top:52px;left:0;right:0;bottom:0;
+  display:flex;overflow:hidden;
+}
+
+/* ── SIDEBAR IZQ ── */
+#sideL{
+  width:148px;flex-shrink:0;
+  background:var(--UI-P);border-right:1px solid var(--UI-B);
+  overflow-y:auto;overflow-x:hidden;
+  padding:10px 7px;display:flex;flex-direction:column;gap:5px;
+}
+.sl-lbl{
+  font-size:8px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--UI-M);padding:2px 4px 8px;
+  border-bottom:1px solid var(--UI-B);margin-bottom:2px;
+}
+.thumb{
+  cursor:pointer;border:2px solid transparent;border-radius:4px;
+  overflow:hidden;position:relative;transition:border-color .15s;
+  flex-shrink:0;
+}
+.thumb:hover{border-color:rgba(56,182,255,.35)}
+.thumb.active{border-color:var(--UI-A)}
+.thumb-inner{width:100%;position:relative;overflow:hidden}
+.thumb-host{
+  position:absolute;top:0;left:0;
+  width:1080px;height:1350px;transform-origin:top left;pointer-events:none;
+}
+.thumb-host.sq{height:1080px}
+.thumb-num{
+  position:absolute;bottom:4px;right:5px;
+  background:rgba(0,0,0,.75);color:rgba(255,255,255,.65);
+  font-size:8px;padding:1px 4px;border-radius:2px;
+}
+.thumb-chip{
+  position:absolute;top:4px;left:5px;
+  background:rgba(14,14,14,.8);color:rgba(255,255,255,.4);
+  font-size:7px;letter-spacing:.07em;text-transform:uppercase;
+  padding:2px 4px;border-radius:2px;
+}
+
+/* ── STAGE CENTRAL ── */
+#stageArea{
+  flex:1;min-width:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-start;
+  padding:20px 14px 16px;
+  overflow-y:auto;overflow-x:hidden;
+  background:#080808;gap:12px;
+}
+#viewport{position:relative;width:100%;max-width:400px;flex-shrink:0}
+#safeRing{
+  position:absolute;inset:0;pointer-events:none;z-index:20;
+  display:none;border-radius:5px;
+}
+#safeRing.on{display:block}
+#safeRing::before{
+  content:'';position:absolute;
+  top:5.5%;left:5%;right:5%;bottom:5.5%;
+  border:1.5px dashed rgba(56,182,255,.35);border-radius:3px;
+}
+#safeRing::after{
+  content:'zona segura';
+  position:absolute;top:6%;left:5.8%;
+  font-size:7px;color:rgba(56,182,255,.35);
+  letter-spacing:.1em;text-transform:uppercase;
+}
+#stage{
+  width:100%;aspect-ratio:4/5;
+  border-radius:5px;overflow:hidden;
+  box-shadow:0 18px 60px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.04);
+  position:relative;background:var(--C-DARK);transition:aspect-ratio .3s;
+}
+#stage.sq{aspect-ratio:1/1}
+#stageInner{
+  position:absolute;top:0;left:0;
+  width:1080px;height:1350px;transform-origin:top left;
+}
+#stageInner.sq{height:1080px}
+
+#navRow{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.nbtn{
+  background:var(--UI-P);border:1px solid var(--UI-B);
+  color:var(--UI-T);padding:5px 14px;border-radius:4px;
+  cursor:pointer;font-size:11px;transition:all .14s;
+}
+.nbtn:hover:not(:disabled){background:var(--UI-A);border-color:var(--UI-A);color:#fff}
+.nbtn:disabled{opacity:.3;cursor:not-allowed}
+#navCnt{font-size:11px;color:var(--UI-M);min-width:42px;text-align:center}
+
+/* ── PANEL DER ── */
+#sideR{
+  width:250px;flex-shrink:0;
+  background:var(--UI-P);border-left:1px solid var(--UI-B);
+  overflow:hidden;display:flex;flex-direction:column;
+}
+
+/* Tabs del panel derecho */
+.rtabs{display:flex;border-bottom:1px solid var(--UI-B);flex-shrink:0}
+.rtab{
+  flex:1;padding:9px 4px;border:none;background:transparent;
+  color:var(--UI-M);font-size:9px;font-family:var(--F-SAN);
+  font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;
+}
+.rtab.on{color:var(--UI-A);border-bottom-color:var(--UI-A)}
+.rtab:hover:not(.on){color:var(--UI-T)}
+
+.rpanel{display:none;flex-direction:column;gap:14px;overflow-y:auto;padding:14px 12px;flex:1}
+.rpanel.on{display:flex}
+
+.csec{display:flex;flex-direction:column;gap:7px}
+.csec-h{
+  font-size:8px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--UI-M);padding-bottom:6px;
+  border-bottom:1px solid var(--UI-B);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.crow{display:flex;flex-direction:column;gap:3px}
+.crow label{font-size:9px;color:var(--UI-M)}
+.crow input[type=text],
+.crow select,
+.crow textarea{
+  background:#0A0A0A;border:1px solid var(--UI-B);
+  color:var(--UI-T);padding:5px 8px;border-radius:3px;
+  font-size:10px;font-family:var(--F-SAN);width:100%;
+  transition:border-color .15s;resize:none;line-height:1.45;
+}
+.crow input[type=text]:focus,
+.crow select:focus,
+.crow textarea:focus{outline:none;border-color:var(--UI-A)}
+.c3g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.cpick{display:flex;flex-direction:column;gap:2px}
+.cpick label{font-size:8px;color:var(--UI-M)}
+.cpick input[type=color]{
+  width:100%;height:24px;border:none;border-radius:3px;
+  cursor:pointer;padding:1px;background:var(--UI-B);
+}
+.tml{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--UI-T)}
+
+/* Range sliders */
+.rrow{display:flex;align-items:center;gap:6px}
+.rrow input[type=range]{flex:1;accent-color:var(--UI-A)}
+.rval{font-size:10px;color:var(--UI-A);min-width:32px;text-align:right;font-weight:600}
+
+/* Copy panel */
+.copy-block{display:flex;flex-direction:column;gap:4px}
+.copy-label{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--UI-M);margin-top:8px}
+.copy-text{
+  background:#0A0A0A;border:1px solid var(--UI-B);border-radius:3px;
+  padding:7px 8px;font-size:10px;color:var(--UI-T);line-height:1.6;
+  white-space:pre-wrap;word-break:break-word;max-height:90px;overflow-y:auto;
+}
+.copy-text.hashtags{color:var(--UI-A);font-size:9px}
+.cbtn{
+  border:1px solid var(--UI-B2);background:transparent;color:var(--UI-M);
+  padding:4px 8px;border-radius:3px;font-size:9px;font-weight:600;
+  letter-spacing:.04em;cursor:pointer;transition:all .15s;text-align:left;
+}
+.cbtn:hover{border-color:var(--UI-A);color:var(--UI-A)}
+
+/* Toast */
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);
+  background:var(--UI-A);color:#fff;padding:8px 18px;border-radius:4px;
+  font-size:11px;font-weight:600;letter-spacing:.06em;
+  opacity:0;transition:all .25s;pointer-events:none;z-index:9999;
+}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--UI-B2);border-radius:2px}
+
+/* ═══════════ OVERLAYS ═══════════ */
+#genOv{
+  position:fixed;inset:0;background:rgba(0,0,0,.92);
+  display:none;flex-direction:column;align-items:center;
+  justify-content:center;z-index:9999;gap:18px;
+}
+#genOv.on{display:flex}
+.gen-ring{
+  width:44px;height:44px;border-radius:50%;
+  border:3px solid var(--UI-B2);border-top-color:var(--UI-A);
+  animation:spin .75s linear infinite;
+}
+#genTxt{font-size:12px;color:var(--UI-A);letter-spacing:.08em;text-align:center;line-height:1.6}
+.gen-step-list{display:flex;flex-direction:column;gap:5px;margin-top:4px}
+.gen-step{font-size:10px;color:var(--UI-M);display:flex;align-items:center;gap:8px;transition:color .3s}
+.gen-step::before{content:'○';font-size:10px;transition:all .3s}
+.gen-step.ok{color:var(--UI-A)}
+.gen-step.ok::before{content:'✓'}
+
+#expOv{
+  position:fixed;inset:0;background:rgba(0,0,0,.9);
+  display:none;flex-direction:column;align-items:center;
+  justify-content:center;z-index:9998;gap:12px;
+}
+#expOv.on{display:flex}
+#expMsg{font-size:12px;color:var(--UI-A);letter-spacing:.06em}
+.expbw{width:180px;height:3px;background:var(--UI-B);border-radius:2px;overflow:hidden}
+#expBar{height:100%;background:var(--UI-A);width:0%;transition:width .2s}
+
+/* ═══════════════════════════════════════════
+   SISTEMA DE SLIDES — 1080 × 1350 (4:5)
+                        1080 × 1080 (1:1 post)
+   ═══════════════════════════════════════════ */
+.slide{
+  width:1080px;
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+  font-family:var(--F-SAN);
+}
+.slide.h135{height:1350px}
+.slide.h108{height:1080px}
+
+.SD{background:#1A1A1A}
+.SL{background:#F5F1EA}
+.SB{background:#38B6FF}
+
+.SD .Ct{color:#F5F1EA}        .SL .Ct{color:#1A1A1A}        .SB .Ct{color:#1A1A1A}
+.SD .Ca{color:#38B6FF}        .SL .Ca{color:#38B6FF}        .SB .Ca{color:#1A1A1A}
+.SD .Cm{color:rgba(245,241,234,.32)} .SL .Cm{color:rgba(26,26,26,.35)} .SB .Cm{color:rgba(26,26,26,.45)}
+.SD .Cb{color:rgba(245,241,234,.6)}  .SL .Cb{color:rgba(26,26,26,.62)} .SB .Cb{color:rgba(26,26,26,.68)}
+.SD .Cl{background:rgba(245,241,234,.09)} .SL .Cl{background:rgba(26,26,26,.1)} .SB .Cl{background:rgba(26,26,26,.14)}
+.SD .Cn{color:rgba(245,241,234,.04)} .SL .Cn{color:rgba(26,26,26,.05)} .SB .Cn{color:rgba(26,26,26,.07)}
+
+/* Tipografías base — tamaños controlados por JS
+   PRINCIPAL: DM Sans (headlines, cuerpo, todo)
+   SECUNDARIO: Cormorant Garamond italic (acento: números, comillas, monograma) */
+.TEye{font-family:var(--F-SAN);font-weight:500;letter-spacing:.24em;text-transform:uppercase;line-height:1}
+.TDlg{font-family:var(--F-SAN);line-height:1.08;font-weight:300;letter-spacing:-.02em}
+.TDmd{font-family:var(--F-SAN);line-height:1.1;font-weight:300;letter-spacing:-.015em}
+.TDsm{font-family:var(--F-SAN);line-height:1.12;font-weight:300;letter-spacing:-.01em}
+.TBdy{font-family:var(--F-SAN);line-height:1.6;font-weight:300}
+.TCap{font-family:var(--F-SAN);letter-spacing:.15em;text-transform:uppercase;font-weight:500}
+
+/* Acento Cormorant — solo elementos editoriales puntuales */
+.accent-ser{font-family:var(--F-SER);font-style:italic}
+
+.SP{padding:86px 90px 78px;display:flex;flex-direction:column;height:100%}
+.SP108{padding:80px 90px 72px;display:flex;flex-direction:column;height:100%}
+
+.SH{display:flex;justify-content:space-between;align-items:center}
+.SF{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:34px}
+
+/* Logo en slides — pequeño y discreto como en el feed real */
+.logo-wrap{
+  overflow:hidden;
+  /* Recorta el texto "STRATEGIC MEDIA BUYER" (ocupa ~28% inferior) */
+  height:38px;
+  width:38px;
+  flex-shrink:0;
+  display:flex;align-items:flex-start;
+}
+.slide-logo-img{
+  width:38px;
+  height:auto;
+  object-fit:none;
+  object-position:center top;
+  display:block;
+  flex-shrink:0;
+}
+/* Fondo oscuro o azul → letras blancas */
+.SD .logo-wrap{mix-blend-mode:screen}
+.SD .slide-logo-img{filter:invert(1) brightness(1.6) contrast(1.1);opacity:.72}
+.SB .logo-wrap{mix-blend-mode:screen}
+.SB .slide-logo-img{filter:invert(1) brightness(1.6) contrast(1.1);opacity:.72}
+/* Fondo claro → multiply elimina fondo crema, letras negras visibles */
+.SL .logo-wrap{mix-blend-mode:multiply}
+.SL .slide-logo-img{filter:none;opacity:.58}
+.rm{font-family:var(--F-SER);font-style:italic;font-size:24px;letter-spacing:.04em}
+.SD .rm{color:rgba(245,241,234,.28)} .SL .rm{color:rgba(26,26,26,.22)} .SB .rm{color:rgba(26,26,26,.4)}
+
+.abar{width:44px;height:3px;border-radius:1px;flex-shrink:0}
+.SD .abar{background:#38B6FF} .SL .abar{background:#38B6FF} .SB .abar{background:#1A1A1A}
+
+.HL{height:1px;width:100%}
+
+.BGN{
+  position:absolute;font-family:var(--F-SER);
+  pointer-events:none;user-select:none;
+  right:-40px;bottom:-90px;line-height:1;
+}
+
+/* ─── Tipos de slide ─── */
+.sHook .zone{flex:1;display:flex;flex-direction:column;justify-content:center;gap:36px;padding-top:40px}
+.sHook .eyerow{display:flex;align-items:center;gap:14px}
+
+.sFrase .zone{flex:1;display:flex;flex-direction:column;justify-content:center;gap:38px}
+/* Comilla → acento Cormorant italic */
+.sFrase .qm{font-family:var(--F-SER);font-style:italic;font-size:130px;line-height:.65;opacity:.2;margin-bottom:-16px}
+
+.sBA{display:grid!important;grid-template-rows:1fr 1fr}
+.bah{padding:62px 90px 52px;display:flex;flex-direction:column;gap:14px;position:relative}
+.bah.bef{background:#111}
+.bah.aft{background:#1A1A1A}
+.babadge{display:inline-flex;align-items:center;gap:10px;font-family:var(--F-SAN);font-size:17px;letter-spacing:.16em;text-transform:uppercase;font-weight:500}
+.badot{width:8px;height:8px;border-radius:50%}
+.bef .badot{background:rgba(245,241,234,.18)} .bef .babadge{color:rgba(245,241,234,.28)}
+.aft .badot{background:#38B6FF}             .aft .babadge{color:#38B6FF}
+.batext{font-family:var(--F-SAN);font-size:52px;font-weight:300;line-height:1.18}
+.bef .batext{color:rgba(245,241,234,.25);font-style:italic}
+.aft .batext{color:#F5F1EA}
+.bafoot{display:flex;justify-content:space-between;align-items:center;margin-top:auto}
+.badiv{position:absolute;bottom:0;left:90px;right:90px;height:1px;background:rgba(245,241,234,.07)}
+
+.sLista .lzone{flex:1;display:flex;flex-direction:column;margin-top:30px}
+.lrow{display:flex;align-items:flex-start;gap:22px;padding:26px 0;border-top:1px solid rgba(26,26,26,.1)}
+.lrow:last-child{border-bottom:1px solid rgba(26,26,26,.1)}
+.SD .lrow{border-color:rgba(245,241,234,.08)} .SD .lrow:last-child{border-color:rgba(245,241,234,.08)}
+.lnum{font-family:var(--F-SER);font-style:italic;color:#38B6FF;min-width:38px;padding-top:2px}
+.ltxt strong{font-weight:600;font-family:var(--F-SAN);font-style:normal}
+.SD .ltxt{color:rgba(245,241,234,.68)} .SD .ltxt strong{color:#F5F1EA}
+.SL .ltxt{color:rgba(26,26,26,.72)}    .SL .ltxt strong{color:#1A1A1A}
+
+.sStats .sgrid{display:grid;grid-template-columns:1fr 1fr;flex:1;margin-top:28px}
+.scell{padding:44px 38px;display:flex;flex-direction:column;gap:8px}
+.scell:nth-child(1),.scell:nth-child(2){border-bottom:1px solid rgba(26,26,26,.1)}
+.scell:nth-child(1),.scell:nth-child(3){border-right:1px solid rgba(26,26,26,.1)}
+.SD .scell{border-color:rgba(245,241,234,.08)!important}
+.snum{font-family:var(--F-SER);line-height:1;color:#38B6FF;font-weight:400;letter-spacing:-.02em}
+.slbl{font-family:var(--F-SAN);letter-spacing:.12em;text-transform:uppercase;color:rgba(26,26,26,.4);font-weight:500;line-height:1.3}
+.SD .slbl{color:rgba(245,241,234,.35)}
+
+.sProceso .stepsrow{display:flex;align-items:flex-start;gap:0;flex:1;margin-top:36px}
+.pstep{flex:1;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:0 14px;position:relative}
+.pstep:not(:last-child)::after{content:'';position:absolute;top:26px;left:calc(50% + 26px);width:calc(100% - 52px);height:2px;background:rgba(56,182,255,.2)}
+.pnum{width:52px;height:52px;border-radius:50%;background:#38B6FF;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--F-SAN);font-size:21px;font-weight:600;flex-shrink:0;z-index:1}
+.ptitle{font-family:var(--F-SAN);font-size:34px;font-weight:500;line-height:1.15}
+.SL .ptitle{color:#1A1A1A} .SD .ptitle{color:#F5F1EA}
+.pdesc{font-family:var(--F-SAN);font-size:21px;line-height:1.45;font-weight:300}
+.SL .pdesc{color:rgba(26,26,26,.55)} .SD .pdesc{color:rgba(245,241,234,.55)}
+
+.sServ .svzone{flex:1;display:flex;flex-direction:column;margin-top:36px}
+.svrow{display:flex;align-items:center;gap:20px;padding:24px 0;border-bottom:1px solid rgba(26,26,26,.1)}
+.svrow:first-child{border-top:1px solid rgba(26,26,26,.1)}
+.SD .svrow{border-color:rgba(245,241,234,.08)} .SD .svrow:first-child{border-color:rgba(245,241,234,.08)}
+.svcheck{width:30px;height:30px;border-radius:50%;border:1.5px solid #38B6FF;display:flex;align-items:center;justify-content:center;color:#38B6FF;font-size:14px;flex-shrink:0}
+.SD .svtxt{color:rgba(245,241,234,.68)} .SL .svtxt{color:rgba(26,26,26,.72)}
+
+.sDebate .dq{flex:1;display:flex;align-items:center;padding:26px 0}
+.sDebate .dopts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:30px}
+.dopt{border-radius:4px;padding:30px 24px;font-family:var(--F-SAN);line-height:1.4;font-weight:300;text-align:center}
+.dopt-a{background:rgba(56,182,255,.12);border:1px solid rgba(56,182,255,.28);color:#38B6FF}
+.dopt-b{background:rgba(245,241,234,.04);border:1px solid rgba(245,241,234,.1);color:rgba(245,241,234,.4)}
+.SL .dopt-b{background:rgba(26,26,26,.05);border-color:rgba(26,26,26,.12);color:rgba(26,26,26,.4)}
+
+.sCTA .zone{flex:1;display:flex;flex-direction:column;justify-content:center;gap:40px}
+.ctapill{display:inline-flex;align-items:center;gap:12px;background:#38B6FF;color:#fff;font-family:var(--F-SAN);font-weight:600;letter-spacing:.06em;padding:20px 36px;border-radius:3px;align-self:flex-start}
+.SB .ctapill{background:#1A1A1A;color:#F5F1EA}
+
+.sPost .zone{flex:1;display:flex;flex-direction:column;justify-content:center;gap:34px;padding-top:20px}
+
+/* ─── FOTO FONDO (imagen a sangre + overlay + texto) ─── */
+.sFoto{position:relative}
+.sFoto .foto-bg{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+  z-index:0;
+}
+.sFoto .foto-overlay{
+  position:absolute;inset:0;z-index:1;
+}
+/* Overlays calibrados con el feed real — gradiente de #1A1A1A hacia transparente */
+.sFoto .foto-overlay.dark{background:linear-gradient(to top, #1A1A1A 0%, rgba(26,26,26,.65) 40%, rgba(26,26,26,.2) 100%)}
+.sFoto .foto-overlay.light{background:linear-gradient(to top, rgba(245,241,234,.92) 0%, rgba(245,241,234,.55) 40%, rgba(245,241,234,.1) 100%)}
+.sFoto .SP{position:relative;z-index:2}
+
+/* ─── BEFORE/AFTER CON FOTOS ─── */
+.sBAFoto{display:grid!important;grid-template-rows:1fr 1fr}
+.baf-half{
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:40px 90px 44px;
+}
+.baf-half .baf-img{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+  z-index:0;
+}
+.baf-half .baf-ov{position:absolute;inset:0;z-index:1}
+.baf-half.bef .baf-ov{background:linear-gradient(0deg,rgba(10,10,10,.82) 0%,rgba(10,10,10,.2) 100%)}
+.baf-half.aft .baf-ov{background:linear-gradient(0deg,rgba(10,10,10,.78) 0%,rgba(10,10,10,.15) 100%)}
+.baf-half .baf-content{position:relative;z-index:2;display:flex;flex-direction:column;gap:10px}
+.baf-badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--F-SAN);font-size:16px;letter-spacing:.18em;text-transform:uppercase;font-weight:600}
+.baf-dot{width:7px;height:7px;border-radius:50%}
+.bef .baf-dot{background:rgba(255,255,255,.35)} .bef .baf-badge{color:rgba(255,255,255,.5)}
+.aft .baf-dot{background:#38B6FF}               .aft .baf-badge{color:#38B6FF}
+.baf-txt{font-family:var(--F-SAN);font-size:44px;font-weight:300;line-height:1.2;color:#F5F1EA}
+.baf-divider{position:absolute;top:50%;left:0;right:0;height:2px;background:#38B6FF;z-index:3;display:flex;align-items:center;justify-content:center}
+.baf-divider span{background:#38B6FF;color:#fff;font-family:var(--F-SAN);font-size:12px;font-weight:700;letter-spacing:.12em;padding:4px 14px;border-radius:20px}
+
+/* ─── FOTO + TEXTO (imagen izq, texto der) ─── */
+.sFotoTxt{display:grid!important;grid-template-columns:1fr 1fr}
+.ft-img{background-size:cover;background-position:center;position:relative}
+.ft-txt{display:flex;flex-direction:column;justify-content:center;padding:80px 70px;gap:28px}
+
+/* ─── AUTORIDAD (foto + datos media buyer) ─── */
+.sAutoridad{display:grid!important;grid-template-columns:420px 1fr}
+.aut-foto{background-size:cover;background-position:center top;position:relative}
+.aut-foto .aut-ov{position:absolute;inset:0;background:linear-gradient(90deg,transparent 60%,#1A1A1A 100%)}
+.aut-txt{display:flex;flex-direction:column;justify-content:center;padding:80px 80px 80px 50px;gap:24px;background:#1A1A1A}
+
+/* ─── BIBLIOTECA DE MEDIA ─── */
+#mediaLib{
+  width:170px;flex-shrink:0;
+  background:var(--UI-P);border-right:1px solid var(--UI-B);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#mediaLib.hidden{display:none}
+.mlib-top{
+  padding:8px 8px 6px;border-bottom:1px solid var(--UI-B);
+  display:flex;flex-direction:column;gap:6px;flex-shrink:0;
+}
+.mlib-title{font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--UI-M)}
+.mlib-drop{
+  border:1.5px dashed var(--UI-B2);border-radius:4px;
+  padding:10px 6px;text-align:center;cursor:pointer;
+  font-size:9px;color:var(--UI-M);line-height:1.5;
+  transition:all .2s;
+}
+.mlib-drop:hover,.mlib-drop.drag{border-color:var(--UI-A);color:var(--UI-A);background:rgba(56,182,255,.04)}
+.mlib-drop input{display:none}
+.mlib-grid{
+  flex:1;overflow-y:auto;padding:7px;
+  display:grid;grid-template-columns:1fr 1fr;gap:5px;
+  align-content:start;
+}
+.mlib-item{
+  position:relative;aspect-ratio:1;border-radius:3px;
+  overflow:hidden;border:2px solid transparent;
+  cursor:pointer;transition:border-color .15s;
+  background:var(--UI-B);
+}
+.mlib-item:hover{border-color:var(--UI-A)}
+.mlib-item.selected{border-color:var(--UI-A)}
+.mlib-item img{width:100%;height:100%;object-fit:cover;display:block}
+.mlib-item .mlib-del{
+  position:absolute;top:2px;right:2px;
+  width:16px;height:16px;border-radius:50%;
+  background:rgba(0,0,0,.7);color:#fff;
+  font-size:9px;display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .15s;cursor:pointer;
+  border:none;line-height:1;
+}
+.mlib-item:hover .mlib-del{opacity:1}
+.mlib-item .mlib-use{
+  position:absolute;bottom:0;left:0;right:0;
+  background:var(--UI-A);color:#fff;
+  font-size:8px;font-weight:600;letter-spacing:.05em;
+  text-align:center;padding:3px;opacity:0;transition:opacity .15s;
+  cursor:pointer;border:none;
+}
+.mlib-item:hover .mlib-use{opacity:1}
+.mlib-empty{
+  grid-column:1/-1;font-size:9px;color:var(--UI-M);
+  text-align:center;padding:16px 0;line-height:1.6;
+}
+/* selector de destino en panel editar */
+.img-assign{
+  background:#0A0A0A;border:1px solid var(--UI-B);border-radius:3px;
+  padding:5px 7px;font-size:9px;color:var(--UI-M);
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  cursor:pointer;transition:border-color .15s;
+}
+.img-assign:hover{border-color:var(--UI-A);color:var(--UI-T)}
+.img-assign .ia-prev{width:24px;height:24px;border-radius:2px;object-fit:cover;flex-shrink:0}
+.img-assign .ia-none{width:24px;height:24px;border-radius:2px;background:var(--UI-B2);flex-shrink:0}
+
+/* Controles de imagen */
+.img-ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px}
+.img-layout-btn{
+  border:1px solid var(--UI-B2);background:transparent;color:var(--UI-M);
+  padding:5px 4px;border-radius:3px;font-size:8px;font-weight:600;
+  letter-spacing:.04em;cursor:pointer;transition:all .15s;text-align:center;
+}
+.img-layout-btn:hover,.img-layout-btn.on{border-color:var(--UI-A);color:var(--UI-A);background:rgba(56,182,255,.08)}
+
+/* Layouts de imagen en slides */
+.sImgSplitL{display:grid!important;grid-template-columns:1fr 1fr}
+.sImgSplitR{display:grid!important;grid-template-columns:1fr 1fr}
+.sImgTopHalf{display:flex!important;flex-direction:column}
+.sImgBottomHalf{display:flex!important;flex-direction:column}
+.sImgInset .img-inset{
+  border-radius:8px;overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+
+/* Pexels search */
+.pexels-bar{display:flex;gap:4px;margin-top:6px}
+.pexels-bar input{
+  flex:1;background:#0A0A0A;border:1px solid var(--UI-B);
+  color:var(--UI-T);padding:5px 7px;border-radius:3px;
+  font-size:9px;font-family:'Montserrat',sans-serif;
+}
+.pexels-bar input:focus{outline:none;border-color:var(--UI-A)}
+.pexels-bar button{
+  background:var(--UI-A);border:none;color:#fff;
+  padding:0 8px;border-radius:3px;cursor:pointer;
+  font-size:10px;font-weight:600;white-space:nowrap;
+}
+.pexels-bar button:hover{background:#50c4ff}
+.pexels-key{
+  font-size:8px;color:var(--UI-M);margin-top:4px;
+  display:flex;align-items:center;gap:4px;
+}
+.pexels-key input{
+  flex:1;background:#0A0A0A;border:1px solid var(--UI-B);
+  color:var(--UI-T);padding:3px 5px;border-radius:3px;font-size:8px;
+}
+.pexels-key input:focus{outline:none;border-color:var(--UI-A)}
+.mlib-section{
+  font-size:7px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--UI-M);padding:6px 0 4px;border-top:1px solid var(--UI-B);
+  margin-top:4px;
+}
+.mlib-item.pexels-item .mlib-del{display:none}
+
+/* Prompt Midjourney en Copy tab */
+.mj-block{
+  background:#0A0A0A;border:1px solid var(--UI-B);border-radius:4px;
+  padding:8px 10px;font-size:9px;color:rgba(245,241,234,.7);
+  line-height:1.6;word-break:break-word;
+  font-family:'Montserrat',monospace;
+  margin-top:4px;cursor:text;
+}
+.mj-block em{color:var(--UI-A);font-style:normal}
+.mj-tag{
+  display:inline-block;background:rgba(56,182,255,.12);
+  border:1px solid rgba(56,182,255,.25);color:var(--UI-A);
+  font-size:8px;padding:2px 6px;border-radius:2px;
+  margin:2px 2px 0 0;font-weight:600;letter-spacing:.04em;
+}
+
+/* Items dinámicos en panel */
+.item-row{
+  display:flex;align-items:flex-start;gap:4px;
+}
+.item-row textarea{
+  flex:1;background:#0A0A0A;border:1px solid var(--UI-B);
+  color:var(--UI-T);padding:5px 7px;border-radius:3px;
+  font-size:10px;font-family:'Montserrat',sans-serif;
+  resize:none;line-height:1.45;min-height:34px;
+  transition:border-color .15s;
+}
+.item-row textarea:focus{outline:none;border-color:var(--UI-A)}
+.item-row .item-num{
+  font-family:'Playfair Display',serif;font-style:italic;
+  color:var(--UI-A);font-size:11px;min-width:16px;
+  padding-top:6px;text-align:center;
+}
+.item-row .item-del{
+  border:none;background:transparent;color:var(--UI-M);
+  cursor:pointer;font-size:13px;padding:4px 2px;
+  line-height:1;transition:color .15s;flex-shrink:0;
+}
+.item-row .item-del:hover{color:#ff4d4d}
+
+/* Slide lista — adapta layout según número de items */
+.lzone-2 .lrow{padding:38px 0}
+.lzone-3 .lrow{padding:28px 0}
+.lzone-4 .lrow{padding:20px 0}
+.lzone-5 .lrow,.lzone-6 .lrow{padding:13px 0}
+.lzone-5 .ltxt,.lzone-6 .ltxt{line-height:1.35}
+/* 5-6 items: dos columnas */
+.lzone-5,.lzone-6{
+  display:grid!important;
+  grid-template-columns:1fr 1fr;
+  gap:0 40px;
+  margin-top:24px;
+}
+.lzone-5 .lrow,.lzone-6 .lrow{
+  border-top:1px solid rgba(26,26,26,.1);
+}
+.SD .lzone-5 .lrow,.SD .lzone-6 .lrow{border-color:rgba(245,241,234,.08)}
+</style>
+</head>
+<body>
+
+<div id="toast">✓ Copiado</div>
+
+<!-- OVERLAY GENERANDO -->
+<div id="genOv">
+  <div class="gen-ring"></div>
+  <div id="genTxt">Generando contenido...</div>
+  <div class="gen-step-list" id="genSteps"></div>
+</div>
+
+<!-- OVERLAY EXPORTANDO -->
+<div id="expOv">
+  <div id="expMsg">Exportando...</div>
+  <div class="expbw"><div id="expBar"></div></div>
+</div>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="tb-left">
+    <div class="tb-mono">RM</div>
+    <div>
+      <div class="tb-name">Rosa María Studio</div>
+      <div class="tb-sub">Generador de contenido</div>
+    </div>
+  </div>
+
+  <div style="font-size:9px;color:var(--UI-M);letter-spacing:.06em">1080 × 1350 px</div>
+
+  <div class="tb-right">
+    <button class="btn btn-gh" id="btnMedia" onclick="toggleMedia()">📷 Fotos</button>
+    <button class="btn btn-gh" id="btnG" onclick="toggleGuias()">Guías</button>
+    <div class="exp-wrap" id="expWrap">
+      <button class="btn btn-out exp-trigger" onclick="toggleExpMenu()">↓ EXPORTAR</button>
+      <div class="exp-menu" id="expMenu">
+        <button onclick="expActual();toggleExpMenu()">📄 PNG — slide actual</button>
+        <button onclick="expTodos();toggleExpMenu()">📦 ZIP — todos los slides</button>
+        <button onclick="expPPTX();toggleExpMenu()">🎨 PPTX — editable en Canva</button>
+      </div>
+    </div>
+    <button class="btn btn-gen" id="btnGen" onclick="generar()">
+      <span class="btn-gen-ico">⚡</span>
+      <div class="spinner"></div>
+      <span id="btnGenTxt">Generar</span>
+    </button>
+  </div>
+</div>
+
+<!-- APP BODY -->
+<div id="app">
+
+  <!-- BIBLIOTECA DE MEDIA -->
+  <div id="mediaLib" class="hidden">
+    <div class="mlib-top">
+      <div class="mlib-title">📷 Fotos</div>
+
+      <!-- Subida manual -->
+      <label class="mlib-drop" id="mlibDrop">
+        <input type="file" id="mlibInput" accept="image/*" multiple onchange="cargarImagenes(this.files)">
+        Arrastra fotos aquí<br>o pulsa para subir
+      </label>
+
+      <!-- Pexels search con fetch -->
+      <div class="pexels-bar">
+        <input type="text" id="pexelsQ" placeholder="reforma, cocina..." onkeydown="if(event.key==='Enter')buscarPexels()">
+        <button onclick="buscarPexels()">🔍</button>
+      </div>
+      <div class="pexels-key">
+        <span>API Key:</span>
+        <input type="password" id="pexelsKey" placeholder="pexels.com/api" oninput="guardarKeyPexels(this.value)">
+      </div>
+      <div id="pexelsStatus" style="font-size:8px;margin-top:3px;line-height:1.5;color:var(--UI-M)"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px" id="pexelsTags"></div>
+    </div>
+
+    <!-- Grid: fotos subidas -->
+    <div class="mlib-grid" id="mlibGrid">
+      <div class="mlib-empty">Sin fotos aún.<br>Sube imágenes o busca<br>en Pexels arriba.</div>
+    </div>
+
+    <!-- Resultados Pexels -->
+    <div id="pexelsResults" style="display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0">
+      <div style="font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--UI-M);padding:5px 7px;border-top:1px solid var(--UI-B);flex-shrink:0">Resultados Pexels</div>
+      <div class="mlib-grid" id="pexelsGrid" style="overflow-y:auto;flex:1"></div>
+    </div>
+
+  </div>
+
+  <!-- SIDEBAR IZQ -->
+  <div id="sideL">
+    <div class="sl-lbl">Slides</div>
+  </div>
+
+  <!-- STAGE -->
+  <div id="stageArea">
+    <div id="viewport">
+      <div id="safeRing"></div>
+      <div id="stage">
+        <div id="stageInner"></div>
+      </div>
+    </div>
+    <div id="navRow">
+      <button class="nbtn" id="bPrev" onclick="nav(-1)">← Ant</button>
+      <span id="navCnt">1 / 7</span>
+      <button class="nbtn" id="bNext" onclick="nav(1)">Sig →</button>
+      <button class="nbtn" id="bUp"   onclick="moverSlide(-1)" title="Mover slide arriba">↑</button>
+      <button class="nbtn" id="bDown" onclick="moverSlide(1)"  title="Mover slide abajo">↓</button>
+    </div>
+  </div>
+
+  <!-- PANEL DER -->
+  <div id="sideR">
+
+    <!-- Tabs -->
+    <div class="rtabs">
+      <button class="rtab on" onclick="switchTab('editar',this)">Editar</button>
+      <button class="rtab" onclick="switchTab('generar',this)">Generar</button>
+      <button class="rtab" onclick="switchTab('tipo',this)">Tipo</button>
+      <button class="rtab" onclick="switchTab('copy',this)">Copy</button>
+    </div>
+
+    <!-- TAB: EDITAR -->
+    <div class="rpanel on" id="tab-editar">
+      <div class="csec">
+        <div class="csec-h">Slide activo</div>
+        <div class="crow">
+          <label>Tipo</label>
+          <select id="cTipo" onchange="ed('tipo',this.value)">
+            <option value="hook">Hook</option>
+            <option value="frase">Frase / Cita</option>
+            <option value="ba">Before / After (texto)</option>
+            <option value="lista">Lista</option>
+            <option value="stats">Estadísticas</option>
+            <option value="proceso">Proceso</option>
+            <option value="servicio">Servicio</option>
+            <option value="debate">Debate</option>
+            <option value="cta">CTA Final</option>
+            <option value="post">Post único</option>
+            <optgroup label="── Con foto ──">
+              <option value="foto">Foto fondo + texto</option>
+              <option value="bafoto">Before/After con fotos</option>
+              <option value="fototxt">Foto + texto (mitad/mitad)</option>
+              <option value="autoridad">Autoridad / Retrato</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="crow">
+          <label>Fondo</label>
+          <select id="cFondo" onchange="ed('fondo',this.value)">
+            <option value="dark">Negro carbón</option>
+            <option value="light">Blanco roto</option>
+            <option value="blue">Azul marca</option>
+          </select>
+        </div>
+        <div class="crow" id="rowImgFondo" style="display:none">
+          <label>Imagen de fondo</label>
+          <div class="img-assign" onclick="abrirAsignador('fondo')">
+            <span id="iaFondoLbl" style="flex:1;font-size:9px">Sin imagen</span>
+            <div class="ia-none" id="iaFondoPrev"></div>
+          </div>
+        </div>
+        <div class="crow" id="rowImgBef" style="display:none">
+          <label>Foto ANTES</label>
+          <div class="img-assign" onclick="abrirAsignador('antes')">
+            <span id="iaAntesLbl" style="flex:1;font-size:9px">Sin imagen</span>
+            <div class="ia-none" id="iaAntesPrev"></div>
+          </div>
+        </div>
+        <div class="crow" id="rowImgAft" style="display:none">
+          <label>Foto DESPUÉS</label>
+          <div class="img-assign" onclick="abrirAsignador('despues')">
+            <span id="iaDesLbl" style="flex:1;font-size:9px">Sin imagen</span>
+            <div class="ia-none" id="iaDesPrev"></div>
+          </div>
+        </div>
+        <div class="crow" id="rowImgOverlay" style="display:none">
+          <label>Overlay</label>
+          <select id="cOverlay" onchange="ed('overlay',this.value)">
+            <option value="dark">Oscuro</option>
+            <option value="light">Claro</option>
+            <option value="none">Sin overlay</option>
+          </select>
+        </div>
+
+        <!-- Controles avanzados imagen -->
+        <div class="crow" id="rowImgLayout" style="display:none">
+          <label>Layout imagen</label>
+          <div class="img-ctrl-grid">
+            <button class="img-layout-btn on" id="lbg"    onclick="setImgLayout('bg-full')">🖼 Fondo completo</button>
+            <button class="img-layout-btn"    id="linset" onclick="setImgLayout('inset')">⬜ Recuadro</button>
+            <button class="img-layout-btn"    id="lsplitl" onclick="setImgLayout('split-left')">◧ Img izq</button>
+            <button class="img-layout-btn"    id="lsplitr" onclick="setImgLayout('split-right')">◨ Img der</button>
+            <button class="img-layout-btn"    id="ltop"   onclick="setImgLayout('top-half')">⬆ Img arriba</button>
+            <button class="img-layout-btn"    id="lbottom" onclick="setImgLayout('bottom-half')">⬇ Img abajo</button>
+          </div>
+        </div>
+
+        <div class="crow" id="rowImgPos" style="display:none">
+          <label>Enfoque horizontal</label>
+          <div class="rrow"><input type="range" id="rImgX" min="0" max="100" value="50" oninput="ed('imgX',this.value);document.getElementById('vImgX').textContent=this.value+'%'"><span class="rval" id="vImgX">50%</span></div>
+          <label style="margin-top:5px">Enfoque vertical</label>
+          <div class="rrow"><input type="range" id="rImgY" min="0" max="100" value="50" oninput="ed('imgY',this.value);document.getElementById('vImgY').textContent=this.value+'%'"><span class="rval" id="vImgY">50%</span></div>
+          <label style="margin-top:5px">Zoom imagen</label>
+          <div class="rrow"><input type="range" id="rImgZ" min="100" max="200" value="110" oninput="ed('imgZoom',this.value);document.getElementById('vImgZ').textContent=this.value+'%'"><span class="rval" id="vImgZ">110%</span></div>
+        </div>
+
+        <div class="crow" id="rowTxtPos" style="display:none">
+          <label>Posición del texto</label>
+          <select id="cTxtPos" onchange="ed('txtPos',this.value)">
+            <option value="center">Centro</option>
+            <option value="top">Arriba</option>
+            <option value="bottom">Abajo</option>
+          </select>
+        </div>
+        <div class="crow">
+          <label>Eyebrow</label>
+          <input type="text" id="cEye" oninput="ed('eye',this.value)">
+        </div>
+        <div class="crow">
+          <label>Headline</label>
+          <textarea id="cHead" rows="4" oninput="ed('head',this.value)"></textarea>
+        </div>
+        <div class="crow">
+          <label>Cuerpo</label>
+          <textarea id="cBody" rows="3" oninput="ed('body',this.value)"></textarea>
+        </div>
+        <div class="crow" id="rowItems">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <label>Items</label>
+            <div style="display:flex;gap:4px;align-items:center">
+              <span id="itemsCount" style="font-size:9px;color:var(--UI-M)">0</span>
+              <button onclick="addItem()" style="border:1px solid var(--UI-B2);background:transparent;color:var(--UI-A);width:20px;height:20px;border-radius:3px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
+            </div>
+          </div>
+          <div id="itemsList" style="display:flex;flex-direction:column;gap:4px"></div>
+        </div>
+        <div class="crow">
+          <label>CTA</label>
+          <input type="text" id="cCta" oninput="ed('cta',this.value)">
+        </div>
+      </div>
+
+      <div class="csec">
+        <div class="csec-h">Colores de marca</div>
+        <div class="c3g">
+          <div class="cpick"><label>Negro</label><input type="color" value="#1A1A1A" oninput="setV('--C-DARK',this.value)"></div>
+          <div class="cpick"><label>Crema</label><input type="color" value="#F5F1EA" oninput="setV('--C-LIGHT',this.value)"></div>
+          <div class="cpick"><label>Azul</label><input type="color" value="#38B6FF" oninput="setV('--C-BLUE',this.value)"></div>
+        </div>
+      </div>
+
+      <div class="csec">
+        <div class="csec-h">
+          <span>Vista</span>
+          <button class="btn btn-gh" id="btnG2" onclick="toggleGuias()" style="padding:3px 8px">Off</button>
+        </div>
+        <div class="tml"><span>Guías de zona segura</span></div>
+      </div>
+    </div>
+
+    <!-- TAB: GENERAR -->
+    <div class="rpanel" id="tab-generar">
+      <div class="csec">
+        <div class="csec-h">Pilar de contenido</div>
+        <div class="crow">
+          <label>Pilar estratégico</label>
+          <select id="cPilar" onchange="actualizarAngulos()">
+            <option value="dolor">💔 Dolor — Agitar el problema</option>
+            <option value="deseo">✨ Deseo — La vida que quiere</option>
+            <option value="autoridad">🏆 Autoridad — Prueba y credibilidad</option>
+            <option value="reencuadre">🔄 Reencuadre — Romper creencias</option>
+            <option value="conversion">🎯 Conversión — Llamada a actuar</option>
+          </select>
+        </div>
+        <div class="crow">
+          <label>Ángulo específico</label>
+          <select id="cAngulo"></select>
+        </div>
+        <div class="crow">
+          <label>Número de slides</label>
+          <select id="cNumSlides">
+            <option value="5">5 slides</option>
+            <option value="6">6 slides</option>
+            <option value="7" selected>7 slides</option>
+          </select>
+        </div>
+      </div>
+      <div style="font-size:9px;color:var(--UI-M);line-height:1.8">
+        <b style="color:var(--UI-A);display:block;margin-bottom:2px">⚡ Generar</b>
+        Selecciona pilar y ángulo. La IA genera el copy completo. Si no hay conexión, usa el banco local.<br><br>
+        <b style="color:var(--UI-A);display:block;margin-bottom:2px">📋 Copy</b>
+        En la pestaña Copy encontrarás hook, caption y hashtags listos para pegar en Instagram.
+      </div>
+    </div>
+
+    <!-- TAB: TIPO (Tipografía) -->
+    <div class="rpanel" id="tab-tipo">
+      <div class="csec">
+        <div class="csec-h">
+          <span>Tipografía</span>
+          <button class="btn btn-gh" style="padding:3px 8px" onclick="resetType()">Reset</button>
+        </div>
+        <div class="crow"><label>Eyebrow</label>
+          <div class="rrow"><input type="range" id="rEye" min="8" max="24" value="16" oninput="applyType()"><span class="rval" id="vEye">16px</span></div>
+        </div>
+        <div class="crow"><label>Headline</label>
+          <div class="rrow"><input type="range" id="rHead" min="40" max="140" value="104" oninput="applyType()"><span class="rval" id="vHead">104px</span></div>
+        </div>
+        <div class="crow"><label>Cuerpo</label>
+          <div class="rrow"><input type="range" id="rBody" min="16" max="48" value="30" oninput="applyType()"><span class="rval" id="vBody">30px</span></div>
+        </div>
+        <div class="crow"><label>Items / texto lista</label>
+          <div class="rrow"><input type="range" id="rItems" min="14" max="42" value="26" oninput="applyType()"><span class="rval" id="vItems">26px</span></div>
+        </div>
+        <div class="crow"><label>Stats número</label>
+          <div class="rrow"><input type="range" id="rStat" min="50" max="120" value="88" oninput="applyType()"><span class="rval" id="vStat">88px</span></div>
+        </div>
+        <div class="crow"><label>CTA / footer</label>
+          <div class="rrow"><input type="range" id="rCta" min="10" max="32" value="16" oninput="applyType()"><span class="rval" id="vCta">16px</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: COPY -->
+    <div class="rpanel" id="tab-copy">
+      <div class="csec">
+        <div class="csec-h">Copy listo para Instagram</div>
+        <div id="copyContent">
+          <div style="font-size:9px;color:var(--UI-M);line-height:1.7;margin-top:4px">
+            Genera contenido primero. El copy, caption y hashtags aparecerán aquí listos para copiar.
+          </div>
+        </div>
+      </div>
+      <div class="csec">
+        <div class="csec-h">🎨 Prompt Midjourney / DALL·E</div>
+        <div id="mjContent">
+          <div style="font-size:9px;color:var(--UI-M);line-height:1.7;margin-top:4px">
+            Genera contenido primero para ver los prompts optimizados para este ángulo.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   BANCO DE COPY — organizado por PILAR + ÁNGULO
+   ════════════════════════════════════════════════════════ */
+
+const PILARES_MAP = {
+  dolor:      ['bocaboca','regateo','saturacion','autoridad','tiempo','familia'],
+  deseo:      ['estabilidad','premium','margen','familia'],
+  autoridad:  ['autoridad','sistema','resultados'],
+  reencuadre: ['bocaboca','objecion','precio','saturacion'],
+  conversion: ['bocaboca','regateo','estabilidad','sistema'],
+};
+
+const ANGULO_LABELS = {
+  bocaboca:   'Dependencia del boca a boca',
+  regateo:    'Clientes que regatean',
+  saturacion: 'Saturación y tiempo perdido',
+  autoridad:  'Autoridad digital y percepción',
+  tiempo:     'Recuperar tiempo y familia',
+  familia:    'Cenar con la familia tranquilo',
+  estabilidad:'Estabilidad e ingresos predecibles',
+  premium:    'Atraer clientes premium',
+  margen:     'Dejar de competir por precio',
+  objecion:   'Objeciones al marketing',
+  precio:     'Precio vs. posicionamiento',
+  sistema:    'Sistema de captación predecible',
+  resultados: 'Resultados reales con datos',
+};
+
+const BANCO = {
+  angulos: {
+    bocaboca:   "dependencia del boca a boca y por qué destruye la estabilidad de una empresa de reformas",
+    regateo:    "clientes que solo piden precio, visitas perdidas y tiempo robado al reformista",
+    saturacion: "saturación del dueño de reformas que vive atrapado entre obra, presupuestos y familia",
+    autoridad:  "por qué una empresa peor puede captar más obras solo por comunicar mejor",
+    sistema:    "cómo un sistema de captación predecible cambia la vida de una empresa de reformas",
+    tiempo:     "recuperar tiempo, cenar con la familia y dejar de ser esclavo del propio negocio",
+    familia:    "el coste real de un negocio sin sistema: tardes perdidas, cenas frías y fines de semana robados",
+    premium:    "cómo atraer clientes de alto ticket que no regatean y respetan el presupuesto",
+    objecion:   "objeciones al marketing digital en el sector reformas y cómo responderlas",
+    precio:     "dejar de competir por precio y empezar a competir por autoridad y confianza",
+    estabilidad:"estabilidad, previsibilidad y tranquilidad para empresas de reformas",
+    margen:     "aumentar el ticket medio sin perder clientes dejando de ser el más barato",
+    resultados: "resultados reales de campañas en el sector reformas con datos concretos",
+  },
+
+  hooks: {
+    bocaboca:[
+      "Llevas 15 años haciendo reformas perfectas.\n\nY el mes que viene no sabes si tendrás obras.",
+      "El boca a boca no es una estrategia.\n\nEs rezar para que alguien te recomiende antes de que se acabe el mes.",
+      "Tu empresa funciona por recomendación.\n\nEl problema es que no puedes encenderlo cuando lo necesitas.",
+      "Una empresa de reformas me dijo: «Tengo 20 años de experiencia y este mes solo 2 presupuestos.»\n\nEsto fue lo que cambió.",
+      "5 señales de que tu empresa de reformas depende demasiado del boca a boca.",
+    ],
+    regateo:[
+      "3 visitas esta semana.\n\n3 presupuestos enviados.\n\n0 obras cerradas.\n\nEl problema no está en tu precio.",
+      "Cada visita a alguien que solo busca el precio más bajo te roba algo que no vuelve: tu tarde.",
+      "La mayoría no tiene problema de clientes.\n\nTiene problema de filtros.",
+      "Si tu formulario de contacto tiene solo un campo, estás invitando a entrar a quien no puede pagarte.",
+      "¿Cuántas horas al mes pierdes en presupuestos que nunca se cierran?",
+    ],
+    saturacion:[
+      "Mañana: obra.\nMediodía: proveedor.\nTarde: visita comercial.\nNoche: presupuestos.\n\nAsí no se crece. Así se sobrevive.",
+      "El mayor problema de tu empresa de reformas no es la competencia.\n\nEres tú, intentando hacerlo todo.",
+      "Cuando todo depende de ti, tu negocio no es libre.\n\nTú tampoco.",
+      "Tu negocio debería darte tranquilidad.\n\nNo ansiedad.",
+      "Lo que más desgasta no es trabajar mucho.\n\nEs trabajar sin previsibilidad.",
+    ],
+    autoridad:[
+      "Hay empresas de reformas peores que la tuya cerrando obras mejores.\n\nNo es casualidad. Es percepción.",
+      "Tu calidad técnica es impecable.\n\nEl problema es que nadie lo sabe antes de verte.",
+      "La imagen digital de tu empresa decide a qué tipo de cliente atraes antes de que digas una sola palabra.",
+      "Si tus redes no transmiten autoridad, estás perdiendo obras sin darte cuenta.",
+      "La diferencia entre una empresa que atrae clientes premium y una que pelea por precio\na menudo es solo una: la percepción.",
+    ],
+    sistema:[
+      "12 leads cualificados en 7 días.\n\nNinguno preguntó por el precio antes de la visita.",
+      "Hay una diferencia entre recibir contactos y tener un sistema que filtra, cualifica y llena agenda.\n\nSolo uno da estabilidad.",
+      "Dejar de depender del boca a boca cambia más que tu facturación.\n\nCambia cómo duermes.",
+      "De 2 presupuestos al mes a lista de espera de 6 semanas.\n\nSolo cambió el sistema de captación.",
+      "La estabilidad no llega sola.\n\nSe construye.",
+    ],
+    tiempo:[
+      "El verdadero lujo para un reformista no es un coche mejor.\n\nEs poder apagar el móvil a las 19:00.",
+      "Construiste una empresa para vivir mejor.\n\nNo para vivir estresado.",
+      "¿Cuántas tardes más vas a cambiar por visitas que no valen la pena?",
+      "Tu tiempo vale demasiado como para regalarlo en presupuestos que no se cierran.",
+      "Cenar con tu familia con la mente despejada.\n\nEso también es un KPI.",
+    ],
+    familia:[
+      "¿Cuándo fue la última vez que llegaste a casa antes de las 21:00 sin pendientes en la cabeza?",
+      "Tu familia no necesita más dinero.\n\nNecesita más de ti presente.",
+      "Construiste una empresa para darles una vida mejor.\n\nNo para perderte la suya.",
+      "El verdadero coste de no tener sistema no aparece en la facturación.\n\nAparece en casa.",
+      "Hay reformistas que trabajan 60 horas a la semana y ganan menos que los que trabajan 40 con sistema.",
+    ],
+    premium:[
+      "No necesitas más clientes.\n\nNecesitas mejores clientes.",
+      "Hay un tipo de cliente que no regatrea, respeta los plazos y te recomienda después.\n\nCómo llegar a él.",
+      "Cuando subes el precio y mejoras cómo te comunicas, el tipo de cliente cambia.\n\nSiempre.",
+      "Una empresa premium no corre detrás de cualquier presupuesto.\n\nElige sus obras.",
+      "Lo que mira un cliente de alto ticket antes de pedirte presupuesto.",
+    ],
+    objecion:[
+      "«Ya probé publicidad y no funcionó.»\n\nEsa frase me la dicen casi todos los reformistas que luego tienen los mejores resultados.",
+      "No probaste publicidad.\n\nProbaste visibilidad sin estrategia de cualificación. Son cosas muy distintas.",
+      "«Instagram no funciona para reformas.»\n\nNo. Instagram sin estrategia no funciona. Con estrategia, es otra historia.",
+      "«No tengo tiempo para esto.»\n\nPrecisamente por eso necesitas que funcione sin depender de tu tiempo.",
+      "Si el problema fuera la publicidad, empresas peores que la tuya no estarían llenando agenda.",
+    ],
+    precio:[
+      "Competir por precio es lo que ocurre cuando tu empresa no transmite suficiente autoridad.",
+      "La calidad técnica sin autoridad visual deja dinero encima de la mesa.",
+      "Subir precios sin cambiar cómo comunicas tu empresa solo ahuyenta clientes.\n\nCambiar ambas cosas los atrae mejores.",
+      "Si el cliente llega preguntando por precio antes de ver tu trabajo, el problema está antes de la visita.",
+      "Menos curiosos. Más obras rentables.\n\nEso es lo que da un buen filtro de captación.",
+    ],
+    margen:[
+      "No es subir precios.\n\nEs mejorar cómo percibes valor antes de que el cliente decida.",
+      "El cliente que solo mira el precio es el cliente que nunca debiste atraer.",
+      "Más obras a menor precio no es crecer.\n\nEs desgastarse más por menos.",
+      "Cuando tu posicionamiento mejora, el ticket sube sin que tengas que justificarlo.",
+      "¿Cuánto dejas encima de la mesa cada mes por no comunicar bien lo que vales?",
+    ],
+    estabilidad:[
+      "Un trimestre cubierto.\n\nUna agenda planificada.\n\nUn negocio que no depende de la suerte.\n\nEso también se construye.",
+      "La inestabilidad de clientes no es solo un problema financiero.\n\nEs ansiedad silenciosa todos los meses.",
+      "Saber que seguirán entrando clientes cambia cómo diriges tu empresa.\n\nY cómo vives.",
+      "Más control. Más margen. Más tranquilidad.\n\nAsí se ve un sistema de captación que funciona.",
+      "Tu agenda debería estar cubierta antes de que acabe el mes.\n\nNo a ver qué pasa.",
+    ],
+    resultados:[
+      "12 leads en la primera semana.\n3 semanas hasta lista de espera.\nEsto es lo que cambió.",
+      "+127% de solicitudes. −32% de coste por conversión.\n\nNo es suerte. Es sistema.",
+      "De ningún lead cualificado a 8 por semana en 30 días.\n\nEmpresa de reformas. Valencia.",
+      "El ROI medio de las campañas que gestiono: 3.6×.\n\nDatos reales. Sin promesas vacías.",
+      "¿Cuánto te cuesta cada presupuesto que no se cierra? Esto es lo que encontramos al medirlo.",
+    ],
+  },
+
+  frases: [
+    "El boca a boca no es una estrategia.\nEs una oración.",
+    "La publicidad no se trata de impresionar.\nSe trata de conectar con quien importa.",
+    "No necesitas más seguidores.\nNecesitas mejores clientes.",
+    "Tu obra perfecta merece\nque el cliente perfecto la vea primero.",
+    "El precio no es el problema.\nEl posicionamiento sí.",
+    "Menos curiosos.\nMás obras rentables.",
+    "Tu negocio debería darte estabilidad.\nNo ansiedad.",
+    "Construiste una empresa para vivir mejor.\nNo para vivir estresado.",
+    "La autoridad también se comunica.",
+    "Más control. Más margen.\nMás tranquilidad.",
+    "La estabilidad también se construye.",
+    "Deja de perseguir presupuestos.\nEmpieza a filtrar mejor.",
+    "La calidad técnica sin autoridad visual\ndeja dinero encima de la mesa.",
+    "El objetivo no es facturar más a cualquier precio.\nEs crecer con calma y criterio.",
+    "No vivas esperando a que te recomienden.",
+  ],
+
+  subtitulos: [
+    "Esto cambió todo lo que hacía en Meta y Google.",
+    "Lo que nadie del sector te dice en público.",
+    "No es teoría. Es lo que aplico cada semana.",
+    "Estrategia + datos + criterio = resultados.",
+    "El sistema que uso con todas las empresas que trabajan conmigo.",
+    "Más sencillo de lo que parece. Más poderoso de lo que imaginas.",
+    "Cuatro años de campañas condensados en este carrusel.",
+    "La explicación más directa que voy a darte.",
+    "Desliza para ver el antes y el después real.",
+    "Lo que separa una campaña rentable de una que sangra presupuesto.",
+  ],
+
+  ctas: [
+    "Escríbeme CLIENTES","Escríbeme REFORMAS","Escríbeme SISTEMA",
+    "Escríbeme ESTABILIDAD","Escríbeme AGENDA","Escríbeme RESULTADOS",
+    "Escríbeme OBRAS","Escríbeme FILTRO","Escríbeme AUTORIDAD",
+    "Escríbeme TIEMPO","Escríbeme MARGEN","Escríbeme PREMIUM",
+  ],
+
+  listas: {
+    bocaboca:[
+      ["*El boca a boca* no se controla: funciona cuando quiere, no cuando lo necesitas.","*No puedes planificar* ni ingresos ni agenda cuando dependes de que alguien te recuerde.","*Aceptas obras que no encajan* por miedo a quedarte sin trabajo ese mes.","*Tu crecimiento tiene techo* porque no puedes escalar una recomendación."],
+    ],
+    regateo:[
+      ["*El primer filtro* está en el anuncio: el copy que descalifica al que no puede pagarte.","*El segundo filtro* está en el formulario: 3-4 preguntas antes de que lleguen al teléfono.","*El tercer filtro* está en el primer mensaje: velocidad y tono de respuesta determinan quién sigue.","*El cuarto filtro* está en la visita: solo para quien ya pasó los tres anteriores."],
+    ],
+    autoridad:[
+      ["*Prueba social específica*: casos similares al del cliente, no fotos genéricas de obra.","*Claridad de proceso*: que sepa exactamente qué pasará desde el presupuesto.","*Imagen coherente*: que la percepción digital esté a la altura de la calidad real de la obra.","*Un solo punto de contacto*: que no tenga que perseguirte para saber cómo va su proyecto."],
+    ],
+    sistema:[
+      ["*Google Ads* para quien ya sabe que quiere reformar. Intención declarada, conversión directa.","*Meta Ads* para quien todavía no sabe que tú existes. Demanda latente, coste menor.","*Formulario de cualificación* para filtrar antes de que lleguen al teléfono.","*Seguimiento en menos de 20 minutos*: el primero que responde bien suele cerrar la obra."],
+    ],
+    premium:[
+      ["*Hablar del resultado*, no del proceso: el cliente no compra azulejos, compra tranquilidad.","*Usar el precio como filtro*, no como gancho: el cliente correcto no huye del precio justo.","*Mostrar casos con datos*: metros, días, presupuesto real. La especificidad genera confianza.","*Autoridad visual coherente*: que la imagen de tu empresa esté a la altura de tu trabajo real."],
+    ],
+    estabilidad:[
+      ["*Previsibilidad*: saber que el mes siguiente está cubierto antes de que acabe este.","*Autoridad*: que el tipo de cliente que te contacta ya sepa que puedes cobrar lo que vales.","*Tiempo*: dejar de regalar tardes a presupuestos que nunca se cierran.","*Control*: tener un sistema que funciona sin que todo dependa de ti."],
+    ],
+    default:[
+      ["*Estabilidad*: saber que el mes siguiente está cubierto antes de que acabe este.","*Autoridad*: que el tipo de cliente que te contacta ya sepa que puedes cobrar lo que vales.","*Tiempo*: dejar de regalar tardes a presupuestos que nunca se cierran.","*Control*: tener un sistema que funciona sin que todo dependa de ti."],
+    ],
+  },
+
+  antes:[
+    ["2 presupuestos al mes. Todo por recomendación. Sin control ni previsibilidad.","12 leads cualificados por semana. Sistema activo. Agenda cubierta 3 semanas por adelantado."],
+    ["Anuncio publicado. Sin respuesta. Presupuesto gastado sin entender por qué.","Campaña ajustada. 8 leads en 5 días. Coste por lead: 14 €. CPL real medido."],
+    ["Visitas a clientes que solo comparan precio. Tardes perdidas. Sin cierres.","Clientes que llegan informados, con presupuesto y sin preguntar por descuentos."],
+    ["Meses buenos y meses flojos sin explicación. Nóminas con ansiedad cada trimestre.","Sistema predecible. Ingresos estables. Posibilidad de planificar a 3 meses vista."],
+    ["Empresa buena, imagen genérica. Compitiendo contra empresas peores que comunican mejor.","Posicionamiento claro. Imagen que transmite el nivel real del trabajo. Clientes premium."],
+  ],
+
+  debates:[
+    ["¿Las reformas se venden\npor *precio* o por *confianza*?","Por confianza. El precio es excusa cuando no ven el valor real.","Por precio. El mercado de reformas es muy competitivo."],
+    ["¿*Instagram* o *Google*\npara captar reformas?","Google. La intención de búsqueda ya está declarada y la conversión es directa.","Meta. Llegas antes que la competencia a un coste menor."],
+    ["¿Boca a boca o *sistema\nde captación digital*?","Sistema digital. El boca a boca es bueno pero no se controla ni se escala.","Boca a boca. Es la forma más auténtica de crecer en este sector."],
+    ["¿*Especialista* en un tipo\nde reforma o generalista?","Especialista. Más autoridad, mejor cliente, menos competencia de precio.","Generalista. Más mercado, más obras, más crecimiento a corto plazo."],
+    ["¿El dueño debe aparecer\nen cámara o puede ser *la empresa*?","El dueño. La gente compra a personas, la cara da confianza inmediata.","La empresa. Más profesional, más escalable cuando el negocio crezca."],
+  ],
+
+  stats:[
+    ["+127%::Aumento de solicitudes","-32%::Coste por conversión","3.6x::ROI promedio de campañas","+89::Negocios escalados"],
+    ["+340%::Leads cualificados","−28%::Coste por lead","5.2x::Retorno medio","60d::Agenda llena"],
+    ["12::Leads en primera semana","3::Semanas hasta lista de espera","−40%::Coste por cierre","+20%::Ticket medio"],
+    ["+200%::Solicitudes de presupuesto","48h::Primeros leads","4x::Ratio de cierre","+15%::Precio medio de obra"],
+  ],
+
+  procesos:[
+    ["Análisis:Entiendo tu negocio y tu cliente ideal.","Estrategia:Diseño campañas con objetivo claro.","Ejecución:Creo, lanzo y optimizo cada detalle.","Escalado:Aumento los resultados de forma rentable."],
+    ["Diagnóstico:Audito tu situación actual en 2 horas.","Configuración:Estructuro la campaña desde cero.","Lanzamiento:Campaña activa en menos de 48 h.","Optimización:Ajusto semanalmente para mejorar el CPL."],
+    ["Define:Identificamos al cliente ideal con precisión.","Crea:Construimos el anuncio que le habla a él.","Lanza:Campaña activa con el presupuesto correcto.","Mejora:Datos → decisiones → mejores resultados."],
+  ],
+
+  servicios:[
+    ["Estrategia de campañas Meta Ads","Segmentación avanzada por perfil de cliente","Creatividades que filtran antes de la visita","Optimización basada en datos reales","Escalado rentable mes a mes"],
+    ["Definición de cliente ideal y ángulo de captación","Configuración técnica de campañas (Meta + Google)","Cualificación de leads antes de llegar al teléfono","Seguimiento y optimización semanal","Reportes claros en lenguaje de negocio"],
+  ],
+
+  eyebrows:[
+    "Media Buyer · Empresas de Reformas",
+    "Estrategia · Meta + Google · Reformas",
+    "Captación de clientes · Sector Reformas",
+    "Media Buyer Estratégica · Reformas",
+    "Resultados reales · Empresas de Reformas",
+  ],
+
+  // Copy listo para Instagram por ángulo
+  instagramCopy: {
+    bocaboca:{
+      caption:"¿Tu empresa depende de que alguien te recomiende en el momento justo?\n\nEso no es una estrategia. Es una oración.\n\nCuéntame: ¿cuántos presupuestos pediste este mes que vinieron del boca a boca? 👇",
+      hashtags:"#reformas #empresadereformas #captacionclientes #marketingdigital #mediabuyerstrategy #bocaaboca #sistemadecaptacion #reformasintegrales",
+    },
+    regateo:{
+      caption:"¿Cuántas horas pierdes al mes en presupuestos que nunca se cierran?\n\nEl problema no es tu precio. Es que estás atrayendo al cliente equivocado antes de la visita.\n\n¿Te ha pasado? 👇",
+      hashtags:"#reformas #clientesfantasma #empresadereformas #sistemadecaptacion #mediabuyerstrategy #cualificacion #captaciondigital #reformasintegrales",
+    },
+    saturacion:{
+      caption:"¿A qué hora del día terminas de verdad?\n\nEl mayor problema no es la competencia. Eres tú, intentando hacerlo todo.\n\nCuéntame en comentarios 👇",
+      hashtags:"#conciliacion #empresadereformas #autonomosaturado #marketinglocal #reformasvalencia #burnout #mediabuyerstrategy #reformas",
+    },
+    autoridad:{
+      caption:"¿Tu perfil de Instagram transmite la calidad real de tu trabajo?\n\nSi no, estás perdiendo obras antes de que el cliente te llame.\n\n¿Qué transmite la imagen de tu empresa? 👇",
+      hashtags:"#autoridad #brandingdigital #reformasintegrales #imagenonline #mediabuyerstrategy #empresadereformas #marketingdigital #reformas",
+    },
+    tiempo:{
+      caption:"¿Cuándo fue la última vez que desconectaste de verdad? 👨‍👩‍👧‍👦\n\nSi tu negocio no puede funcionar sin ti, no tienes una empresa. Tienes un trabajo mal pagado.\n\n¿Cómo lo ves tú?",
+      hashtags:"#conciliacion #libertadfinanciera #reformasintegrales #empresariodereformas #burnout #mediabuyerstrategy #reformas #sistemadecaptacion",
+    },
+    familia:{
+      caption:"¿Para qué montaste tu empresa? Cuéntame en comentarios 👇\n\nPorque si la respuesta tiene que ver con tu familia, quizás es hora de revisar cómo funciona el negocio.",
+      hashtags:"#conciliacion #libertad #reformas #empresadereformas #mediabuyerstrategy #familia #emprendedor #reformasintegrales",
+    },
+    estabilidad:{
+      caption:"¿Cómo cambiaría tu negocio si supieras que el mes que viene ya está cubierto? 💬\n\nEso también se construye. No es suerte.\n\nEscríbeme si quieres saber cómo.",
+      hashtags:"#estabilidadfinanciera #reformas #sistemadecaptacion #mediabuyerstrategy #empresadereformas #captacionclientes #reformasintegrales #marketing",
+    },
+    premium:{
+      caption:"¿Estás atrayendo al cliente que paga lo que merece tu trabajo?\n\nO estás perdiendo tardes con quien solo quiere el precio más bajo.\n\n¿Qué tipo de cliente quieres en los próximos 3 meses? 👇",
+      hashtags:"#clientespremium #reformasluxury #posicionamiento #autoridad #empresadereformasintegrales #mediabuyerstrategy #captacion #reformas",
+    },
+    objecion:{
+      caption:"«Ya probé publicidad y no funcionó.»\n\nEs la frase que más escucho de los que luego tienen los mejores resultados.\n\n¿Qué pasó cuando lo intentaste? 👇",
+      hashtags:"#marketingdigital #reformasinstagram #estrategiacontenidos #mediabuyerstrategy #antesdespues #captacionreformas #reformas #empresadereformas",
+    },
+    precio:{
+      caption:"¿Estás cobrando lo que realmente vale tu trabajo? 🔑\n\nSi el cliente llega preguntando por precio antes de ver lo que haces, el problema está antes de la visita.",
+      hashtags:"#margen #reformasintegrales #altoticket #empresadereformas #estrategiacomercial #mediabuyerstrategy #captacion #posicionamiento",
+    },
+    margen:{
+      caption:"¿Cuánto dejas encima de la mesa cada mes por no comunicar bien lo que vales?\n\nNo es subir precios. Es mejorar la percepción antes de que el cliente decida. 🎯",
+      hashtags:"#margen #ticketmedio #reformasintegrales #altoticket #empresadereformas #mediabuyerstrategy #posicionamiento #captacion",
+    },
+    sistema:{
+      caption:"¿Puedes encender tu captación cuando quieres o solo esperas?\n\nHay una diferencia entre recibir contactos y tener un sistema. Solo uno da estabilidad. 💡",
+      hashtags:"#bocaaboca #sistemadecaptacion #reformas #marketingreformas #empresadereformas #mediabuyerstrategy #captacionclientes #reformasintegrales",
+    },
+    resultados:{
+      caption:"Datos reales de campañas en el sector reformas. Sin promesas vacías.\n\nSi quieres saber cómo aplico esto a tu empresa, escríbeme por DM 💬",
+      hashtags:"#captacionclientes #reformas #mediabuyerstrategy #sistemadecaptacion #reformasvalencia #resultados #metaads #googleads",
+    },
+    default:{
+      caption:"¿Cómo está funcionando tu captación de clientes este mes?\n\nCuéntame en comentarios 👇",
+      hashtags:"#reformas #empresadereformas #captacionclientes #marketingdigital #mediabuyerstrategy #sistemadecaptacion #reformasintegrales",
+    },
+  },
+};
+
+/* ═══════════════════════════════════════════
+   ESTADO GLOBAL
+   ═══════════════════════════════════════════ */
+let SLIDES   = [];
+let cur      = 0;
+const modo   = 'carrusel'; // siempre 1080×1350
+let guias    = false;
+const MARCA  = 'Rosa María';
+const HANDLE = '@rosamariamedia';
+const LOGO_SRC = 'LOGO WEB.png';
+
+// Biblioteca de imágenes: [{id, url, name}]
+let MEDIA = [];
+let mediaIdCounter = 0;
+// Destino activo al asignar desde biblioteca
+let asignandoTarget = null; // 'fondo' | 'antes' | 'despues'
+
+// Tamaños de tipografía (px) — calibrados con el feed real de Rosa María
+let T = { eye:16, head:104, body:30, items:26, stat:88, cta:16 };
+
+/* ═══════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════ */
+function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)] }
+function p(s){
+  if(!s) return '';
+  return s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+          .replace(/\*(.+?)\*/g,'<em>$1</em>')
+          .replace(/\n/g,'<br>');
+}
+function fc(f){ return f==='light'?'SL':f==='blue'?'SB':'SD' }
+function isSq(){ return false }       // siempre 4:5
+function slideH(){ return 'h135' }    // siempre 1350px
+function spClass(){ return 'SP' }     // siempre padding 4:5
+function delay(ms){return new Promise(r=>setTimeout(r,ms))}
+
+function logoHTML(){
+  return `<div class="logo-wrap"><img class="slide-logo-img" src="${LOGO_SRC}" alt="RM" onerror="this.outerHTML='<span class=\\'rm\\'>RM</span>'"></div>`;
+}
+
+/* ═══════════════════════════════════════════
+   BIBLIOTECA DE MEDIA
+   ═══════════════════════════════════════════ */
+function cargarImagenes(files){
+  Array.from(files).forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const id = ++mediaIdCounter;
+      MEDIA.push({id, url: e.target.result, name: file.name});
+      renderMediaGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderMediaGrid(){
+  const grid = document.getElementById('mlibGrid');
+  if(!MEDIA.length){
+    grid.innerHTML = '<div class="mlib-empty">Sin fotos aún.<br>Sube imágenes<br>para usarlas en slides.</div>';
+    return;
+  }
+  grid.innerHTML = MEDIA.map(m=>`
+    <div class="mlib-item" id="mitem-${m.id}" onclick="seleccionarMedia(${m.id})">
+      <img src="${m.url}" alt="${m.name}">
+      <button class="mlib-del" onclick="event.stopPropagation();borrarMedia(${m.id})">✕</button>
+      <button class="mlib-use" onclick="event.stopPropagation();usarMedia(${m.id})">Usar</button>
+    </div>`).join('');
+}
+
+function borrarMedia(id){
+  MEDIA = MEDIA.filter(m=>m.id!==id);
+  // limpiar referencias en slides
+  SLIDES.forEach(s=>{
+    if(s.imgFondo===id) s.imgFondo=null;
+    if(s.imgAntes===id) s.imgAntes=null;
+    if(s.imgDespues===id) s.imgDespues=null;
+  });
+  renderMediaGrid();
+  show(cur);
+}
+
+function seleccionarMedia(id){
+  document.querySelectorAll('.mlib-item').forEach(el=>el.classList.remove('selected'));
+  const el = document.getElementById('mitem-'+id);
+  if(el) el.classList.add('selected');
+}
+
+function usarMedia(id){
+  // Si hay un target de asignación activo, asignar directamente
+  if(asignandoTarget){
+    asignarImagen(id, asignandoTarget);
+    asignandoTarget = null;
+    return;
+  }
+
+  const d = SLIDES[cur];
+  if(!d) return;
+
+  const tiposFoto = ['foto','fototxt','autoridad','bafoto'];
+
+  if(tiposFoto.includes(d.tipo)){
+    // Slide ya es de tipo foto — asignar al destino correcto
+    if(d.tipo === 'bafoto'){
+      if(!d.imgAntes) asignarImagen(id, 'antes');
+      else asignarImagen(id, 'despues');
+    } else {
+      asignarImagen(id, 'fondo');
+    }
+  } else {
+    // Slide es de tipo texto — convertirlo a "foto" automáticamente
+    // conservando el texto que ya tiene
+    d.tipo = 'foto';
+    d.overlay = 'dark';
+    d.imgFondo = id;
+    // Actualizar selector de tipo en el panel
+    const sel = document.getElementById('cTipo');
+    if(sel) sel.value = 'foto';
+    show(cur);
+    refreshThumb(cur);
+    sincronizarPanelImg(d);
+    toast2('✓ Slide convertido a Foto fondo + texto');
+  }
+}
+
+function abrirAsignador(target){
+  asignandoTarget = target;
+  // Highlight visual en biblioteca
+  document.querySelectorAll('.mlib-item').forEach(el=>el.classList.remove('selected'));
+  toast2(`Selecciona una foto de la biblioteca → ${target}`);
+}
+
+function asignarImagen(id, target){
+  const d = SLIDES[cur];
+  if(!d) return;
+  if(target==='fondo')   d.imgFondo   = id;
+  if(target==='antes')   d.imgAntes   = id;
+  if(target==='despues') d.imgDespues = id;
+  show(cur);
+  refreshThumb(cur);
+  sincronizarPanelImg(d);
+}
+
+function getImgUrl(id){
+  if(!id) return null;
+  const m = MEDIA.find(m=>m.id===id);
+  return m ? m.url : null;
+}
+
+function setImgLayout(layout){
+  if(!SLIDES.length) return;
+  SLIDES[cur].imgLayout = layout;
+  // Actualizar botones activos
+  ['bg','inset','splitl','splitr','top','bottom'].forEach(k=>{
+    const btn = document.getElementById('l'+k);
+    if(btn) btn.classList.remove('on');
+  });
+  const map = {'bg-full':'bg','inset':'inset','split-left':'splitl','split-right':'splitr','top-half':'top','bottom-half':'bottom'};
+  const btn = document.getElementById('l'+(map[layout]||'bg'));
+  if(btn) btn.classList.add('on');
+  show(cur); refreshThumb(cur);
+}
+
+function sincronizarPanelImg(d){
+  const tiposConFoto   = ['foto','fototxt','autoridad'];
+  const tiposConFondo  = tiposConFoto;
+  const tiposConBA     = ['bafoto'];
+  const tiposConOverlay= tiposConFoto;
+  const tiposConLayout = tiposConFoto;
+
+  const hasFoto = tiposConFondo.includes(d.tipo);
+  const hasBA   = tiposConBA.includes(d.tipo);
+  document.getElementById('rowImgFondo').style.display   = hasFoto ? '' : 'none';
+  document.getElementById('rowImgBef').style.display     = hasBA   ? '' : 'none';
+  document.getElementById('rowImgAft').style.display     = hasBA   ? '' : 'none';
+  document.getElementById('rowImgOverlay').style.display = hasFoto ? '' : 'none';
+  document.getElementById('rowImgLayout').style.display  = hasFoto ? '' : 'none';
+  document.getElementById('rowImgPos').style.display     = hasFoto ? '' : 'none';
+  document.getElementById('rowTxtPos').style.display     = hasFoto ? '' : 'none';
+
+  // Sincronizar sliders
+  if(hasFoto){
+    const ix=document.getElementById('rImgX'),iy=document.getElementById('rImgY'),iz=document.getElementById('rImgZ');
+    const vx=document.getElementById('vImgX'),vy=document.getElementById('vImgY'),vz=document.getElementById('vImgZ');
+    if(ix){ix.value=d.imgX??50; vx.textContent=(d.imgX??50)+'%'}
+    if(iy){iy.value=d.imgY??50; vy.textContent=(d.imgY??50)+'%'}
+    if(iz){iz.value=d.imgZoom??110; vz.textContent=(d.imgZoom??110)+'%'}
+    const tp=document.getElementById('cTxtPos'); if(tp) tp.value=d.txtPos||'center';
+    const ov=document.getElementById('cOverlay'); if(ov) ov.value=d.overlay||'dark';
+    // Botones layout
+    const layout=d.imgLayout||'bg-full';
+    const map={'bg-full':'bg','inset':'inset','split-left':'splitl','split-right':'splitr','top-half':'top','bottom-half':'bottom'};
+    ['bg','inset','splitl','splitr','top','bottom'].forEach(k=>{
+      const b=document.getElementById('l'+k); if(b) b.classList.toggle('on',map[layout]===k||('bg'===k&&layout==='bg-full'));
+    });
+  }
+
+  // preview miniatura fondo
+  const prevFondo = document.getElementById('iaFondoPrev');
+  const urlF = getImgUrl(d.imgFondo);
+  if(urlF){
+    prevFondo.outerHTML = `<img class="ia-prev" id="iaFondoPrev" src="${urlF}">`;
+    document.getElementById('iaFondoLbl').textContent = 'Foto asignada ✓';
+  } else {
+    if(prevFondo.tagName==='IMG') prevFondo.outerHTML=`<div class="ia-none" id="iaFondoPrev"></div>`;
+    document.getElementById('iaFondoLbl').textContent = 'Sin imagen';
+  }
+  // antes
+  const prevA = document.getElementById('iaAntesPrev');
+  const urlA = getImgUrl(d.imgAntes);
+  if(urlA){
+    prevA.outerHTML = `<img class="ia-prev" id="iaAntesPrev" src="${urlA}">`;
+    document.getElementById('iaAntesLbl').textContent = 'Foto asignada ✓';
+  } else {
+    if(prevA && prevA.tagName==='IMG') prevA.outerHTML=`<div class="ia-none" id="iaAntesPrev"></div>`;
+    document.getElementById('iaAntesLbl').textContent = 'Sin imagen';
+  }
+  // despues
+  const prevD = document.getElementById('iaDesPrev');
+  const urlD = getImgUrl(d.imgDespues);
+  if(urlD){
+    prevD.outerHTML = `<img class="ia-prev" id="iaDesPrev" src="${urlD}">`;
+    document.getElementById('iaDesLbl').textContent = 'Foto asignada ✓';
+  } else {
+    if(prevD && prevD.tagName==='IMG') prevD.outerHTML=`<div class="ia-none" id="iaDesPrev"></div>`;
+    document.getElementById('iaDesLbl').textContent = 'Sin imagen';
+  }
+  // overlay
+  if(d.overlay) document.getElementById('cOverlay').value = d.overlay;
+}
+
+
+function toast2(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  setTimeout(()=>{ t.textContent='✓ Copiado'; t.classList.remove('on'); },2200);
+}
+
+/* ═══════════════════════════════════════════
+   RENDERIZADORES — SLIDES CON FOTO
+   ═══════════════════════════════════════════ */
+function bgImgTag(imgId, extraStyle='', d={}){
+  const url = getImgUrl(imgId);
+  if(!url) return `<div style="position:absolute;inset:0;background:#111;z-index:0"></div>`;
+  const x = d.imgX ?? 50;
+  const y = d.imgY ?? 50;
+  const z = (d.imgZoom ?? 110) / 100;
+  return `<img src="${url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:${x}% ${y}%;transform:scale(${z});transform-origin:${x}% ${y}%;z-index:0;display:block;${extraStyle}">`;
+}
+
+function rFoto(d,n){
+  const ov      = d.overlay || 'dark';
+  const layout  = d.imgLayout || 'bg-full';
+  const txtPos  = d.txtPos || 'center';
+  const sq      = isSq();
+  const pad     = sq ? 'SP108' : 'SP';
+  const isDark  = ov === 'dark' || ov === 'none';
+  const txtColor= isDark ? '#F5F1EA' : '#1A1A1A';
+  const subColor= isDark ? 'rgba(245,241,234,.75)' : 'rgba(26,26,26,.65)';
+  const acColor = '#38B6FF';
+  const justify = txtPos==='top' ? 'flex-start' : txtPos==='bottom' ? 'flex-end' : 'center';
+
+  // Overlay style
+  const ovStyle = ov==='none' ? '' :
+    ov==='dark'
+      ? 'position:absolute;inset:0;z-index:1;background:linear-gradient(to top,#1A1A1A 0%,rgba(26,26,26,.55) 45%,rgba(26,26,26,.1) 100%)'
+      : 'position:absolute;inset:0;z-index:1;background:linear-gradient(to top,rgba(245,241,234,.95) 0%,rgba(245,241,234,.5) 45%,rgba(245,241,234,.08) 100%)';
+
+  // Bloque de texto reutilizable
+  const txtBlock = `
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:${justify};gap:24px;padding-top:${txtPos==='top'?'20px':'40px'}">
+      <div style="height:1px;background:${isDark?'rgba(255,255,255,.18)':'rgba(26,26,26,.12)'}"></div>
+      <h1 class="TDlg" style="font-size:${sq?Math.round(T.head*.88):T.head}px;color:${txtColor};text-shadow:0 2px 16px rgba(0,0,0,.4)">${p(d.head)}</h1>
+      <div style="height:1px;background:${isDark?'rgba(255,255,255,.18)':'rgba(26,26,26,.12)'}"></div>
+      ${d.body?`<p class="TBdy" style="font-size:${T.body}px;color:${subColor}">${p(d.body)}</p>`:''}
+    </div>
+    <div class="SF">
+      <span class="TCap" style="font-size:${T.cta}px;color:${subColor}">${HANDLE}</span>
+      <span class="TCap" style="font-size:${T.cta}px;color:${acColor}">${p(d.cta)}</span>
+    </div>`;
+
+  const header = `
+    <div class="SH">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="abar" style="background:${acColor}"></div>
+        <span class="TEye" style="font-size:${T.eye}px;color:${subColor}">${p(d.eye)}</span>
+      </div>
+      ${logoHTML()}
+    </div>`;
+
+  // ── LAYOUTS ──
+  if(layout === 'bg-full'){
+    return `<div class="slide ${slideH()}" style="position:relative;overflow:hidden;background:#111">
+  ${bgImgTag(d.imgFondo,'',d)}
+  ${ovStyle?`<div style="${ovStyle}"></div>`:''}
+  <div class="${pad}" style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%">
+    ${header}${txtBlock}
+  </div>
+</div>`;
+  }
+
+  if(layout === 'inset'){
+    const bgC = isDark ? '#1A1A1A' : '#F5F1EA';
+    return `<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()} SP" style="position:relative">
+  ${header}
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:${justify};gap:24px;padding-top:20px">
+    <div style="position:relative;border-radius:10px;overflow:hidden;width:100%;aspect-ratio:16/9;flex-shrink:0">
+      ${bgImgTag(d.imgFondo,'border-radius:0',d)}
+    </div>
+    <h1 class="TDlg Ct" style="font-size:${Math.round(T.head*.78)}px">${p(d.head)}</h1>
+    ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px">${p(d.body)}</p>`:''}
+  </div>
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    <span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta)}</span>
+  </div>
+</div>`;
+  }
+
+  if(layout === 'split-left' || layout === 'split-right'){
+    const imgFirst = layout === 'split-left';
+    const bgSlide  = isDark ? '#1A1A1A' : '#F5F1EA';
+    const imgCol   = `<div style="position:relative;overflow:hidden">${bgImgTag(d.imgFondo,'',d)}</div>`;
+    const txtCol   = `<div style="display:flex;flex-direction:column;justify-content:${justify};padding:80px 60px;gap:20px;background:${bgSlide}">
+      <div style="display:flex;align-items:center;gap:10px"><div class="abar"></div><span class="TEye" style="font-size:${T.eye}px;color:${subColor}">${p(d.eye)}</span></div>
+      <h1 class="TDlg" style="font-size:${Math.round(T.head*.75)}px;color:${txtColor}">${p(d.head)}</h1>
+      ${d.body?`<p class="TBdy" style="font-size:${Math.round(T.body*.9)}px;color:${subColor}">${p(d.body)}</p>`:''}
+      <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center">
+        <span class="TCap" style="font-size:${T.cta}px;color:${subColor}">${HANDLE}</span>
+        ${logoHTML()}
+      </div>
+    </div>`;
+    return `<div class="slide ${slideH()}" style="display:grid;grid-template-columns:1fr 1fr;overflow:hidden">
+  ${imgFirst ? imgCol+txtCol : txtCol+imgCol}
+</div>`;
+  }
+
+  if(layout === 'top-half' || layout === 'bottom-half'){
+    const imgTop   = layout === 'top-half';
+    const bgSlide  = isDark ? '#1A1A1A' : '#F5F1EA';
+    const imgH     = sq ? '50%' : '55%';
+    const imgBlock = `<div style="position:relative;overflow:hidden;height:${imgH};flex-shrink:0">${bgImgTag(d.imgFondo,'',d)}</div>`;
+    const txtArea  = `<div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px 90px;gap:20px;background:${bgSlide}">
+      <div style="display:flex;align-items:center;gap:10px"><div class="abar"></div><span class="TEye" style="font-size:${T.eye}px;color:${subColor}">${p(d.eye)}</span></div>
+      <h1 class="TDlg" style="font-size:${Math.round(T.head*.8)}px;color:${txtColor}">${p(d.head)}</h1>
+      ${d.body?`<p class="TBdy" style="font-size:${T.body}px;color:${subColor}">${p(d.body)}</p>`:''}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto">
+        <span class="TCap" style="font-size:${T.cta}px;color:${subColor}">${HANDLE}</span>
+        <span class="TCap" style="font-size:${T.cta}px;color:${acColor}">${p(d.cta)}</span>
+      </div>
+    </div>`;
+    return `<div class="slide ${slideH()}" style="display:flex;flex-direction:column;overflow:hidden">
+  ${imgTop ? imgBlock+txtArea : txtArea+imgBlock}
+</div>`;
+  }
+
+  // Fallback
+  return rHead(d,n);
+}
+
+function rBAFoto(d,n){
+  const its = d.items||[];
+  const txtA = (its[0]||'').replace(/^Antes:\s*/i,'');
+  const txtD = (its[1]||'').replace(/^Después:\s*/i,'');
+  return `<div class="slide SD ${slideH()} sBAFoto" style="position:relative">
+  <div class="baf-half bef" style="position:relative;overflow:hidden">
+    ${bgImgTag(d.imgAntes)}
+    <div class="baf-ov" style="position:absolute;inset:0;z-index:1;background:linear-gradient(0deg,rgba(10,10,10,.85) 0%,rgba(10,10,10,.2) 100%)"></div>
+    <div class="baf-content" style="position:relative;z-index:2">
+      <div class="baf-badge"><span class="baf-dot"></span>Antes</div>
+      <p class="baf-txt">${p(txtA||'Situación anterior')}</p>
+      <span style="font-size:${T.cta}px;color:rgba(255,255,255,.35);letter-spacing:.12em;text-transform:uppercase">${HANDLE}</span>
+    </div>
+  </div>
+  <div class="baf-divider" style="position:absolute;top:50%;left:0;right:0;height:2px;background:#38B6FF;z-index:10;display:flex;align-items:center;justify-content:center">
+    <span style="background:#38B6FF;color:#fff;font-size:12px;font-weight:700;letter-spacing:.12em;padding:4px 14px;border-radius:20px">VS</span>
+  </div>
+  <div class="baf-half aft" style="position:relative;overflow:hidden">
+    ${bgImgTag(d.imgDespues)}
+    <div class="baf-ov" style="position:absolute;inset:0;z-index:1;background:linear-gradient(0deg,rgba(10,10,10,.82) 0%,rgba(10,10,10,.15) 100%)"></div>
+    <div class="baf-content" style="position:relative;z-index:2">
+      <div class="baf-badge"><span class="baf-dot"></span>Después</div>
+      <p class="baf-txt">${p(txtD||'Resultado conseguido')}</p>
+      <span style="font-size:${T.cta}px;color:#38B6FF;letter-spacing:.1em;text-transform:uppercase">${p(d.cta)}</span>
+    </div>
+  </div>
+</div>`;
+}
+
+function rFotoTxt(d,n){
+  const sq = isSq();
+  const fc2 = fc(d.fondo);
+  return `<div class="slide ${fc2} ${slideH()} sFotoTxt">
+  <div class="ft-img" style="position:relative;overflow:hidden">${bgImgTag(d.imgFondo)}</div>
+  <div class="ft-txt">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <div class="abar"></div>
+      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    <h1 class="TDmd Ct" style="font-size:${Math.min(T.head,90)}px">${p(d.head)}</h1>
+    ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px;margin-top:20px">${p(d.body)}</p>`:''}
+    <div style="margin-top:auto;padding-top:28px;display:flex;justify-content:space-between;align-items:center">
+      <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+      ${logoHTML()}
+    </div>
+  </div>
+</div>`;
+}
+
+function rAutoridad(d,n){
+  return `<div class="slide SD ${slideH()} sAutoridad">
+  <div class="aut-foto" style="position:relative;overflow:hidden">
+    ${bgImgTag(d.imgFondo)}
+    <div class="aut-ov" style="position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,transparent 55%,#1A1A1A 100%)"></div>
+  </div>
+  <div class="aut-txt">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'Media Buyer · Reformas')}</span>
+    </div>
+    <h1 class="TDsm Ct" style="font-size:${Math.min(T.head,78)}px;margin-top:16px">${p(d.head)}</h1>
+    ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px">${p(d.body)}</p>`:''}
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:14px">
+      <div style="height:1px;background:rgba(245,241,234,.1)"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+        <span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta)}</span>
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+/* ═══════════════════════════════════════════
+   PANEL TABS
+   ═══════════════════════════════════════════ */
+function switchTab(id, btn){
+  document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.rpanel').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('tab-'+id).classList.add('on');
+}
+
+/* ═══════════════════════════════════════════
+   PILARES Y ÁNGULOS
+   ═══════════════════════════════════════════ */
+function actualizarAngulos(){
+  const pilar = document.getElementById('cPilar').value;
+  const angulos = PILARES_MAP[pilar] || [];
+  const sel = document.getElementById('cAngulo');
+  sel.innerHTML = '<option value="auto">⚡ Automático (aleatorio)</option>' +
+    angulos.map(a=>`<option value="${a}">${ANGULO_LABELS[a]||a}</option>`).join('');
+}
+
+/* ═══════════════════════════════════════════
+   TIPOGRAFÍA
+   ═══════════════════════════════════════════ */
+function applyType(){
+  T.eye   = parseInt(document.getElementById('rEye').value);
+  T.head  = parseInt(document.getElementById('rHead').value);
+  T.body  = parseInt(document.getElementById('rBody').value);
+  T.items = parseInt(document.getElementById('rItems').value);
+  T.stat  = parseInt(document.getElementById('rStat').value);
+  T.cta   = parseInt(document.getElementById('rCta').value);
+  document.getElementById('vEye').textContent   = T.eye+'px';
+  document.getElementById('vHead').textContent  = T.head+'px';
+  document.getElementById('vBody').textContent  = T.body+'px';
+  document.getElementById('vItems').textContent = T.items+'px';
+  document.getElementById('vStat').textContent  = T.stat+'px';
+  document.getElementById('vCta').textContent   = T.cta+'px';
+  if(SLIDES.length){ buildThumbs(); show(cur); }
+}
+
+function resetType(){
+  const defaults = {rEye:16,rHead:104,rBody:30,rItems:26,rStat:88,rCta:16};
+  Object.entries(defaults).forEach(([id,v])=>{ document.getElementById(id).value=v; });
+  applyType();
+}
+
+/* ═══════════════════════════════════════════
+   RENDERIZADORES
+   ═══════════════════════════════════════════ */
+function rHead(d,n){
+  const sq=isSq();
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${sq?'sPost':'sHook'} ${spClass()}">
+  <div class="SH">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Cm" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    ${logoHTML()}
+  </div>
+  <div class="zone">
+    <div class="HL Cl"></div>
+    <h1 class="TDlg Ct" style="font-size:${sq?Math.round(T.head*.88):T.head}px">${p(d.head)}</h1>
+    <div class="HL Cl"></div>
+    ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px">${p(d.body)}</p>`:''}
+  </div>
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    <span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta)}</span>
+  </div>
+  <div class="BGN Cn" style="font-size:${sq?400:500}px">${n}</div>
+</div>`;}
+
+function rFrase(d,n){
+  const sq=isSq();
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} sFrase ${spClass()}">
+  <div class="SH">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Cm" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    ${logoHTML()}
+  </div>
+  <div class="zone">
+    <div class="qm Cm">"</div>
+    <h1 class="TDlg Ct" style="font-size:${sq?Math.round(T.head*.88):T.head}px">${p(d.head)}</h1>
+    ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px">${p(d.body)}</p>`:''}
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TCap Cm" style="font-size:14px">${MARCA} · ${HANDLE}</span>
+    </div>
+  </div>
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    <span class="TCap Ct" style="font-size:${T.cta}px">${p(d.cta)}</span>
+  </div>
+</div>`;}
+
+function rBA(d,n){
+  const its=d.items||[];
+  const bt=(its[0]||'').replace(/^Antes:\s*/i,'');
+  const at=(its[1]||'').replace(/^Después:\s*/i,'');
+  return`<div class="slide SD ${slideH()} sBA">
+  <div class="bah bef">
+    <div class="babadge"><span class="badot"></span>Antes</div>
+    <p class="batext">${p(bt)}</p>
+    <div class="bafoot">
+      <span style="font-family:var(--F-SAN);font-size:${T.cta}px;color:rgba(245,241,234,.2);letter-spacing:.12em;text-transform:uppercase">${HANDLE}</span>
+      <span style="font-family:var(--F-SAN);font-size:${T.cta}px;color:rgba(245,241,234,.2);letter-spacing:.12em;text-transform:uppercase">${n}</span>
+    </div>
+    <div class="badiv"></div>
+  </div>
+  <div class="bah aft">
+    <div class="babadge"><span class="badot"></span>Después</div>
+    <p class="batext">${p(at)}</p>
+    <div class="bafoot">
+      ${logoHTML()}
+      <span style="font-family:var(--F-SAN);font-size:${T.cta}px;color:#38B6FF;letter-spacing:.1em;text-transform:uppercase">${p(d.cta)}</span>
+    </div>
+  </div>
+</div>`;}
+
+function rLista(d,n){
+  const items = d.items||[];
+  const count = items.length||4;
+  // Tamaño de fuente adaptativo: más items → letra más pequeña
+  const tamItems = count<=2 ? T.items+6
+                 : count===3 ? T.items+3
+                 : count===4 ? T.items
+                 : count===5 ? T.items-3
+                 : T.items-5;
+  // Número acento: más pequeño con más items
+  const tamNum  = count<=3 ? 36 : count<=4 ? 30 : 24;
+  const rows = items.map((it,i)=>`
+<div class="lrow">
+  <span class="lnum" style="font-size:${tamNum}px;line-height:1;min-width:${tamNum+2}px">${String(i+1).padStart(2,'0')}</span>
+  <span class="ltxt" style="font-size:${tamItems}px;line-height:${count>=5?1.3:1.45};font-weight:300">${p(it)}</span>
+</div>`).join('');
+  // Zona con clase para layout adaptativo
+  const zoneClass = `lzone lzone-${count}`;
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} sLista ${spClass()}">
+  <div class="SH">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    ${logoHTML()}
+  </div>
+  <h1 class="TDsm Ct" style="margin-top:${count>=5?16:24}px;font-size:${Math.min(T.head,count>=5?72:84)}px">${p(d.head)}</h1>
+  <div class="${zoneClass}">${rows}</div>
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    <span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta)}</span>
+  </div>
+</div>`;}
+
+function rStats(d,n){
+  const cells=(d.items||[]).map(it=>{
+    const [num,lbl]=it.split('::');
+    return`<div class="scell"><div class="snum" style="font-size:${T.stat}px">${p(num)}</div><div class="slbl" style="font-size:17px">${p(lbl)}</div></div>`;
+  }).join('');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} sStats ${spClass()}">
+  <div class="SH">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    ${logoHTML()}
+  </div>
+  <div class="sgrid">${cells}</div>
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    <span class="TCap Cm" style="font-size:${T.cta}px">${n} · ${SLIDES.length}</span>
+  </div>
+</div>`;}
+
+function rProceso(d,n){
+  const steps=(d.items||[]).map((it,i)=>{
+    const [title,...rest]=it.split(':');
+    const desc=rest.join(':').trim();
+    return`<div class="pstep">
+      <div class="pnum">${i+1}</div>
+      <div class="ptitle">${p(title)}</div>
+      <div class="pdesc" style="font-size:${T.items}px">${p(desc)}</div>
+    </div>`;
+  }).join('');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} sProceso ${spClass()}">
+  <div class="SH">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    ${logoHTML()}
+  </div>
+  <h1 class="TDsm Ct" style="margin-top:24px;font-size:${Math.min(T.head,84)}px">${p(d.head)}</h1>
+  <div class="stepsrow">${steps}</div>
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    <span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta)}</span>
+  </div>
+</div>`;}
+
+function rServ(d,n){
+  const rows=(d.items||[]).map(it=>`
+<div class="svrow">
+  <div class="svcheck">✓</div>
+  <span class="svtxt" style="font-size:${T.items}px;line-height:1.3;font-weight:300">${p(it)}</span>
+</div>`).join('');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} sServ ${spClass()}">
+  <div class="SH">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    ${logoHTML()}
+  </div>
+  ${d.head?`<h1 class="TDsm Ct" style="margin-top:24px;font-size:${Math.min(T.head,84)}px">${p(d.head)}</h1>`:''}
+  <div class="svzone">${rows}</div>
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    <span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta)}</span>
+  </div>
+</div>`;}
+
+function rDebate(d,n){
+  const o=d.items||[];
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} sDebate ${spClass()}">
+  <div class="SH">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Cm" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    ${logoHTML()}
+  </div>
+  <div class="dq"><h1 class="TDsm Ct" style="font-size:${Math.min(T.head,84)}px">${p(d.head)}</h1></div>
+  <div class="dopts">
+    <div class="dopt dopt-a" style="font-size:${T.items}px">${p(o[0]||'Opción A')}</div>
+    <div class="dopt dopt-b" style="font-size:${T.items}px">${p(o[1]||'Opción B')}</div>
+  </div>
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    <span class="TCap Cm" style="font-size:${T.cta}px">${p(d.cta)}</span>
+  </div>
+</div>`;}
+
+function rCTA(d,n){
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} sCTA ${spClass()}">
+  <div class="SH">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Cm" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    ${logoHTML()}
+  </div>
+  <div class="zone">
+    <div class="HL Cl"></div>
+    <h1 class="TDlg Ct" style="font-size:${T.head}px">${p(d.head)}</h1>
+    <div class="HL Cl"></div>
+    ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px">${p(d.body)}</p>`:''}
+    <div class="ctapill" style="font-size:${T.cta}px"><span>→</span><span>${p(d.cta)}</span></div>
+  </div>
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    ${logoHTML()}
+  </div>
+  <div class="BGN Cn" style="font-size:380px;opacity:.04">${n}</div>
+</div>`;}
+
+function render(d,i){
+  const n=String(i+1).padStart(2,'0');
+  switch(d.tipo){
+    case'hook': case'post': return rHead(d,n);
+    case'frase':            return rFrase(d,n);
+    case'ba':               return rBA(d,n);
+    case'lista':            return rLista(d,n);
+    case'stats':            return rStats(d,n);
+    case'proceso':          return rProceso(d,n);
+    case'servicio':         return rServ(d,n);
+    case'debate':           return rDebate(d,n);
+    case'cta':              return rCTA(d,n);
+    case'foto':             return rFoto(d,n);
+    case'bafoto':           return rBAFoto(d,n);
+    case'fototxt':          return rFotoTxt(d,n);
+    case'autoridad':        return rAutoridad(d,n);
+    default:                return rHead(d,n);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   GENERADOR
+   ═══════════════════════════════════════════ */
+async function generar(){
+  const btn=document.getElementById('btnGen');
+  btn.classList.add('loading');
+  document.getElementById('btnGenTxt').textContent='Generando...';
+
+  const ov=document.getElementById('genOv');
+  const txEl=document.getElementById('genTxt');
+  const stEl=document.getElementById('genSteps');
+  ov.classList.add('on');
+
+  const pasos=['Analizando pilar y ángulo...','Generando copy con IA...','Construyendo estructura...','Aplicando diseño de marca...'];
+  stEl.innerHTML=pasos.map(t=>`<div class="gen-step">${t}</div>`).join('');
+  const sEls=stEl.querySelectorAll('.gen-step');
+
+  sEls[0].classList.add('ok');
+  await delay(350);
+
+  const pilar = document.getElementById('cPilar').value;
+  const selAngulo = document.getElementById('cAngulo').value;
+  const posibles = PILARES_MAP[pilar] || Object.keys(BANCO.angulos);
+  const angulo = (selAngulo === 'auto' || !selAngulo)
+    ? rnd(posibles)
+    : selAngulo;
+
+  txEl.textContent=`${pilar.toUpperCase()} · ${angulo}`;
+
+  sEls[1].classList.add('ok');
+  txEl.textContent='Generando copy con IA...';
+
+  let aiData=null;
+  try{ aiData=await fetchAI(angulo); }
+  catch(e){ console.warn('API no disponible, usando banco local',e.message); }
+
+  sEls[2].classList.add('ok');
+  await delay(250);
+
+  const numSlides = parseInt(document.getElementById('cNumSlides').value)||7;
+  const nuevo = buildCarrusel(angulo,aiData,numSlides);
+  SLIDES.length=0;
+  nuevo.forEach(s=>SLIDES.push(s));
+
+  sEls[3].classList.add('ok');
+  txEl.textContent='¡Listo!';
+  await delay(500);
+
+  cur=0;
+  buildThumbs();
+  show(0);
+  scaleStage();
+  document.getElementById('navCnt').textContent=
+    modo==='post'?'1 / 1':`1 / ${SLIDES.length}`;
+
+  // Actualizar panel Copy y tags Pexels
+  actualizarCopy(angulo, aiData);
+  actualizarTagsPexels(angulo);
+
+  ov.classList.remove('on');
+  btn.classList.remove('loading');
+  document.getElementById('btnGenTxt').textContent='Generar';
+}
+
+async function fetchAI(angulo){
+  const desc=BANCO.angulos[angulo]||BANCO.angulos.sistema;
+  const prompt=`Eres Rosa María, media buyer estratégica especializada en Meta Ads y Google Ads para empresas de reformas en España. Tu cliente ideal es Javier Moreno Castillo: 43 años, Valencia, gerente de empresa de reformas, saturado, escéptico con el marketing, dependiente del boca a boca, con familia que espera en casa.
+
+Tu tono: elegante, directo, lenguaje de negocio. NUNCA tecnicismos (CTR, CPL, funnel, pixel). Habla de: obras rentables, agenda cubierta, clientes de calidad, estabilidad, tiempo, familia, autoridad, control.
+
+Genera copy para un carrusel de Instagram sobre: "${desc}".
+
+Responde SOLO en JSON válido sin markdown:
+{
+  "hook": "headline impactante (puede tener \\n para saltos de línea)",
+  "hook_sub": "subtítulo (1 frase corta, máx 12 palabras)",
+  "frase": "frase polémica o de autoridad (puede tener \\n)",
+  "frase_sub": "subtítulo de la frase (1-2 frases)",
+  "lista_head": "titular del slide de lista",
+  "lista": ["item 1 con *palabra clave* en cursiva", "item 2", "item 3", "item 4"],
+  "debate_q": "pregunta del debate (puede tener \\n y *cursiva*)",
+  "debate_a": "opción A (frase corta)",
+  "debate_b": "opción B (frase corta)",
+  "cta_head": "headline del CTA final (puede tener \\n)",
+  "cta_body": "subtítulo CTA (1-2 frases)",
+  "cta_word": "UNA PALABRA en mayúsculas para el CTA (ej: SISTEMA, AGENDA, OBRAS)"
+}`;
+
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data=await res.json();
+  const txt=data.content?.[0]?.text||'';
+  return JSON.parse(txt.replace(/```json|```/g,'').trim());
+}
+
+/* ─── Construir carrusel ─── */
+function buildCarrusel(angulo,ai,numSlides=7){
+  const hooksArr=BANCO.hooks[angulo]||BANCO.hooks.sistema;
+  const listaArr=BANCO.listas[angulo]||BANCO.listas.default;
+  const ba=rnd(BANCO.antes);
+  const deb=rnd(BANCO.debates);
+  const eye=rnd(BANCO.eyebrows);
+  const cta=rnd(BANCO.ctas);
+  const seq=rnd([
+    ['dark','light','dark','blue','light','dark','dark'],
+    ['dark','light','dark','blue','dark','light','dark'],
+    ['dark','blue','dark','light','dark','light','dark'],
+  ]);
+  const todos = [
+    {tipo:'hook',   fondo:seq[0], eye,
+      head: ai?ai.hook:rnd(hooksArr),
+      body: ai?ai.hook_sub:rnd(BANCO.subtitulos),
+      items:[], cta:'Desliza →'},
+    {tipo:'ba',     fondo:seq[1], eye:'', head:'', body:'',
+      items:[`Antes: ${ba[0]}`,`Después: ${ba[1]}`], cta:'Sigue leyendo →'},
+    {tipo:'frase',  fondo:seq[2], eye:'Esto nadie lo dice',
+      head: ai?ai.frase:rnd(BANCO.frases),
+      body: ai?ai.frase_sub:rnd(BANCO.subtitulos),
+      items:[], cta:'¿Incómodo? Bien. →'},
+    {tipo:'lista',  fondo:seq[3], eye,
+      head: ai?ai.lista_head:`Lo que necesita tu cliente ideal para contratar sin pedir descuento.`,
+      body:'',
+      items: ai&&ai.lista?ai.lista:rnd(listaArr),
+      cta:`${cta} →`},
+    {tipo:'stats',  fondo:'light', eye:'Resultados que hablan',
+      head:'', body:'', items:rnd(BANCO.stats), cta:''},
+    {tipo:'debate', fondo:seq[5], eye:'Tú decides',
+      head: ai?ai.debate_q:deb[0],
+      body:'',
+      items:[ai?ai.debate_a:deb[1], ai?ai.debate_b:deb[2]],
+      cta:'Comenta tu respuesta ↓'},
+    {tipo:'cta',    fondo:seq[6], eye:'Siguiente paso',
+      head: ai?ai.cta_head:`Si quieres clientes que pagan lo que vales,\nescríbeme una palabra.`,
+      body: ai?ai.cta_body:`Sin rodeos. Te cuento cómo lo haría para tu empresa de reformas.`,
+      items:[], cta:ai?`Escríbeme ${ai.cta_word} →`:`${cta} →`},
+  ];
+  return todos.slice(0, numSlides);
+}
+
+/* ─── Construir post único ─── */
+function buildPost(angulo,ai){
+  const hooksArr=BANCO.hooks[angulo]||BANCO.hooks.sistema;
+  const tipo=rnd(['hook','frase']);
+  const fondo=rnd(['dark','light','blue']);
+  const eye=rnd(BANCO.eyebrows);
+  const cta=rnd(BANCO.ctas);
+  if(tipo==='frase'){
+    return[{tipo:'frase',fondo,eye,
+      head:ai?ai.frase:rnd(BANCO.frases),
+      body:ai?ai.frase_sub:rnd(BANCO.subtitulos),
+      items:[],cta:`${cta} →`}];
+  }
+  return[{tipo:'post',fondo,eye,
+    head:ai?ai.hook:rnd(hooksArr),
+    body:ai?ai.hook_sub:rnd(BANCO.subtitulos),
+    items:[],cta:`${cta} →`}];
+}
+
+/* ═══════════════════════════════════════════
+   PANEL COPY
+   ═══════════════════════════════════════════ */
+function actualizarCopy(angulo, ai){
+  const copyData = BANCO.instagramCopy[angulo] || BANCO.instagramCopy.default;
+  const hook = ai ? ai.hook : (BANCO.hooks[angulo]?BANCO.hooks[angulo][0]:'');
+  const caption = copyData.caption;
+  const hashtags = copyData.hashtags;
+
+  const container = document.getElementById('copyContent');
+  container.innerHTML = `
+    <div class="copy-label">Hook (headline)</div>
+    <div class="copy-text">${hook}</div>
+    <button class="cbtn" onclick="copiar(this.previousElementSibling.textContent)">📋 Copiar hook</button>
+    <div class="copy-label">Caption Instagram</div>
+    <div class="copy-text">${caption}</div>
+    <button class="cbtn" onclick="copiar(this.previousElementSibling.textContent)">📋 Copiar caption</button>
+    <div class="copy-label">Hashtags</div>
+    <div class="copy-text hashtags">${hashtags}</div>
+    <button class="cbtn" onclick="copiar(this.previousElementSibling.textContent)">📋 Copiar hashtags</button>
+    <div class="copy-label" style="margin-top:4px">Todo junto</div>
+    <button class="cbtn" onclick="copiarTodo('${angulo}','${encodeURIComponent(hook)}')">📋 Copiar caption + hashtags</button>
+  `;
+
+  actualizarPromptsMJ(angulo);
+}
+
+/* ═══════════════════════════════════════════
+   PROMPTS MIDJOURNEY / DALL·E
+   ═══════════════════════════════════════════ */
+const MJ_BASE = '--ar 4:5 --style raw --v 6.1 --q 2';
+const MJ_BASE_SQ = '--ar 1:1 --style raw --v 6.1 --q 2';
+
+const MJ_PROMPTS = {
+  // Por tipo de slide
+  foto_hook: [
+    'modern spanish home renovation, open plan living room, white walls, warm lighting, minimal furniture, editorial photography, architectural digest style',
+    'beautiful kitchen renovation spain, marble countertops, dark cabinetry, professional photo, interior design magazine',
+    'luxury bathroom renovation, freestanding bathtub, natural stone, soft light, high-end real estate photo',
+  ],
+  foto_empresario: [
+    'spanish male entrepreneur 40s, professional business photo, modern office, blue jacket, confident smile, editorial portrait',
+    'construction company owner spain, professional headshot, neutral background, business attire, trust and authority',
+    'renovation company director, professional portrait, modern workspace, natural light, high-end corporate photography',
+  ],
+  foto_media_buyer: [
+    'marketing dashboard on laptop screen, meta ads manager, campaign results, dark office, blue light, professional workspace, top view flat lay',
+    'digital marketing graphs charts growing, facebook ads performance, clean data visualization, dark background, blue accent colors',
+    'media buyer workspace, dual monitors showing ad campaigns, analytics dashboard, modern dark office, professional atmosphere',
+  ],
+  foto_antes: [
+    'old outdated kitchen before renovation, worn cabinets, dated style, realistic interior photo, natural light',
+    'bathroom before renovation, old tiles, outdated fixtures, worn surfaces, realistic documentary photography',
+    'living room before renovation, old furniture, worn walls, dated interior, realistic photo',
+  ],
+  foto_despues: [
+    'stunning modern kitchen after renovation, new cabinets, stone countertops, professional interior photography, warm lighting',
+    'luxury bathroom after renovation, new tiles, modern fixtures, spa atmosphere, architectural photography',
+    'contemporary living room after renovation, clean design, neutral palette, designer furniture, natural light',
+  ],
+  foto_autoridad: [
+    'professional woman media buyer 35 years old, blue blazer, laptop, modern office, confident posture, editorial portrait, natural light',
+    'female marketing strategist, professional headshot, home office, warm neutral tones, approachable and expert look',
+  ],
+  foto_graficas: [
+    'facebook meta ads dashboard showing positive ROI results, laptop screen, dark office, professional photo, blue screen glow',
+    'google ads campaign analytics showing growth charts, marketing results dashboard, professional workspace photography',
+    'social media marketing results presentation, graphs showing increase, business meeting, professional environment',
+  ],
+};
+
+// Búsquedas Pexels sugeridas por ángulo
+const PEXELS_SUGERIDAS = {
+  bocaboca:   ['home renovation', 'construction worker', 'house remodel'],
+  regateo:    ['business negotiation', 'renovation quote', 'construction budget'],
+  saturacion: ['stressed businessman', 'overworked entrepreneur', 'construction stress'],
+  autoridad:  ['professional woman laptop', 'marketing expert', 'business authority'],
+  sistema:    ['business growth chart', 'marketing dashboard', 'sales funnel'],
+  tiempo:     ['family home', 'work life balance', 'evening dinner family'],
+  familia:    ['happy family home', 'renovation new home', 'family house'],
+  premium:    ['luxury home renovation', 'high end interior', 'premium kitchen'],
+  objecion:   ['business meeting', 'client presentation', 'marketing strategy'],
+  precio:     ['renovation quote', 'construction budget', 'home improvement cost'],
+  margen:     ['business profit', 'revenue growth', 'construction company success'],
+  estabilidad:['modern renovated home', 'beautiful interior', 'home transformation'],
+  resultados: ['marketing results', 'business analytics', 'campaign success'],
+  default:    ['home renovation', 'interior design', 'modern house'],
+};
+
+function actualizarPromptsMJ(angulo){
+  const tipo = SLIDES[cur]?.tipo || 'hook';
+  const esSq = isSq();
+  const params = esSq ? MJ_BASE_SQ : MJ_BASE;
+
+  // Seleccionar prompts relevantes según slide activo y ángulo
+  let prompts = [];
+
+  if(['foto','fototxt'].includes(tipo)){
+    prompts = MJ_PROMPTS.foto_hook;
+  } else if(tipo==='bafoto'){
+    prompts = [...MJ_PROMPTS.foto_antes.slice(0,1), ...MJ_PROMPTS.foto_despues.slice(0,1)];
+  } else if(tipo==='autoridad'){
+    prompts = MJ_PROMPTS.foto_autoridad;
+  } else if(['autoridad','sistema','resultados'].includes(angulo)){
+    prompts = [...MJ_PROMPTS.foto_media_buyer, ...MJ_PROMPTS.foto_graficas];
+  } else if(['premium','estabilidad','margen'].includes(angulo)){
+    prompts = MJ_PROMPTS.foto_hook;
+  } else {
+    prompts = [...MJ_PROMPTS.foto_hook.slice(0,1), ...MJ_PROMPTS.foto_empresario.slice(0,1), ...MJ_PROMPTS.foto_media_buyer.slice(0,1)];
+  }
+
+  // Búsquedas Pexels sugeridas
+  const pexelsSug = PEXELS_SUGERIDAS[angulo] || PEXELS_SUGERIDAS.default;
+
+  const mjEl = document.getElementById('mjContent');
+  if(!mjEl) return;
+
+  mjEl.innerHTML = `
+    <div class="copy-label" style="margin-top:0">Buscar en Pexels</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+      ${pexelsSug.map(q=>`<span class="mj-tag" style="cursor:pointer" onclick="buscarPexelsTermino('${q}')">${q}</span>`).join('')}
+    </div>
+
+    <div class="copy-label" style="margin-top:10px">Prompts Midjourney / DALL·E</div>
+    <div style="font-size:8px;color:var(--UI-M);margin-bottom:6px">Copia, pega en Midjourney o ChatGPT Image. El estilo ya incluye los parámetros.</div>
+    ${prompts.map((pr,i)=>`
+      <div class="mj-block" id="mjp${i}">${pr}, ${params}</div>
+      <button class="cbtn" onclick="copiar(document.getElementById('mjp${i}').textContent)">📋 Copiar prompt ${i+1}</button>
+    `).join('')}
+
+    <div class="copy-label" style="margin-top:8px">Prompt estilo marca RM</div>
+    <div class="mj-block" id="mjpRM">dark minimal background #1A1A1A, white cream text overlay, blue accent #38B6FF, instagram post design for renovation company marketing, professional editorial style, montserrat font aesthetic ${params}</div>
+    <button class="cbtn" onclick="copiar(document.getElementById('mjpRM').textContent)">📋 Copiar prompt marca</button>
+  `;
+}
+
+/* ═══════════════════════════════════════════
+   PEXELS API
+   ═══════════════════════════════════════════ */
+function guardarKeyPexels(val){
+  localStorage.setItem('pexels_key', val);
+}
+
+function getPexelsKey(){
+  const saved = localStorage.getItem('pexels_key');
+  const input = document.getElementById('pexelsKey');
+  if(input && saved) input.value = saved;
+  return saved || (input ? input.value : '');
+}
+
+function esLocalhost(){
+  return location.protocol === 'http:' || location.protocol === 'https:';
+}
+
+function actualizarTagsPexels(angulo){
+  const tags = PEXELS_SUGERIDAS[angulo] || PEXELS_SUGERIDAS.default;
+  const el = document.getElementById('pexelsTags');
+  if(!el) return;
+  el.innerHTML = tags.map(t=>
+    `<span class="mj-tag" style="cursor:pointer" onclick="buscarPexelsTermino('${t}')">${t}</span>`
+  ).join('');
+  // Mostrar aviso si aún está en file://
+  const st = document.getElementById('pexelsStatus');
+  if(st){
+    if(!esLocalhost()){
+      st.style.color = '#ff9f43';
+      st.textContent = '⚠ Doble clic en iniciar.bat para activar búsqueda';
+    } else {
+      st.style.color = '#38B6FF';
+      st.textContent = '✓ Conectado — busca cualquier foto';
+    }
+  }
+}
+
+async function buscarPexels(){
+  const q = document.getElementById('pexelsQ')?.value?.trim();
+  if(!q){ toast2('Escribe algo para buscar'); return; }
+  const keyInput = document.getElementById('pexelsKey');
+  if(keyInput?.value) guardarKeyPexels(keyInput.value);
+  buscarPexelsTermino(q);
+}
+
+async function buscarPexelsTermino(q){
+  const qInput = document.getElementById('pexelsQ');
+  if(qInput) qInput.value = q;
+
+  // Abrir biblioteca si está cerrada
+  const lib = document.getElementById('mediaLib');
+  if(lib.classList.contains('hidden')) toggleMedia();
+
+  // Comprobar si estamos en servidor local
+  if(!esLocalhost()){
+    const grid = document.getElementById('pexelsGrid');
+    const res  = document.getElementById('pexelsResults');
+    if(res) res.style.display = 'flex';
+    if(grid) grid.innerHTML = `<div class="mlib-empty" style="color:#ff9f43;line-height:1.8">
+      ⚠️ Abre con <b style="color:var(--UI-T)">iniciar.bat</b><br>
+      para activar Pexels.<br><br>
+      <span style="font-size:8px;color:var(--UI-M)">Doble clic en la carpeta POSTS</span>
+    </div>`;
+    return;
+  }
+
+  const keyInput = document.getElementById('pexelsKey');
+  const key = (keyInput?.value?.trim()) || localStorage.getItem('pexels_key') || '';
+  if(!key){
+    toast2('Pega tu API Key de Pexels');
+    document.getElementById('pexelsKey')?.focus();
+    return;
+  }
+
+  const resultsBox = document.getElementById('pexelsResults');
+  const grid = document.getElementById('pexelsGrid');
+  resultsBox.style.display = 'flex';
+  grid.innerHTML = '<div class="mlib-empty">🔍 Buscando...</div>';
+
+  try{
+    const res = await fetch(
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=16&orientation=portrait`,
+      { headers:{ 'Authorization': key } }
+    );
+    if(res.status === 401){
+      grid.innerHTML = '<div class="mlib-empty" style="color:#ff6b6b">❌ API Key incorrecta</div>';
+      return;
+    }
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if(!data.photos?.length){
+      grid.innerHTML = '<div class="mlib-empty">Sin resultados.<br>Prueba otro término.</div>';
+      return;
+    }
+    grid.innerHTML = data.photos.map(ph=>`
+      <div class="mlib-item pexels-item" title="📷 ${ph.photographer}">
+        <img src="${ph.src.medium}" loading="lazy" alt="${ph.alt||''}">
+        <button class="mlib-use" onclick="importarFotoPexels('${(ph.src.large2x||ph.src.large).replace(/'/g,'%27')}','${ph.photographer.replace(/['"]/g,'')}')">Usar</button>
+      </div>`).join('');
+  }catch(e){
+    grid.innerHTML = `<div class="mlib-empty" style="color:#ff6b6b">Error: ${e.message}</div>`;
+  }
+}
+
+async function importarFotoPexels(url, autor){
+  toast2('Descargando foto...');
+  try{
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const id = ++mediaIdCounter;
+      MEDIA.push({id, url: e.target.result, name:`Pexels · ${autor}`});
+      renderMediaGrid();
+      toast2(`✓ Foto de ${autor} añadida a tu biblioteca`);
+      // Asignar automáticamente si hay target activo
+      if(asignandoTarget) asignarImagen(id, asignandoTarget);
+    };
+    reader.readAsDataURL(blob);
+  }catch(e){
+    toast2('Error al descargar la foto');
+  }
+}
+
+function copiar(txt){
+  navigator.clipboard.writeText(txt.trim()).then(toast).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=txt.trim();document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);toast();
+  });
+}
+
+function copiarTodo(angulo, hookEnc){
+  const copyData = BANCO.instagramCopy[angulo] || BANCO.instagramCopy.default;
+  const full = decodeURIComponent(hookEnc) + '\n\n' + copyData.caption + '\n\n' + copyData.hashtags;
+  copiar(full);
+}
+
+function toast(){
+  const t=document.getElementById('toast');
+  t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),1800);
+}
+
+/* ═══════════════════════════════════════════
+   ESCALA STAGE
+   ═══════════════════════════════════════════ */
+function scaleStage(){
+  const stage=document.getElementById('stage');
+  const inner=document.getElementById('stageInner');
+  if(!stage||!inner) return;
+  const w=stage.offsetWidth;
+  const scale=w/1080;
+  inner.style.transform=`scale(${scale})`;
+  inner.style.width='1080px';
+  inner.style.height='1350px';
+  stage.style.height=(1350*scale)+'px';
+}
+
+/* ═══════════════════════════════════════════
+   MODO POST / CARRUSEL
+   ═══════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════
+   MOSTRAR SLIDE
+   ═══════════════════════════════════════════ */
+function show(i){
+  if(!SLIDES.length) return;
+  cur=Math.max(0,Math.min(i,SLIDES.length-1));
+  document.getElementById('stageInner').innerHTML=render(SLIDES[cur],cur);
+  scaleStage();
+  const total=SLIDES.length;
+  document.getElementById('navCnt').textContent=`${cur+1} / ${total}`;
+  document.getElementById('bPrev').disabled=cur===0;
+  document.getElementById('bNext').disabled=cur===total-1;
+  document.querySelectorAll('.thumb').forEach((el,j)=>el.classList.toggle('active',j===cur));
+  const d=SLIDES[cur];
+  document.getElementById('cTipo').value=d.tipo;
+  document.getElementById('cFondo').value=d.fondo;
+  document.getElementById('cEye').value=d.eye||'';
+  document.getElementById('cHead').value=d.head||'';
+  document.getElementById('cBody').value=d.body||'';
+  document.getElementById('cCta').value=d.cta||'';
+  renderItemsList();
+  sincronizarPanelImg(d);
+}
+function nav(dir){show(cur+dir)}
+
+function moverSlide(dir){
+  if(!SLIDES.length) return;
+  const nueva = cur + dir;
+  if(nueva < 0 || nueva >= SLIDES.length) return;
+  // Intercambiar posiciones
+  [SLIDES[cur], SLIDES[nueva]] = [SLIDES[nueva], SLIDES[cur]];
+  cur = nueva;
+  buildThumbs();
+  show(cur);
+}
+
+function ed(f,v){
+  if(!SLIDES.length) return;
+  const d=SLIDES[cur];
+  if(f==='tipo')    d.tipo=v;
+  if(f==='fondo')   d.fondo=v;
+  if(f==='eye')     d.eye=v;
+  if(f==='head')    d.head=v;
+  if(f==='body')    d.body=v;
+  if(f==='cta')     d.cta=v;
+  if(f==='overlay')   d.overlay=v;
+  if(f==='imgX')      d.imgX=parseInt(v);
+  if(f==='imgY')      d.imgY=parseInt(v);
+  if(f==='imgZoom')   d.imgZoom=parseInt(v);
+  if(f==='txtPos')    d.txtPos=v;
+  if(f==='imgLayout') d.imgLayout=v;
+  show(cur);
+  refreshThumb(cur);
+}
+
+/* ═══════════════════════════════════════════
+   ITEMS DINÁMICOS
+   ═══════════════════════════════════════════ */
+function addItem(txt=''){
+  if(!SLIDES.length) return;
+  const d=SLIDES[cur];
+  if(!d.items) d.items=[];
+  if(d.items.length>=6) return;
+  d.items.push(txt);
+  renderItemsList();
+  show(cur);
+  refreshThumb(cur);
+  // foco en el nuevo campo
+  const rows=document.querySelectorAll('.item-row textarea');
+  if(rows.length) rows[rows.length-1].focus();
+}
+
+function removeItem(i){
+  if(!SLIDES.length) return;
+  const d=SLIDES[cur];
+  d.items.splice(i,1);
+  renderItemsList();
+  show(cur);
+  refreshThumb(cur);
+}
+
+function editItemTxt(i,v){
+  if(!SLIDES.length) return;
+  SLIDES[cur].items[i]=v;
+  show(cur);
+  refreshThumb(cur);
+}
+
+function renderItemsList(){
+  const d=SLIDES[cur];
+  const items=d?d.items||[]:[];
+  const list=document.getElementById('itemsList');
+  const count=document.getElementById('itemsCount');
+  if(!list) return;
+  count.textContent=`${items.length}/6`;
+  list.innerHTML=items.map((it,i)=>`
+    <div class="item-row">
+      <span class="item-num">${i+1}</span>
+      <textarea rows="2" oninput="editItemTxt(${i},this.value)">${it}</textarea>
+      <button class="item-del" onclick="removeItem(${i})">✕</button>
+    </div>`).join('');
+}
+function setV(k,v){document.documentElement.style.setProperty(k,v);show(cur);buildThumbs()}
+
+/* ═══════════════════════════════════════════
+   THUMBNAILS
+   ═══════════════════════════════════════════ */
+const TIPO_L={hook:'Hook',frase:'Frase',ba:'BA Texto',lista:'Lista',
+  stats:'Stats',proceso:'Proceso',servicio:'Servicio',debate:'Debate',
+  cta:'CTA',post:'Post',foto:'Foto BG',bafoto:'BA Foto',
+  fototxt:'Foto+Txt',autoridad:'Autoridad'};
+
+function buildThumbs(){
+  const panel=document.getElementById('sideL');
+  const lbl=panel.querySelector('.sl-lbl');
+  panel.innerHTML='';panel.appendChild(lbl);
+  if(modo==='post'){return}
+  SLIDES.forEach((d,i)=>{
+    const wrap=document.createElement('div');
+    wrap.className='thumb'+(i===cur?' active':'');
+    wrap.onclick=()=>show(i);
+    const inner=document.createElement('div');
+    inner.className='thumb-inner';
+    const host=document.createElement('div');
+    host.className='thumb-host';
+    host.innerHTML=render(d,i);
+    inner.appendChild(host);
+    requestAnimationFrame(()=>{
+      const w=inner.offsetWidth||128;
+      const s=w/1080;
+      host.style.transform=`scale(${s})`;
+      inner.style.height=(1350*s)+'px';
+    });
+    const numEl=document.createElement('div');
+    numEl.className='thumb-num';
+    numEl.textContent=String(i+1).padStart(2,'0');
+    const chipEl=document.createElement('div');
+    chipEl.className='thumb-chip';
+    chipEl.textContent=TIPO_L[d.tipo]||d.tipo;
+    wrap.appendChild(inner);wrap.appendChild(numEl);wrap.appendChild(chipEl);
+    panel.appendChild(wrap);
+  });
+}
+function refreshThumb(i){
+  const ts=document.querySelectorAll('.thumb');
+  if(!ts[i]) return;
+  const host=ts[i].querySelector('.thumb-host');
+  if(!host) return;
+  const inner=ts[i].querySelector('.thumb-inner');
+  host.innerHTML=render(SLIDES[i],i);
+  const w=inner.offsetWidth||128;
+  host.style.transform=`scale(${w/1080})`;
+}
+
+/* ═══════════════════════════════════════════
+   BIBLIOTECA TOGGLE
+   ═══════════════════════════════════════════ */
+function toggleMedia(){
+  const lib = document.getElementById('mediaLib');
+  const btn = document.getElementById('btnMedia');
+  const hidden = lib.classList.toggle('hidden');
+  btn.classList.toggle('on', !hidden);
+}
+
+/* ═══════════════════════════════════════════
+   GUÍAS
+   ═══════════════════════════════════════════ */
+function toggleExpMenu(){
+  document.getElementById('expMenu').classList.toggle('on');
+}
+// Cerrar dropdown al clicar fuera
+document.addEventListener('click', e=>{
+  const wrap = document.getElementById('expWrap');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('expMenu').classList.remove('on');
+  }
+});
+
+function toggleGuias(){
+  guias=!guias;
+  document.getElementById('safeRing').classList.toggle('on',guias);
+  ['btnG','btnG2'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.classList.toggle('on',guias);el.textContent=guias?'Guías ✓':'Guías'}
+  });
+  document.getElementById('btnG2').textContent=guias?'On':'Off';
+}
+
+/* ═══════════════════════════════════════════
+   EXPORTAR
+   ═══════════════════════════════════════════ */
+async function capture(i){
+  const d=SLIDES[i];
+  const H=1350;
+  const root=getComputedStyle(document.documentElement);
+  const vars=['--C-DARK','--C-LIGHT','--C-BLUE']
+    .map(k=>`${k}:${root.getPropertyValue(k).trim()}`).join(';');
+  const wrap=document.createElement('div');
+  wrap.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:1080px;height:${H}px;overflow:hidden;`;
+  wrap.innerHTML=render(d,i);
+  const st=document.createElement('style');
+  st.textContent=`
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap');
+    :root{${vars};--C-BLUE2:#1A9AE8;--F-SER:'Playfair Display',Georgia,serif;--F-SAN:'Montserrat',system-ui,sans-serif}`;
+  wrap.appendChild(st);
+  document.body.appendChild(wrap);
+  try{
+    const cv=await html2canvas(wrap,{width:1080,height:H,scale:1,
+      useCORS:true,allowTaint:true,backgroundColor:null,logging:false});
+    document.body.removeChild(wrap);return cv;
+  }catch(e){document.body.removeChild(wrap);throw e}
+}
+
+async function expActual(){
+  if(!SLIDES.length) return;
+  const ov=document.getElementById('expOv');
+  const msg=document.getElementById('expMsg');
+  const bar=document.getElementById('expBar');
+  ov.classList.add('on');bar.style.width='0%';
+  msg.textContent=`Exportando ${modo==='post'?'post':'slide '+(cur+1)}...`;
+  try{
+    const cv=await capture(cur);bar.style.width='100%';
+    await delay(250);
+    const a=document.createElement('a');
+    a.download=`rm-${modo}-${String(cur+1).padStart(2,'0')}.png`;
+    a.href=cv.toDataURL('image/png');a.click();
+  }catch(e){alert('Error al exportar.');}
+  ov.classList.remove('on');
+}
+
+async function expTodos(){
+  if(!SLIDES.length) return;
+  const ov=document.getElementById('expOv');
+  const msg=document.getElementById('expMsg');
+  const bar=document.getElementById('expBar');
+  ov.classList.add('on');
+
+  // Usar JSZip si está disponible
+  if(typeof JSZip !== 'undefined'){
+    const zip = new JSZip();
+    for(let i=0;i<SLIDES.length;i++){
+      bar.style.width=Math.round(i/SLIDES.length*100)+'%';
+      msg.textContent=`Generando ${i+1} de ${SLIDES.length}...`;
+      try{
+        const cv=await capture(i);
+        const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+        zip.file(`rm_slide_${String(i+1).padStart(2,'0')}_1080x${isSq()?1080:1350}.png`,blob);
+        await delay(80);
+      }catch(e){console.error(e)}
+    }
+    bar.style.width='100%';
+    msg.textContent='Empaquetando ZIP...';
+    const content=await zip.generateAsync({type:'blob'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(content);
+    a.download=`rm_carrusel_${SLIDES.length}_slides.zip`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    msg.textContent=`✓ ${SLIDES.length} slides en ZIP`;
+  } else {
+    // Fallback: descargar uno a uno
+    for(let i=0;i<SLIDES.length;i++){
+      bar.style.width=Math.round(i/SLIDES.length*100)+'%';
+      msg.textContent=`Exportando ${i+1} de ${SLIDES.length}...`;
+      try{
+        const cv=await capture(i);
+        const a=document.createElement('a');
+        a.download=`rm-carrusel-${String(i+1).padStart(2,'0')}.png`;
+        a.href=cv.toDataURL('image/png');a.click();
+        await delay(700);
+      }catch(e){console.error(e)}
+    }
+    bar.style.width='100%';
+    msg.textContent=`✓ ${SLIDES.length} archivos exportados`;
+  }
+  await delay(1200);
+  ov.classList.remove('on');
+}
+
+/* ═══════════════════════════════════════════
+   EXPORT PPTX — editable en Canva
+   ═══════════════════════════════════════════ */
+async function expPPTX(){
+  if(!SLIDES.length){ alert('Genera contenido primero.'); return; }
+  if(typeof PptxGenJS === 'undefined'){ alert('Cargando librería PPTX, espera un momento y vuelve a intentarlo.'); return; }
+
+  const ov = document.getElementById('expOv');
+  const msg = document.getElementById('expMsg');
+  const bar = document.getElementById('expBar');
+  ov.classList.add('on');
+  msg.textContent = 'Generando PPTX...';
+  bar.style.width = '0%';
+
+  const pptx = new PptxGenJS();
+  // Formato 4:5 Instagram (en pulgadas)
+  pptx.defineLayout({ name:'IG45', width:10.8, height:13.5 });
+  pptx.layout = 'IG45';
+
+  // Colores de marca
+  const CDARK  = '1A1A1A';
+  const CLIGHT = 'F5F1EA';
+  const CBLUE  = '38B6FF';
+
+  // Escala px→pulgadas (1080px = 10.8in)
+  const sc = v => parseFloat((v / 100).toFixed(4));
+
+  for(let i=0;i<SLIDES.length;i++){
+    const d = SLIDES[i];
+    bar.style.width = Math.round((i/SLIDES.length)*80)+'%';
+    msg.textContent = `Slide ${i+1} de ${SLIDES.length}...`;
+    await delay(30);
+
+    const slide = pptx.addSlide();
+    const bgColor = d.fondo==='light' ? CLIGHT : d.fondo==='blue' ? CBLUE : CDARK;
+    slide.background = { color: bgColor };
+
+    const txtC = d.fondo==='dark' ? 'F5F1EA' : '1A1A1A';
+    const subC = d.fondo==='dark' ? 'A0A0A0' : '555555';
+    const accC = CBLUE;
+
+    // Imagen de fondo (slides con foto)
+    if(['foto','fototxt','autoridad','bafoto'].includes(d.tipo)){
+      const url = getImgUrl(d.imgFondo || d.imgAntes);
+      if(url){
+        try{
+          slide.addImage({ data: url, x:0, y:0, w:10.8, h:13.5, sizing:{type:'cover',w:10.8,h:13.5} });
+          // Overlay oscuro
+          slide.addShape(pptx.ShapeType.rect, { x:0, y:0, w:10.8, h:13.5,
+            fill:{ color:'000000', transparency:45 }, line:{color:'000000',transparency:100} });
+        }catch(e){}
+      }
+    }
+
+    // Barra de acento superior
+    slide.addShape(pptx.ShapeType.rect, { x:sc(90), y:sc(86), w:sc(44), h:sc(3), fill:{color:CBLUE}, line:{color:CBLUE,transparency:100} });
+
+    // Eyebrow
+    if(d.eye){
+      slide.addText(d.eye.toUpperCase(), {
+        x:sc(148), y:sc(82), w:sc(800), h:sc(40),
+        fontSize:10, color:subC, fontFace:'Montserrat',
+        charSpacing:3, bold:true,
+      });
+    }
+
+    // Headline
+    if(d.head){
+      const headTxt = d.head.replace(/\*\*(.+?)\*\*/g,'$1').replace(/\*(.+?)\*/g,'$1');
+      slide.addText(headTxt, {
+        x:sc(90), y:sc(200), w:sc(900), h:sc(700),
+        fontSize:Math.round(T.head*0.72), color:txtC,
+        fontFace:'Montserrat', bold:false,
+        valign:'middle', wrap:true, lineSpacingMultiple:1.15,
+      });
+    }
+
+    // Cuerpo
+    if(d.body){
+      slide.addText(d.body, {
+        x:sc(90), y:sc(920), w:sc(900), h:sc(200),
+        fontSize:Math.round(T.body*0.72), color:subC,
+        fontFace:'Montserrat', wrap:true, lineSpacingMultiple:1.4,
+      });
+    }
+
+    // Items (lista)
+    if(d.items?.length && ['lista','servicio','proceso'].includes(d.tipo)){
+      const itemY = 820;
+      const itemH = Math.floor(900/d.items.length);
+      d.items.forEach((it,j)=>{
+        const txt = it.replace(/\*\*(.+?)\*\*/g,'$1').replace(/\*(.+?)\*/g,'$1');
+        slide.addText(`${String(j+1).padStart(2,'0')}  ${txt}`, {
+          x:sc(90), y:sc(itemY+(j*itemH)), w:sc(900), h:sc(itemH-10),
+          fontSize:Math.round(T.items*0.65), color:txtC,
+          fontFace:'Montserrat', wrap:true,
+        });
+      });
+    }
+
+    // Footer: handle + CTA
+    slide.addText(HANDLE, {
+      x:sc(90), y:sc(1260), w:sc(400), h:sc(30),
+      fontSize:9, color:subC, fontFace:'Montserrat', charSpacing:2, bold:true,
+    });
+    if(d.cta){
+      slide.addText(d.cta, {
+        x:sc(590), y:sc(1255), w:sc(400), h:sc(40),
+        fontSize:10, color:accC, fontFace:'Montserrat',
+        align:'right', bold:true, charSpacing:1,
+      });
+    }
+  }
+
+  bar.style.width = '95%';
+  msg.textContent = 'Guardando archivo...';
+  await pptx.writeFile({ fileName:`RM_carrusel_${SLIDES.length}_slides.pptx` });
+
+  bar.style.width = '100%';
+  msg.textContent = '✓ PPTX listo — importa en Canva';
+  await delay(1800);
+  ov.classList.remove('on');
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded',async()=>{
+  actualizarAngulos();
+  // Restaurar API key guardada
+  const savedKey = localStorage.getItem('pexels_key');
+  if(savedKey){ const ki=document.getElementById('pexelsKey'); if(ki) ki.value=savedKey; }
+  const angulo=rnd(Object.keys(BANCO.angulos));
+  const slides=buildCarrusel(angulo,null,7);
+  slides.forEach(s=>SLIDES.push(s));
+  buildThumbs();
+  show(0);
+  scaleStage();
+  actualizarCopy(angulo, null);
+  actualizarTagsPexels(angulo);
+  window.addEventListener('resize',scaleStage);
+
+  // Pre-cargar foto de perfil profesional en la biblioteca
+  precargarImagen('FOTO PERFIL PROFESIONAL.png', 'Rosa María — Foto perfil');
+  // Pre-cargar feed principal como referencia visual
+  precargarImagen('FEED ROSA PRINCIPAL.png', 'Feed principal RM');
+
+  // Drag & drop en la biblioteca
+  const drop = document.getElementById('mlibDrop');
+  drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave',()=> drop.classList.remove('drag'));
+  drop.addEventListener('drop', e=>{
+    e.preventDefault(); drop.classList.remove('drag');
+    cargarImagenes(e.dataTransfer.files);
+  });
+});
+
+async function precargarImagen(src, name){
+  try{
+    const res = await fetch(src);
+    if(!res.ok) return;
+    const blob = await res.blob();
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const id = ++mediaIdCounter;
+      MEDIA.push({id, url: e.target.result, name});
+      renderMediaGrid();
+    };
+    reader.readAsDataURL(blob);
+  }catch(e){
+    // archivo no accesible desde file:// — normal, se ignora silenciosamente
+  }
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown') nav(1);
+  if(e.key==='ArrowLeft' ||e.key==='ArrowUp')   nav(-1);
+});
+</script>
+</body>
+</html>
