@@ -767,7 +767,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <div class="tb-mono">RM</div>
     <div>
       <div class="tb-name">Rosa María Studio</div>
-      <div class="tb-sub">Generador de contenido · v9</div>
+      <div class="tb-sub">Generador de contenido · v10</div>
     </div>
   </div>
 
@@ -1100,10 +1100,12 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <label>Pilar estratégico</label>
           <select id="cPilar" onchange="actualizarAngulos()">
             <option value="dolor">💔 Dolor — Agitar el problema</option>
-            <option value="deseo">✨ Deseo — La vida que quiere</option>
+            <option value="educativo">📚 Educativo — Enseñar con criterio</option>
             <option value="autoridad">🏆 Autoridad — Prueba y credibilidad</option>
-            <option value="reencuadre">🔄 Reencuadre — Romper creencias</option>
             <option value="conversion">🎯 Conversión — Llamada a actuar</option>
+            <option value="reframe">🔄 Reframe — Romper creencias</option>
+            <option value="servicio">🛠 Servicio — Cómo trabajas</option>
+            <option value="objecion">🛡 Objeción — Responder dudas</option>
           </select>
         </div>
         <div class="crow">
@@ -1151,10 +1153,12 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <select id="bancoFiltroPilar" onchange="renderBanco()" style="background:#0A0A0A;border:1px solid var(--UI-B);color:var(--UI-T);padding:4px 5px;border-radius:3px;font-size:9px">
             <option value="">Todos pilares</option>
             <option value="Dolor">Dolor</option>
-            <option value="Deseo">Deseo</option>
             <option value="Educativo">Educativo</option>
             <option value="Autoridad">Autoridad</option>
             <option value="Conversion">Conversión</option>
+            <option value="Reframe">Reframe</option>
+            <option value="Servicio">Servicio</option>
+            <option value="Objecion">Objeción</option>
           </select>
         </div>
         <!-- Toggle ocultar usadas -->
@@ -1230,11 +1234,13 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
    ════════════════════════════════════════════════════════ */
 
 const PILARES_MAP = {
-  dolor:      ['bocaboca','regateo','saturacion','autoridad','tiempo','familia'],
-  deseo:      ['estabilidad','premium','margen','familia'],
-  autoridad:  ['autoridad','sistema','resultados'],
-  reencuadre: ['bocaboca','objecion','precio','saturacion'],
-  conversion: ['bocaboca','regateo','estabilidad','sistema'],
+  dolor:      ['bocaboca','regateo','saturacion','tiempo','familia'],
+  educativo:  ['sistema','autoridad','resultados','estabilidad'],
+  autoridad:  ['autoridad','sistema','resultados','premium'],
+  conversion: ['bocaboca','sistema','estabilidad','regateo'],
+  reframe:    ['objecion','precio','bocaboca','saturacion'],
+  servicio:   ['sistema','premium','resultados','autoridad'],
+  objecion:   ['objecion','precio','regateo','margen'],
 };
 
 const ANGULO_LABELS = {
@@ -3370,10 +3376,13 @@ function anguloDesdeIdea(idea){
   const dolor=(idea.dolor||'').toLowerCase();
   for(const k in MAP_PILAR_ANGULO){ if(dolor.includes(k.split(' ')[0])) return MAP_PILAR_ANGULO[k]; }
   const pil=(idea.pilar||'').toLowerCase();
-  if(pil.includes('dolor')) return 'bocaboca';
-  if(pil.includes('deseo')) return 'estabilidad';
-  if(pil.includes('autoridad')) return 'autoridad';
+  if(pil.includes('dolor'))      return 'bocaboca';
+  if(pil.includes('educativo'))  return 'sistema';
+  if(pil.includes('autoridad'))  return 'autoridad';
   if(pil.includes('conversion')) return 'sistema';
+  if(pil.includes('reframe'))    return 'objecion';
+  if(pil.includes('servicio'))   return 'sistema';
+  if(pil.includes('objecion'))   return 'objecion';
   return rnd(Object.keys(BANCO.angulos));
 }
 
