@@ -991,6 +991,40 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         </div>
       </div>
 
+      <!-- AJUSTE DE TEXTO (cualquier slide) -->
+      <div class="csec">
+        <div class="csec-h">
+          <span>Ajuste de texto (este slide)</span>
+          <button class="btn btn-gh" style="padding:3px 8px" onclick="resetTextoSlide()">Reset</button>
+        </div>
+        <div class="crow">
+          <label>Tamaño del texto</label>
+          <div class="rrow"><input type="range" id="rTxtScale" min="70" max="130" value="100" oninput="ed('txtScale',this.value);document.getElementById('vTxtScale').textContent=this.value+'%'"><span class="rval" id="vTxtScale">100%</span></div>
+        </div>
+        <div class="crow">
+          <label>Alineación</label>
+          <div class="img-ctrl-grid" style="grid-template-columns:1fr 1fr 1fr">
+            <button class="img-layout-btn on" id="alL" onclick="setTxtAlign('left')">⬅ Izq</button>
+            <button class="img-layout-btn" id="alC" onclick="setTxtAlign('center')">⬌ Centro</button>
+            <button class="img-layout-btn" id="alR" onclick="setTxtAlign('right')">➡ Der</button>
+          </div>
+        </div>
+        <div class="crow">
+          <label>Posición vertical</label>
+          <div class="img-ctrl-grid" style="grid-template-columns:1fr 1fr 1fr">
+            <button class="img-layout-btn" id="vpT" onclick="setTxtVPos('top')">⬆ Arriba</button>
+            <button class="img-layout-btn on" id="vpC" onclick="setTxtVPos('center')">● Centro</button>
+            <button class="img-layout-btn" id="vpB" onclick="setTxtVPos('bottom')">⬇ Abajo</button>
+          </div>
+        </div>
+        <div class="crow">
+          <label>Mover texto horizontal</label>
+          <div class="rrow"><input type="range" id="rTxtDX" min="-120" max="120" value="0" oninput="ed('txtDX',this.value);document.getElementById('vTxtDX').textContent=this.value+'px'"><span class="rval" id="vTxtDX">0px</span></div>
+          <label style="margin-top:5px">Mover texto vertical</label>
+          <div class="rrow"><input type="range" id="rTxtDY" min="-150" max="150" value="0" oninput="ed('txtDY',this.value);document.getElementById('vTxtDY').textContent=this.value+'px'"><span class="rval" id="vTxtDY">0px</span></div>
+        </div>
+      </div>
+
       <div class="csec">
         <div class="csec-h">Colores de marca</div>
         <div class="c3g">
@@ -2271,8 +2305,7 @@ function rCTA(d,n){
   <div class="BGN Cn" style="font-size:380px;opacity:.04">${n}</div>
 </div>`;}
 
-function render(d,i){
-  const n=String(i+1).padStart(2,'0');
+function renderTipo(d,n){
   switch(d.tipo){
     case'hook': case'post': return rHead(d,n);
     case'frase':            return rFrase(d,n);
@@ -2289,6 +2322,47 @@ function render(d,i){
     case'autoridad':        return rAutoridad(d,n);
     default:                return rHead(d,n);
   }
+}
+
+function render(d,i){
+  const n=String(i+1).padStart(2,'0');
+
+  // ── Escala de texto por slide (txtScale) ──
+  // Truco: escalamos T temporalmente para que TODOS los renderers
+  // respeten el tamaño de ESTE slide sin tocar cada función.
+  const scale = (d.txtScale ?? 100) / 100;
+  let html;
+  if(scale !== 1){
+    const bak = {...T};
+    T.head=Math.round(bak.head*scale); T.body=Math.round(bak.body*scale);
+    T.items=Math.round(bak.items*scale); T.eye=Math.round(bak.eye*scale);
+    T.cta=Math.round(bak.cta*scale); T.stat=Math.round(bak.stat*scale);
+    html = renderTipo(d,n);
+    T.head=bak.head; T.body=bak.body; T.items=bak.items;
+    T.eye=bak.eye; T.cta=bak.cta; T.stat=bak.stat;
+  } else {
+    html = renderTipo(d,n);
+  }
+
+  // ── Alineación + posición vertical + desplazamiento (no destructivo) ──
+  const align = d.txtAlign || 'left';
+  const vpos  = d.txtVPos || '';
+  const dx    = d.txtDX || 0;
+  const dy    = d.txtDY || 0;
+  const needsWrap = align!=='left' || vpos || dx || dy;
+  if(needsWrap){
+    // Inyectamos estilo scoped: marcamos el slide con un id único
+    const uid = 'sl'+i;
+    let css = `#${uid} h1,#${uid} p{text-align:${align}!important}`;
+    if(vpos==='top')    css += `#${uid} .zone,#${uid} .lzone,#${uid} [class*=zone]{justify-content:flex-start!important}`;
+    if(vpos==='bottom') css += `#${uid} .zone,#${uid} .lzone,#${uid} [class*=zone]{justify-content:flex-end!important}`;
+    if(vpos==='center') css += `#${uid} .zone,#${uid} .lzone,#${uid} [class*=zone]{justify-content:center!important}`;
+    if(dx||dy)          css += `#${uid} .SP,#${uid} .SP108{transform:translate(${dx}px,${dy}px)}`;
+    // Insertar id en el primer div .slide
+    html = html.replace(/class="slide/, `id="${uid}" class="slide`);
+    html = `<style>${css}</style>` + html;
+  }
+  return html;
 }
 
 /* ═══════════════════════════════════════════
@@ -2775,6 +2849,7 @@ function show(i){
   document.getElementById('cCta').value=d.cta||'';
   renderItemsList();
   sincronizarPanelImg(d);
+  sincronizarTextoSlide(d);
 }
 function nav(dir){show(cur+dir)}
 
@@ -2805,6 +2880,9 @@ function ed(f,v){
   if(f==='ovOpacity') d.ovOpacity=parseInt(v);
   if(f==='txtPos')    d.txtPos=v;
   if(f==='imgLayout') d.imgLayout=v;
+  if(f==='txtScale')  d.txtScale=parseInt(v);
+  if(f==='txtDX')     d.txtDX=parseInt(v);
+  if(f==='txtDY')     d.txtDY=parseInt(v);
   show(cur);
   refreshThumb(cur);
 }
@@ -2857,6 +2935,40 @@ function renderItemsList(){
     </div>`).join('');
 }
 function setV(k,v){document.documentElement.style.setProperty(k,v);show(cur);buildThumbs()}
+
+/* ── Controles de texto por slide ── */
+function setTxtAlign(a){
+  if(!SLIDES.length) return;
+  SLIDES[cur].txtAlign=a;
+  ['L','C','R'].forEach(k=>document.getElementById('al'+k)?.classList.remove('on'));
+  document.getElementById('al'+(a==='left'?'L':a==='center'?'C':'R'))?.classList.add('on');
+  show(cur); refreshThumb(cur);
+}
+function setTxtVPos(v){
+  if(!SLIDES.length) return;
+  SLIDES[cur].txtVPos=v;
+  ['T','C','B'].forEach(k=>document.getElementById('vp'+k)?.classList.remove('on'));
+  document.getElementById('vp'+(v==='top'?'T':v==='bottom'?'B':'C'))?.classList.add('on');
+  show(cur); refreshThumb(cur);
+}
+function resetTextoSlide(){
+  if(!SLIDES.length) return;
+  const d=SLIDES[cur];
+  d.txtScale=100; d.txtAlign='left'; d.txtVPos='center'; d.txtDX=0; d.txtDY=0;
+  sincronizarTextoSlide(d);
+  show(cur); refreshThumb(cur);
+}
+function sincronizarTextoSlide(d){
+  const sc=document.getElementById('rTxtScale'); if(sc){sc.value=d.txtScale??100; document.getElementById('vTxtScale').textContent=(d.txtScale??100)+'%'}
+  const dx=document.getElementById('rTxtDX'); if(dx){dx.value=d.txtDX??0; document.getElementById('vTxtDX').textContent=(d.txtDX??0)+'px'}
+  const dy=document.getElementById('rTxtDY'); if(dy){dy.value=d.txtDY??0; document.getElementById('vTxtDY').textContent=(d.txtDY??0)+'px'}
+  const al=d.txtAlign||'left';
+  ['L','C','R'].forEach(k=>document.getElementById('al'+k)?.classList.remove('on'));
+  document.getElementById('al'+(al==='left'?'L':al==='center'?'C':'R'))?.classList.add('on');
+  const vp=d.txtVPos||'center';
+  ['T','C','B'].forEach(k=>document.getElementById('vp'+k)?.classList.remove('on'));
+  document.getElementById('vp'+(vp==='top'?'T':vp==='bottom'?'B':'C'))?.classList.add('on');
+}
 
 /* ═══════════════════════════════════════════
    THUMBNAILS
