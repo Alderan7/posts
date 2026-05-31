@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script src="ideas365.js"></script>
 <style>
 /* ═══════════════════════════════════════════════════
    MANUAL DE BRANDING — PALETA EXACTA
@@ -591,6 +592,35 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .img-assign .ia-prev{width:24px;height:24px;border-radius:2px;object-fit:cover;flex-shrink:0}
 .img-assign .ia-none{width:24px;height:24px;border-radius:2px;background:var(--UI-B2);flex-shrink:0}
 
+/* Banco de ideas */
+.idea-card{
+  background:#0A0A0A;border:1px solid var(--UI-B);border-radius:5px;
+  padding:8px 9px;display:flex;flex-direction:column;gap:5px;
+  transition:border-color .15s;
+}
+.idea-card:hover{border-color:var(--UI-B2)}
+.idea-card.usada{opacity:.5}
+.idea-card.usada .idea-titulo{text-decoration:line-through}
+.idea-head{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.idea-dia{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--UI-A);font-size:14px;font-weight:600;line-height:1}
+.idea-tag{font-size:7px;letter-spacing:.04em;text-transform:uppercase;padding:2px 5px;border-radius:3px;font-weight:600}
+.idea-tag.fmt{background:rgba(56,182,255,.14);color:var(--UI-A)}
+.idea-tag.pil{background:rgba(255,255,255,.06);color:var(--UI-M)}
+.idea-titulo{font-size:10px;color:var(--UI-T);line-height:1.4;font-weight:500}
+.idea-hook{font-size:9px;color:var(--UI-M);line-height:1.4;font-style:italic}
+.idea-actions{display:flex;gap:4px;margin-top:2px}
+.idea-btn{
+  flex:1;border:1px solid var(--UI-B2);background:transparent;color:var(--UI-T);
+  padding:4px 6px;border-radius:3px;font-size:8px;font-weight:600;
+  cursor:pointer;transition:all .15s;letter-spacing:.03em;
+}
+.idea-btn.primary{background:var(--UI-A);border-color:var(--UI-A);color:#fff}
+.idea-btn:hover{border-color:var(--UI-A);color:var(--UI-A)}
+.idea-btn.primary:hover{background:#50c4ff;color:#fff}
+.idea-btn.repost{color:#ffb454;border-color:rgba(255,180,84,.4)}
+.idea-btn.repost:hover{border-color:#ffb454;color:#ffb454}
+.banco-empty{font-size:9px;color:var(--UI-M);text-align:center;padding:20px 10px;line-height:1.7}
+
 /* Controles de imagen */
 .img-ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px}
 .img-layout-btn{
@@ -814,6 +844,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <div class="rtabs">
       <button class="rtab on" onclick="switchTab('editar',this)">Editar</button>
       <button class="rtab" onclick="switchTab('generar',this)">Generar</button>
+      <button class="rtab" onclick="switchTab('banco',this)">📅 Banco</button>
       <button class="rtab" onclick="switchTab('tipo',this)">Tipo</button>
       <button class="rtab" onclick="switchTab('copy',this)">Copy</button>
     </div>
@@ -992,6 +1023,52 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         Selecciona pilar y ángulo. La IA genera el copy completo. Si no hay conexión, usa el banco local.<br><br>
         <b style="color:var(--UI-A);display:block;margin-bottom:2px">📋 Copy</b>
         En la pestaña Copy encontrarás hook, caption y hashtags listos para pegar en Instagram.
+      </div>
+    </div>
+
+    <!-- TAB: BANCO 365 IDEAS -->
+    <div class="rpanel" id="tab-banco">
+      <div class="csec">
+        <div class="csec-h">
+          <span>Banco de 365 ideas</span>
+          <span id="bancoCount" style="font-size:8px;color:var(--UI-A)">0/365</span>
+        </div>
+        <!-- Barra progreso -->
+        <div style="height:4px;background:var(--UI-B);border-radius:2px;overflow:hidden">
+          <div id="bancoBar" style="height:100%;width:0%;background:var(--UI-A);transition:width .3s"></div>
+        </div>
+        <!-- Buscador -->
+        <input type="text" id="bancoSearch" placeholder="🔍 Buscar idea, dolor, tema..." oninput="renderBanco()" style="background:#0A0A0A;border:1px solid var(--UI-B);color:var(--UI-T);padding:6px 8px;border-radius:3px;font-size:10px;font-family:'Montserrat',sans-serif;width:100%;margin-top:2px">
+        <!-- Filtros -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+          <select id="bancoFiltroFormato" onchange="renderBanco()" style="background:#0A0A0A;border:1px solid var(--UI-B);color:var(--UI-T);padding:4px 5px;border-radius:3px;font-size:9px">
+            <option value="">Todos formatos</option>
+            <option value="Reel">Reel</option>
+            <option value="Carrusel">Carrusel</option>
+            <option value="Post">Post</option>
+          </select>
+          <select id="bancoFiltroPilar" onchange="renderBanco()" style="background:#0A0A0A;border:1px solid var(--UI-B);color:var(--UI-T);padding:4px 5px;border-radius:3px;font-size:9px">
+            <option value="">Todos pilares</option>
+            <option value="Dolor">Dolor</option>
+            <option value="Deseo">Deseo</option>
+            <option value="Educativo">Educativo</option>
+            <option value="Autoridad">Autoridad</option>
+            <option value="Conversion">Conversión</option>
+          </select>
+        </div>
+        <!-- Toggle ocultar usadas -->
+        <label style="display:flex;align-items:center;gap:6px;font-size:9px;color:var(--UI-M);cursor:pointer;margin-top:2px">
+          <input type="checkbox" id="bancoOcultarUsadas" onchange="renderBanco()" checked style="accent-color:var(--UI-A)">
+          Ocultar ideas ya usadas (no repetir)
+        </label>
+        <div style="display:flex;gap:4px;margin-top:2px">
+          <button class="cbtn" style="flex:1;text-align:center" onclick="usarSiguienteIdea()">⚡ Siguiente idea sin usar</button>
+        </div>
+        <button class="cbtn" style="text-align:center;color:var(--UI-M)" onclick="resetBanco()">↺ Reiniciar marcas (empezar de cero)</button>
+      </div>
+      <!-- Lista de ideas -->
+      <div class="csec" style="gap:5px">
+        <div id="bancoList" style="display:flex;flex-direction:column;gap:5px"></div>
       </div>
     </div>
 
@@ -2904,6 +2981,180 @@ async function expTodos(){
 }
 
 /* ═══════════════════════════════════════════
+   BANCO DE 365 IDEAS
+   ═══════════════════════════════════════════ */
+const BANCO_IDEAS = window.IDEAS_365 || [];
+
+function getUsadas(){
+  try{ return JSON.parse(localStorage.getItem('ideas_usadas')||'{}'); }
+  catch(e){ return {}; }
+}
+function setUsadas(obj){
+  localStorage.setItem('ideas_usadas', JSON.stringify(obj));
+}
+function marcarUsada(dia){
+  const u=getUsadas(); u[dia]={fecha:Date.now()}; setUsadas(u);
+}
+function desmarcarUsada(dia){
+  const u=getUsadas(); delete u[dia]; setUsadas(u);
+}
+
+// Mapeo pilar del banco → pilar/ángulo del generador
+const MAP_PILAR_ANGULO = {
+  'dependencia del boca a boca':'bocaboca',
+  'meses llenos y meses vacios':'estabilidad',
+  'ingresos inestables':'estabilidad',
+  'clientes que regatean':'regateo',
+  'saturacion':'saturacion',
+  'falta de tiempo':'tiempo',
+  'competir por precio':'precio',
+};
+
+function anguloDesdeIdea(idea){
+  const dolor=(idea.dolor||'').toLowerCase();
+  for(const k in MAP_PILAR_ANGULO){ if(dolor.includes(k.split(' ')[0])) return MAP_PILAR_ANGULO[k]; }
+  const pil=(idea.pilar||'').toLowerCase();
+  if(pil.includes('dolor')) return 'bocaboca';
+  if(pil.includes('deseo')) return 'estabilidad';
+  if(pil.includes('autoridad')) return 'autoridad';
+  if(pil.includes('conversion')) return 'sistema';
+  return rnd(Object.keys(BANCO.angulos));
+}
+
+function renderBanco(){
+  const list=document.getElementById('bancoList');
+  if(!list || !BANCO_IDEAS.length){
+    if(list) list.innerHTML='<div class="banco-empty">No se cargó el banco de ideas.<br>Verifica que ideas365.js esté en la carpeta.</div>';
+    return;
+  }
+  const usadas=getUsadas();
+  const q=(document.getElementById('bancoSearch')?.value||'').toLowerCase();
+  const fFmt=document.getElementById('bancoFiltroFormato')?.value||'';
+  const fPil=document.getElementById('bancoFiltroPilar')?.value||'';
+  const ocultar=document.getElementById('bancoOcultarUsadas')?.checked;
+
+  // Contador
+  const totalUsadas=Object.keys(usadas).length;
+  document.getElementById('bancoCount').textContent=`${totalUsadas}/365`;
+  document.getElementById('bancoBar').style.width=(totalUsadas/365*100)+'%';
+
+  let filtradas=BANCO_IDEAS.filter(it=>{
+    if(fFmt && it.formato!==fFmt) return false;
+    if(fPil && it.pilar!==fPil) return false;
+    if(ocultar && usadas[it.dia]) return false;
+    if(q){
+      const txt=`${it.idea} ${it.hook} ${it.dolor} ${it.deseo} ${it.avatar} ${it.objetivo}`.toLowerCase();
+      if(!txt.includes(q)) return false;
+    }
+    return true;
+  });
+
+  if(!filtradas.length){
+    list.innerHTML='<div class="banco-empty">Sin ideas que coincidan.<br>'+(ocultar&&totalUsadas>0?'¡Has usado todas las de este filtro! 🎉':'Prueba otro filtro.')+'</div>';
+    return;
+  }
+
+  // Limitar a 40 visibles para rendimiento
+  const visibles=filtradas.slice(0,40);
+  list.innerHTML=visibles.map(it=>{
+    const usada=!!usadas[it.dia];
+    return `<div class="idea-card ${usada?'usada':''}">
+      <div class="idea-head">
+        <span class="idea-dia">${String(it.dia).padStart(3,'0')}</span>
+        <span class="idea-tag fmt">${it.formato}</span>
+        <span class="idea-tag pil">${it.pilar}</span>
+        ${usada?'<span class="idea-tag" style="background:rgba(56,182,255,.2);color:var(--UI-A)">✓ usada</span>':''}
+      </div>
+      <div class="idea-titulo">${it.idea}</div>
+      <div class="idea-hook">"${it.hook}"</div>
+      <div class="idea-actions">
+        ${usada
+          ? `<button class="idea-btn repost" onclick="repostIdea(${it.dia})">↻ Repost</button>`
+          : `<button class="idea-btn primary" onclick="usarIdeaBanco(${it.dia})">⚡ Usar idea</button>`}
+        <button class="idea-btn" onclick="verIdeaCompleta(${it.dia})">👁 Ver</button>
+      </div>
+    </div>`;
+  }).join('') + (filtradas.length>40?`<div class="banco-empty">+${filtradas.length-40} ideas más. Usa el buscador para afinar.</div>`:'');
+}
+
+function usarIdeaBanco(dia){
+  const idea=BANCO_IDEAS.find(i=>String(i.dia)===String(dia));
+  if(!idea) return;
+  const angulo=anguloDesdeIdea(idea);
+  // Construir carrusel base
+  const numSlides=parseInt(document.getElementById('cNumSlides')?.value)||7;
+  const slides=buildCarrusel(angulo,null,numSlides);
+  // Sobrescribir con contenido REAL de la idea
+  if(slides[0]){
+    slides[0].head=idea.hook;
+    slides[0].eye=idea.objetivo||idea.pilar;
+  }
+  // Último slide = CTA real de la idea
+  const ult=slides[slides.length-1];
+  if(ult && idea.cta){
+    ult.cta=idea.cta.length>40?'Escríbeme REFORMAS':idea.cta;
+    ult.body=idea.cta;
+  }
+  SLIDES.length=0;
+  slides.forEach(s=>SLIDES.push(s));
+  cur=0;
+  buildThumbs();
+  show(0);
+  scaleStage();
+  actualizarCopy(angulo,null);
+  // Marcar como usada
+  marcarUsada(dia);
+  renderBanco();
+  toast2(`✓ Idea ${String(dia).padStart(3,'0')} cargada y marcada como usada`);
+  // Saltar a Editar
+  abrirTabEditar();
+}
+
+function repostIdea(dia){
+  desmarcarUsada(dia);
+  renderBanco();
+  toast2(`↻ Idea ${String(dia).padStart(3,'0')} disponible de nuevo para repost`);
+}
+
+function verIdeaCompleta(dia){
+  const it=BANCO_IDEAS.find(i=>String(i.dia)===String(dia));
+  if(!it) return;
+  alert(`DÍA ${it.dia} · ${it.formato} · ${it.pilar}\n`+
+    `\n▸ AVATAR: ${it.avatar}`+
+    `\n▸ DOLOR: ${it.dolor}`+
+    `\n▸ DESEO: ${it.deseo}`+
+    `\n\n▸ IDEA:\n${it.idea}`+
+    `\n\n▸ HOOK:\n${it.hook}`+
+    `\n\n▸ ÁNGULO:\n${it.angulo}`+
+    `\n\n▸ ESTRUCTURA:\n${it.estructura}`+
+    `\n\n▸ IDEA VISUAL:\n${it.visual}`+
+    `\n\n▸ CTA:\n${it.cta}`+
+    `\n\n▸ TEMPERATURA: ${it.temp}  ·  OBJETIVO: ${it.objetivo}`);
+}
+
+function usarSiguienteIdea(){
+  const usadas=getUsadas();
+  const fFmt=document.getElementById('bancoFiltroFormato')?.value||'';
+  const fPil=document.getElementById('bancoFiltroPilar')?.value||'';
+  const sig=BANCO_IDEAS.find(it=>{
+    if(usadas[it.dia]) return false;
+    if(fFmt && it.formato!==fFmt) return false;
+    if(fPil && it.pilar!==fPil) return false;
+    return true;
+  });
+  if(!sig){ toast2('🎉 No quedan ideas sin usar con este filtro'); return; }
+  usarIdeaBanco(sig.dia);
+}
+
+function resetBanco(){
+  if(confirm('¿Reiniciar todas las marcas? Todas las ideas volverán a estar disponibles.')){
+    localStorage.removeItem('ideas_usadas');
+    renderBanco();
+    toast2('↺ Banco reiniciado — 365 ideas disponibles');
+  }
+}
+
+/* ═══════════════════════════════════════════
    EXPORT PPTX — editable en Canva
    ═══════════════════════════════════════════ */
 async function expPPTX(){
@@ -3043,6 +3294,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   scaleStage();
   actualizarCopy(angulo, null);
   actualizarTagsPexels(angulo);
+  renderBanco();
   window.addEventListener('resize',scaleStage);
 
   // Pre-cargar foto de perfil profesional en la biblioteca
