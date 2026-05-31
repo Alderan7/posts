@@ -396,10 +396,19 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .rm{font-family:var(--F-SER);font-style:italic;font-size:24px;letter-spacing:.04em}
 .SD .rm{color:rgba(245,241,234,.28)} .SL .rm{color:rgba(26,26,26,.22)} .SB .rm{color:rgba(26,26,26,.4)}
 
-.abar{width:44px;height:3px;border-radius:1px;flex-shrink:0}
+.abar{width:56px;height:5px;border-radius:2px;flex-shrink:0}
 .SD .abar{background:#38B6FF} .SL .abar{background:#38B6FF} .SB .abar{background:#1A1A1A}
 
-.HL{height:1px;width:100%}
+/* Palabra clave resaltada en AZUL de marca (mantiene fuente del titular) */
+.kw{font-style:normal;font-weight:600;color:#38B6FF}
+.SD .kw{color:#38B6FF} .SL .kw{color:#1A9AE8} .SB .kw{color:#0E3A52}
+/* En slides de lista mantenemos el matiz editorial cursivo */
+.ltxt .kw{font-family:var(--F-SER);font-style:italic;font-weight:600}
+
+.HL{height:2px;width:100%}
+/* Línea de acento con tinte azul para reforzar marca */
+.HLa{height:3px;width:64px;background:#38B6FF;border-radius:2px;flex-shrink:0}
+.SB .HLa{background:#1A1A1A}
 
 .BGN{
   position:absolute;font-family:var(--F-SER);
@@ -433,7 +442,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .lrow{display:flex;align-items:flex-start;gap:22px;padding:26px 0;border-top:1px solid rgba(26,26,26,.1)}
 .lrow:last-child{border-bottom:1px solid rgba(26,26,26,.1)}
 .SD .lrow{border-color:rgba(245,241,234,.08)} .SD .lrow:last-child{border-color:rgba(245,241,234,.08)}
-.lnum{font-family:var(--F-SER);font-style:italic;color:#38B6FF;min-width:38px;padding-top:2px}
+.lnum{font-family:var(--F-SER);font-style:italic;font-weight:600;color:#38B6FF;min-width:38px;padding-top:2px}
+.SB .lnum{color:#0E3A52}
 .ltxt strong{font-weight:600;font-family:var(--F-SAN);font-style:normal}
 .SD .ltxt{color:rgba(245,241,234,.68)} .SD .ltxt strong{color:#F5F1EA}
 .SL .ltxt{color:rgba(26,26,26,.72)}    .SL .ltxt strong{color:#1A1A1A}
@@ -1512,8 +1522,28 @@ function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)] }
 function p(s){
   if(!s) return '';
   return s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-          .replace(/\*(.+?)\*/g,'<em>$1</em>')
+          .replace(/\*(.+?)\*/g,'<em class="kw">$1</em>')   // palabra clave → azul
           .replace(/\n/g,'<br>');
+}
+
+// Auto-resaltado de palabras clave del negocio (azul de marca)
+const KW_POTENTES = ['estabilidad','clientes','autoridad','sistema','tiempo','familia',
+  'premium','agenda','obras','reformas','precio','margen','control','previsibilidad',
+  'confianza','resultados','captación','captacion','percepción','percepcion','libertad',
+  'tranquilidad','rentables','rentable','calidad'];
+
+function pK(s){
+  if(!s) return '';
+  // Si ya tiene marcado manual (*...*), respetarlo y no auto-resaltar
+  if(/\*/.test(s)) return p(s);
+  let count = 0;
+  const out = s.replace(/([A-Za-zÁÉÍÓÚáéíóúñÑ]+)/g, (m)=>{
+    if(count >= 2) return m;                 // máximo 2 por titular
+    const base = m.toLowerCase();
+    if(KW_POTENTES.includes(base)){ count++; return '*'+m+'*'; }
+    return m;
+  });
+  return p(out);
 }
 function fc(f){ return f==='light'?'SL':f==='blue'?'SB':'SD' }
 function isSq(){ return false }       // siempre 4:5
@@ -1854,7 +1884,7 @@ function rFoto(d,n){
   const txtBlock = `
     <div style="flex:1;display:flex;flex-direction:column;justify-content:${justify};gap:24px;padding-top:${txtPos==='top'?'20px':'40px'}">
       <div style="height:1px;background:${isDark?'rgba(255,255,255,.18)':'rgba(26,26,26,.12)'}"></div>
-      <h1 class="TDlg" style="font-size:${sq?Math.round(T.head*.88):T.head}px;color:${txtColor};text-shadow:0 2px 16px rgba(0,0,0,.4)">${p(d.head)}</h1>
+      <h1 class="TDlg" style="font-size:${sq?Math.round(T.head*.88):T.head}px;color:${txtColor};text-shadow:0 2px 16px rgba(0,0,0,.4)">${pK(d.head)}</h1>
       <div style="height:1px;background:${isDark?'rgba(255,255,255,.18)':'rgba(26,26,26,.12)'}"></div>
       ${d.body?`<p class="TBdy" style="font-size:${T.body}px;color:${subColor}">${p(d.body)}</p>`:''}
     </div>
@@ -1891,7 +1921,7 @@ function rFoto(d,n){
     <div style="position:relative;border-radius:10px;overflow:hidden;width:100%;aspect-ratio:16/9;flex-shrink:0">
       ${bgImgTag(d.imgFondo,'border-radius:0',d)}
     </div>
-    <h1 class="TDlg Ct" style="font-size:${Math.round(T.head*.78)}px">${p(d.head)}</h1>
+    <h1 class="TDlg Ct" style="font-size:${Math.round(T.head*.78)}px">${pK(d.head)}</h1>
     ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px">${p(d.body)}</p>`:''}
   </div>
   <div class="SF">
@@ -1907,7 +1937,7 @@ function rFoto(d,n){
     const imgCol   = `<div style="position:relative;overflow:hidden">${bgImgTag(d.imgFondo,'',d)}</div>`;
     const txtCol   = `<div style="display:flex;flex-direction:column;justify-content:${justify};padding:80px 60px;gap:20px;background:${bgSlide}">
       <div style="display:flex;align-items:center;gap:10px"><div class="abar"></div><span class="TEye" style="font-size:${T.eye}px;color:${subColor}">${p(d.eye)}</span></div>
-      <h1 class="TDlg" style="font-size:${Math.round(T.head*.75)}px;color:${txtColor}">${p(d.head)}</h1>
+      <h1 class="TDlg" style="font-size:${Math.round(T.head*.75)}px;color:${txtColor}">${pK(d.head)}</h1>
       ${d.body?`<p class="TBdy" style="font-size:${Math.round(T.body*.9)}px;color:${subColor}">${p(d.body)}</p>`:''}
       <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center">
         <span class="TCap" style="font-size:${T.cta}px;color:${subColor}">${HANDLE}</span>
@@ -1926,7 +1956,7 @@ function rFoto(d,n){
     const imgBlock = `<div style="position:relative;overflow:hidden;height:${imgH};flex-shrink:0">${bgImgTag(d.imgFondo,'',d)}</div>`;
     const txtArea  = `<div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px 90px;gap:20px;background:${bgSlide}">
       <div style="display:flex;align-items:center;gap:10px"><div class="abar"></div><span class="TEye" style="font-size:${T.eye}px;color:${subColor}">${p(d.eye)}</span></div>
-      <h1 class="TDlg" style="font-size:${Math.round(T.head*.8)}px;color:${txtColor}">${p(d.head)}</h1>
+      <h1 class="TDlg" style="font-size:${Math.round(T.head*.8)}px;color:${txtColor}">${pK(d.head)}</h1>
       ${d.body?`<p class="TBdy" style="font-size:${T.body}px;color:${subColor}">${p(d.body)}</p>`:''}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto">
         <span class="TCap" style="font-size:${T.cta}px;color:${subColor}">${HANDLE}</span>
@@ -1948,7 +1978,7 @@ function rFoto(d,n){
   </div>
   <div class="SP" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px 90px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div class="abar"></div><span class="TEye" style="font-size:${T.eye}px;color:${subColor}">${p(d.eye)}</span></div>
-    <h1 class="TDlg" style="font-size:${Math.round(T.head*.82)}px;color:${txtColor}">${p(d.head)}</h1>
+    <h1 class="TDlg" style="font-size:${Math.round(T.head*.82)}px;color:${txtColor}">${pK(d.head)}</h1>
     ${d.body?`<p class="TBdy" style="font-size:${T.body}px;color:${subColor};margin-top:18px">${p(d.body)}</p>`:''}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:24px">
       <span class="TCap" style="font-size:${T.cta}px;color:${subColor}">${HANDLE}</span>
@@ -2001,7 +2031,7 @@ function rFotoTxt(d,n){
       <div class="abar"></div>
       <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye)}</span>
     </div>
-    <h1 class="TDmd Ct" style="font-size:${Math.min(T.head,90)}px">${p(d.head)}</h1>
+    <h1 class="TDmd Ct" style="font-size:${Math.min(T.head,90)}px">${pK(d.head)}</h1>
     ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px;margin-top:20px">${p(d.body)}</p>`:''}
     <div style="margin-top:auto;padding-top:28px;display:flex;justify-content:space-between;align-items:center">
       <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
@@ -2022,7 +2052,7 @@ function rAutoridad(d,n){
       <div class="abar"></div>
       <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'Media Buyer · Reformas')}</span>
     </div>
-    <h1 class="TDsm Ct" style="font-size:${Math.min(T.head,78)}px;margin-top:16px">${p(d.head)}</h1>
+    <h1 class="TDsm Ct" style="font-size:${Math.min(T.head,78)}px;margin-top:16px">${pK(d.head)}</h1>
     ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px">${p(d.body)}</p>`:''}
     <div style="margin-top:auto;display:flex;flex-direction:column;gap:14px">
       <div style="height:1px;background:rgba(245,241,234,.1)"></div>
@@ -2104,7 +2134,7 @@ function rHead(d,n){
   </div>
   <div class="zone">
     <div class="HL Cl"></div>
-    <h1 class="TDlg Ct" style="font-size:${sq?Math.round(T.head*.88):T.head}px">${p(d.head)}</h1>
+    <h1 class="TDlg Ct" style="font-size:${sq?Math.round(T.head*.88):T.head}px">${pK(d.head)}</h1>
     <div class="HL Cl"></div>
     ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px">${p(d.body)}</p>`:''}
   </div>
@@ -2127,7 +2157,7 @@ function rFrase(d,n){
   </div>
   <div class="zone">
     <div class="qm Cm">"</div>
-    <h1 class="TDlg Ct" style="font-size:${sq?Math.round(T.head*.88):T.head}px">${p(d.head)}</h1>
+    <h1 class="TDlg Ct" style="font-size:${sq?Math.round(T.head*.88):T.head}px">${pK(d.head)}</h1>
     ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px">${p(d.body)}</p>`:''}
     <div style="display:flex;align-items:center;gap:12px">
       <div class="abar"></div>
@@ -2190,7 +2220,7 @@ function rLista(d,n){
     </div>
     ${logoHTML()}
   </div>
-  <h1 class="TDsm Ct" style="margin-top:${count>=5?16:24}px;font-size:${Math.min(T.head,count>=5?72:84)}px">${p(d.head)}</h1>
+  <h1 class="TDsm Ct" style="margin-top:${count>=5?16:24}px;font-size:${Math.min(T.head,count>=5?72:84)}px">${pK(d.head)}</h1>
   <div class="${zoneClass}">${rows}</div>
   <div class="SF">
     <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
@@ -2236,7 +2266,7 @@ function rProceso(d,n){
     </div>
     ${logoHTML()}
   </div>
-  <h1 class="TDsm Ct" style="margin-top:24px;font-size:${Math.min(T.head,84)}px">${p(d.head)}</h1>
+  <h1 class="TDsm Ct" style="margin-top:24px;font-size:${Math.min(T.head,84)}px">${pK(d.head)}</h1>
   <div class="stepsrow">${steps}</div>
   <div class="SF">
     <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
@@ -2258,7 +2288,7 @@ function rServ(d,n){
     </div>
     ${logoHTML()}
   </div>
-  ${d.head?`<h1 class="TDsm Ct" style="margin-top:24px;font-size:${Math.min(T.head,84)}px">${p(d.head)}</h1>`:''}
+  ${d.head?`<h1 class="TDsm Ct" style="margin-top:24px;font-size:${Math.min(T.head,84)}px">${pK(d.head)}</h1>`:''}
   <div class="svzone">${rows}</div>
   <div class="SF">
     <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
@@ -2276,7 +2306,7 @@ function rDebate(d,n){
     </div>
     ${logoHTML()}
   </div>
-  <div class="dq"><h1 class="TDsm Ct" style="font-size:${Math.min(T.head,84)}px">${p(d.head)}</h1></div>
+  <div class="dq"><h1 class="TDsm Ct" style="font-size:${Math.min(T.head,84)}px">${pK(d.head)}</h1></div>
   <div class="dopts">
     <div class="dopt dopt-a" style="font-size:${T.items}px">${p(o[0]||'Opción A')}</div>
     <div class="dopt dopt-b" style="font-size:${T.items}px">${p(o[1]||'Opción B')}</div>
@@ -2298,7 +2328,7 @@ function rCTA(d,n){
   </div>
   <div class="zone">
     <div class="HL Cl"></div>
-    <h1 class="TDlg Ct" style="font-size:${T.head}px">${p(d.head)}</h1>
+    <h1 class="TDlg Ct" style="font-size:${T.head}px">${pK(d.head)}</h1>
     <div class="HL Cl"></div>
     ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px">${p(d.body)}</p>`:''}
     <div class="ctapill" style="font-size:${T.cta}px"><span>→</span><span>${p(d.cta)}</span></div>
