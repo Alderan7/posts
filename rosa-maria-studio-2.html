@@ -756,6 +756,11 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     </div>
   </div>
 
+  <div class="mode-row">
+    <button class="mode-btn" id="mPost" onclick="setModo('post')">📄 Post</button>
+    <button class="mode-btn on" id="mCarr" onclick="setModo('carrusel')">🗂 Carrusel</button>
+  </div>
+
   <div class="tb-right">
     <button class="btn btn-gh" id="btnMedia" onclick="toggleMedia()">📷 Fotos</button>
     <button class="btn btn-gh" id="btnG" onclick="toggleGuias()">Guías</button>
@@ -1485,7 +1490,7 @@ const BANCO = {
    ═══════════════════════════════════════════ */
 let SLIDES   = [];
 let cur      = 0;
-const modo   = 'carrusel'; // siempre 1080×1350
+let modo     = 'carrusel'; // 'post' = 1 slide | 'carrusel' = varios — ambos 1080×1350
 let guias    = false;
 const MARCA  = 'Rosa María';
 const HANDLE = '@rosamariamedia';
@@ -2405,7 +2410,7 @@ async function generar(){
   await delay(250);
 
   const numSlides = parseInt(document.getElementById('cNumSlides').value)||7;
-  const nuevo = buildCarrusel(angulo,aiData,numSlides);
+  const nuevo = modo==='post' ? buildPost(angulo,aiData) : buildCarrusel(angulo,aiData,numSlides);
   SLIDES.length=0;
   nuevo.forEach(s=>SLIDES.push(s));
 
@@ -2824,8 +2829,27 @@ function scaleStage(){
 }
 
 /* ═══════════════════════════════════════════
-   MODO POST / CARRUSEL
+   MODO POST / CARRUSEL  (ambos 1080×1350)
+   Post = 1 slide  ·  Carrusel = varios slides
    ═══════════════════════════════════════════ */
+function setModo(m){
+  modo = m;
+  document.getElementById('mPost').classList.toggle('on', m==='post');
+  document.getElementById('mCarr').classList.toggle('on', m==='carrusel');
+  // En modo post: ocultar miniaturas y navegación (un solo slide)
+  document.getElementById('sideL').style.display = m==='post' ? 'none' : '';
+  document.getElementById('navRow').style.display = m==='post' ? 'none' : 'flex';
+  // Si pasamos a post y hay varios slides, quedarnos solo con el actual
+  if(m==='post' && SLIDES.length>1){
+    const actual = SLIDES[cur];
+    SLIDES.length = 0;
+    SLIDES.push(actual);
+    cur = 0;
+  }
+  buildThumbs();
+  show(cur);
+  scaleStage();
+}
 
 /* ═══════════════════════════════════════════
    MOSTRAR SLIDE
