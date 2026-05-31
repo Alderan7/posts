@@ -404,7 +404,9 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 
 /* Palabra clave resaltada en AZUL de marca (mantiene fuente del titular) */
 .kw{font-style:normal;font-weight:600;color:#38B6FF}
-.SD .kw{color:#38B6FF} .SL .kw{color:#1A9AE8} .SB .kw{color:#0E3A52}
+.SD .kw{color:#38B6FF} .SL .kw{color:#1A9AE8}
+/* En fondo azul, el acento va en NEGRO carbón (el azul no contrasta sobre azul) */
+.SB .kw{color:#1A1A1A;font-weight:700}
 /* En slides de lista mantenemos el matiz editorial cursivo */
 .ltxt .kw{font-family:var(--F-SER);font-style:italic;font-weight:600}
 
@@ -446,7 +448,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .lrow:last-child{border-bottom:1px solid rgba(26,26,26,.1)}
 .SD .lrow{border-color:rgba(245,241,234,.08)} .SD .lrow:last-child{border-color:rgba(245,241,234,.08)}
 .lnum{font-family:var(--F-SER);font-style:italic;font-weight:600;color:#38B6FF;min-width:38px;padding-top:2px}
-.SB .lnum{color:#0E3A52}
+.SB .lnum{color:#1A1A1A}
 .ltxt strong{font-weight:600;font-family:var(--F-SAN);font-style:normal}
 .SD .ltxt{color:rgba(245,241,234,.68)} .SD .ltxt strong{color:#F5F1EA}
 .SL .ltxt{color:rgba(26,26,26,.72)}    .SL .ltxt strong{color:#1A1A1A}
@@ -2533,10 +2535,11 @@ function buildCarrusel(angulo,ai,numSlides=7){
   const deb=rnd(BANCO.debates);
   const eye=rnd(BANCO.eyebrows);
   const cta=rnd(BANCO.ctas);
+  // Azul SOLO en slides de impacto (frase=2, cta=6). Nunca en lista/stats/debate (texto denso).
   const seq=rnd([
-    ['dark','light','dark','blue','light','dark','dark'],
-    ['dark','light','dark','blue','dark','light','dark'],
-    ['dark','blue','dark','light','dark','light','dark'],
+    ['dark','light','blue','dark','light','dark','dark'],
+    ['dark','light','dark','dark','light','dark','blue'],
+    ['dark','light','blue','dark','dark','light','dark'],
   ]);
   const todos = [
     {tipo:'hook',   fondo:seq[0], eye,
