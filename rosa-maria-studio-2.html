@@ -46,9 +46,11 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
   background:var(--UI-P);border-bottom:1px solid var(--UI-B);
   display:flex;align-items:center;
   justify-content:space-between;
-  padding:0 16px;gap:10px;
+  padding:0 14px;gap:10px;
+  overflow:visible;
 }
-.tb-left{display:flex;align-items:center;gap:12px}
+.tb-left{display:flex;align-items:center;gap:12px;min-width:0;flex-shrink:1;overflow:hidden}
+.tb-left .tb-name,.tb-left .tb-sub{white-space:nowrap}
 .tb-mono{
   width:32px;height:32px;border-radius:50%;
   border:1.5px solid var(--UI-A);
@@ -68,7 +70,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 }
 .mode-btn.on{background:var(--UI-A);color:#fff}
 
-.tb-right{display:flex;gap:6px;align-items:center}
+.tb-right{display:flex;gap:6px;align-items:center;flex-shrink:0}
 
 /* ═══════════ BOTONES ═══════════ */
 .btn{
@@ -723,8 +725,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       <div class="tb-sub">Generador de contenido</div>
     </div>
   </div>
-
-  <div style="font-size:9px;color:var(--UI-M);letter-spacing:.06em">1080 × 1350 px</div>
 
   <div class="tb-right">
     <button class="btn btn-gh" id="btnMedia" onclick="toggleMedia()">📷 Fotos</button>
