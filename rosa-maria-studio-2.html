@@ -903,8 +903,13 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
             <div class="ia-none" id="iaDesPrev"></div>
           </div>
         </div>
+        <!-- Botón IA — fila propia, bien visible -->
+        <div class="crow" id="rowIAbtn" style="display:none">
+          <button onclick="sugerirLayoutIA()" style="width:100%;border:1px solid var(--UI-A);background:linear-gradient(90deg,rgba(56,182,255,.18),rgba(56,182,255,.08));color:var(--UI-A);padding:9px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.03em">✨ IA: colocar imagen y texto ideal</button>
+        </div>
+
         <div class="crow" id="rowImgOverlay" style="display:none">
-          <label>Overlay</label>
+          <label>Estilo de overlay</label>
           <select id="cOverlay" onchange="ed('overlay',this.value)">
             <option value="dark">Oscuro</option>
             <option value="light">Claro</option>
@@ -912,12 +917,15 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           </select>
         </div>
 
-        <!-- Controles avanzados imagen -->
+        <!-- Transparencia del overlay -->
+        <div class="crow" id="rowOvOpacity" style="display:none">
+          <label>Intensidad del overlay (oscurecer foto)</label>
+          <div class="rrow"><input type="range" id="rOvOp" min="0" max="100" value="65" oninput="ed('ovOpacity',this.value);document.getElementById('vOvOp').textContent=this.value+'%'"><span class="rval" id="vOvOp">65%</span></div>
+        </div>
+
+        <!-- Layout imagen -->
         <div class="crow" id="rowImgLayout" style="display:none">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <label>Posición de la imagen</label>
-            <button onclick="sugerirLayoutIA()" style="border:1px solid var(--UI-A);background:rgba(56,182,255,.1);color:var(--UI-A);padding:3px 8px;border-radius:3px;font-size:8px;font-weight:700;cursor:pointer;letter-spacing:.03em">✨ IA ideal</button>
-          </div>
+          <label>Posición de la imagen</label>
           <div class="img-ctrl-grid">
             <button class="img-layout-btn on" id="lbg"    onclick="setImgLayout('bg-full')">🖼 Fondo completo</button>
             <button class="img-layout-btn"    id="linset" onclick="setImgLayout('inset')">⬜ Recuadro</button>
@@ -925,6 +933,16 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
             <button class="img-layout-btn"    id="lsplitr" onclick="setImgLayout('split-right')">◨ Img derecha</button>
             <button class="img-layout-btn"    id="ltop"   onclick="setImgLayout('top-half')">⬆ Img arriba</button>
             <button class="img-layout-btn"    id="lbottom" onclick="setImgLayout('bottom-half')">⬇ Img abajo</button>
+            <button class="img-layout-btn"    id="lduo"   onclick="setImgLayout('duo')" style="grid-column:1/-1">⊞ Dos fotos (collage)</button>
+          </div>
+        </div>
+
+        <!-- Segunda foto (solo en modo dúo) -->
+        <div class="crow" id="rowImg2" style="display:none">
+          <label>Segunda foto</label>
+          <div class="img-assign" onclick="abrirAsignador('fondo2')">
+            <span id="iaFondo2Lbl" style="flex:1;font-size:9px">Sin imagen</span>
+            <div class="ia-none" id="iaFondo2Prev"></div>
           </div>
         </div>
 
@@ -1502,6 +1520,7 @@ function borrarMedia(id){
   // limpiar referencias en slides
   SLIDES.forEach(s=>{
     if(s.imgFondo===id) s.imgFondo=null;
+    if(s.imgFondo2===id) s.imgFondo2=null;
     if(s.imgAntes===id) s.imgAntes=null;
     if(s.imgDespues===id) s.imgDespues=null;
   });
@@ -1568,6 +1587,7 @@ function asignarImagen(id, target){
   const d = SLIDES[cur];
   if(!d) return;
   if(target==='fondo')   d.imgFondo   = id;
+  if(target==='fondo2')  d.imgFondo2  = id;
   if(target==='antes')   d.imgAntes   = id;
   if(target==='despues') d.imgDespues = id;
   show(cur);
@@ -1585,13 +1605,16 @@ function setImgLayout(layout){
   if(!SLIDES.length) return;
   SLIDES[cur].imgLayout = layout;
   // Actualizar botones activos
-  ['bg','inset','splitl','splitr','top','bottom'].forEach(k=>{
+  ['bg','inset','splitl','splitr','top','bottom','duo'].forEach(k=>{
     const btn = document.getElementById('l'+k);
     if(btn) btn.classList.remove('on');
   });
-  const map = {'bg-full':'bg','inset':'inset','split-left':'splitl','split-right':'splitr','top-half':'top','bottom-half':'bottom'};
+  const map = {'bg-full':'bg','inset':'inset','split-left':'splitl','split-right':'splitr','top-half':'top','bottom-half':'bottom','duo':'duo'};
   const btn = document.getElementById('l'+(map[layout]||'bg'));
   if(btn) btn.classList.add('on');
+  // Mostrar/ocultar fila de segunda foto
+  const r2=document.getElementById('rowImg2');
+  if(r2) r2.style.display = layout==='duo' ? '' : 'none';
   show(cur); refreshThumb(cur);
 }
 
@@ -1684,8 +1707,11 @@ function sincronizarPanelImg(d){
   document.getElementById('rowImgFondo').style.display   = hasFoto ? '' : 'none';
   document.getElementById('rowImgBef').style.display     = hasBA   ? '' : 'none';
   document.getElementById('rowImgAft').style.display     = hasBA   ? '' : 'none';
+  document.getElementById('rowIAbtn').style.display      = hasFoto ? '' : 'none';
   document.getElementById('rowImgOverlay').style.display = hasFoto ? '' : 'none';
+  document.getElementById('rowOvOpacity').style.display  = (hasFoto && (d.overlay||'dark')!=='none') ? '' : 'none';
   document.getElementById('rowImgLayout').style.display  = hasFoto ? '' : 'none';
+  document.getElementById('rowImg2').style.display       = (hasFoto && d.imgLayout==='duo') ? '' : 'none';
   document.getElementById('rowImgPos').style.display     = hasFoto ? '' : 'none';
   document.getElementById('rowTxtPos').style.display     = hasFoto ? '' : 'none';
 
@@ -1696,8 +1722,13 @@ function sincronizarPanelImg(d){
     if(ix){ix.value=d.imgX??50; vx.textContent=(d.imgX??50)+'%'}
     if(iy){iy.value=d.imgY??50; vy.textContent=(d.imgY??50)+'%'}
     if(iz){iz.value=d.imgZoom??110; vz.textContent=(d.imgZoom??110)+'%'}
+    const oo=document.getElementById('rOvOp'); if(oo){oo.value=d.ovOpacity??65; document.getElementById('vOvOp').textContent=(d.ovOpacity??65)+'%'}
     const tp=document.getElementById('cTxtPos'); if(tp) tp.value=d.txtPos||'center';
     const ov=document.getElementById('cOverlay'); if(ov) ov.value=d.overlay||'dark';
+    // Preview segunda foto
+    const p2=document.getElementById('iaFondo2Prev'); const u2=getImgUrl(d.imgFondo2);
+    if(p2){ if(u2){ p2.outerHTML=`<img class="ia-prev" id="iaFondo2Prev" src="${u2}">`; document.getElementById('iaFondo2Lbl').textContent='Foto asignada ✓'; }
+            else if(p2.tagName==='IMG'){ p2.outerHTML='<div class="ia-none" id="iaFondo2Prev"></div>'; document.getElementById('iaFondo2Lbl').textContent='Sin imagen'; } }
     // Botones layout
     const layout=d.imgLayout||'bg-full';
     const map={'bg-full':'bg','inset':'inset','split-left':'splitl','split-right':'splitr','top-half':'top','bottom-half':'bottom'};
@@ -1771,11 +1802,14 @@ function rFoto(d,n){
   const acColor = '#38B6FF';
   const justify = txtPos==='top' ? 'flex-start' : txtPos==='bottom' ? 'flex-end' : 'center';
 
-  // Overlay style
+  // Overlay con transparencia variable (ovOpacity 0-100, default 65)
+  const opBase = (d.ovOpacity ?? 65) / 100;          // intensidad abajo
+  const opMid  = Math.max(0, opBase - 0.30);         // intensidad media
+  const opTop  = Math.max(0, opBase - 0.50);         // intensidad arriba
   const ovStyle = ov==='none' ? '' :
     ov==='dark'
-      ? 'position:absolute;inset:0;z-index:1;background:linear-gradient(to top,#1A1A1A 0%,rgba(26,26,26,.55) 45%,rgba(26,26,26,.1) 100%)'
-      : 'position:absolute;inset:0;z-index:1;background:linear-gradient(to top,rgba(245,241,234,.95) 0%,rgba(245,241,234,.5) 45%,rgba(245,241,234,.08) 100%)';
+      ? `position:absolute;inset:0;z-index:1;background:linear-gradient(to top,rgba(26,26,26,${opBase}) 0%,rgba(26,26,26,${opMid}) 45%,rgba(26,26,26,${opTop}) 100%)`
+      : `position:absolute;inset:0;z-index:1;background:linear-gradient(to top,rgba(245,241,234,${Math.min(1,opBase+0.25)}) 0%,rgba(245,241,234,${opMid+0.1}) 45%,rgba(245,241,234,${opTop}) 100%)`;
 
   // Bloque de texto reutilizable
   const txtBlock = `
@@ -1862,6 +1896,26 @@ function rFoto(d,n){
     </div>`;
     return `<div class="slide ${slideH()}" style="display:flex;flex-direction:column;overflow:hidden">
   ${imgTop ? imgBlock+txtArea : txtArea+imgBlock}
+</div>`;
+  }
+
+  if(layout === 'duo'){
+    // Dos fotos apiladas arriba + texto abajo sobre fondo de marca
+    const bgSlide = isDark ? '#1A1A1A' : '#F5F1EA';
+    return `<div class="slide ${slideH()}" style="display:flex;flex-direction:column;overflow:hidden;background:${bgSlide}">
+  <div style="height:46%;display:flex;flex-shrink:0">
+    <div style="flex:1;position:relative;overflow:hidden;border-right:3px solid ${bgSlide}">${bgImgTag(d.imgFondo,'',d)}</div>
+    <div style="flex:1;position:relative;overflow:hidden">${bgImgTag(d.imgFondo2,'',{imgX:d.imgX,imgY:d.imgY,imgZoom:d.imgZoom})}</div>
+  </div>
+  <div class="SP" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px 90px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div class="abar"></div><span class="TEye" style="font-size:${T.eye}px;color:${subColor}">${p(d.eye)}</span></div>
+    <h1 class="TDlg" style="font-size:${Math.round(T.head*.82)}px;color:${txtColor}">${p(d.head)}</h1>
+    ${d.body?`<p class="TBdy" style="font-size:${T.body}px;color:${subColor};margin-top:18px">${p(d.body)}</p>`:''}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:24px">
+      <span class="TCap" style="font-size:${T.cta}px;color:${subColor}">${HANDLE}</span>
+      <span class="TCap" style="font-size:${T.cta}px;color:${acColor}">${p(d.cta)}</span>
+    </div>
+  </div>
 </div>`;
   }
 
@@ -2744,10 +2798,11 @@ function ed(f,v){
   if(f==='head')    d.head=v;
   if(f==='body')    d.body=v;
   if(f==='cta')     d.cta=v;
-  if(f==='overlay')   d.overlay=v;
+  if(f==='overlay')   { d.overlay=v; sincronizarPanelImg(d); }
   if(f==='imgX')      d.imgX=parseInt(v);
   if(f==='imgY')      d.imgY=parseInt(v);
   if(f==='imgZoom')   d.imgZoom=parseInt(v);
+  if(f==='ovOpacity') d.ovOpacity=parseInt(v);
   if(f==='txtPos')    d.txtPos=v;
   if(f==='imgLayout') d.imgLayout=v;
   show(cur);
