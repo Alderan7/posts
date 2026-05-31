@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rosa María Studio — Generador de Contenido</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
@@ -24,7 +24,7 @@
   --C-BLUE2: #1A9AE8;
   --C-BLUE-D: rgba(56,182,255,.14);
 
-  --F-SER: 'Playfair Display', Georgia, serif;
+  --F-SER: 'Cormorant Garamond', Georgia, serif;
   --F-SAN: 'Montserrat', system-ui, sans-serif;
 
   --UI:    #0E0E0E;
@@ -669,7 +669,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 }
 .item-row textarea:focus{outline:none;border-color:var(--UI-A)}
 .item-row .item-num{
-  font-family:'Playfair Display',serif;font-style:italic;
+  font-family:'Cormorant Garamond',serif;font-style:italic;
   color:var(--UI-A);font-size:11px;min-width:16px;
   padding-top:6px;text-align:center;
 }
@@ -2735,8 +2735,8 @@ async function capture(i){
   wrap.innerHTML=render(d,i);
   const st=document.createElement('style');
   st.textContent=`
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap');
-    :root{${vars};--C-BLUE2:#1A9AE8;--F-SER:'Playfair Display',Georgia,serif;--F-SAN:'Montserrat',system-ui,sans-serif}`;
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap');
+    :root{${vars};--C-BLUE2:#1A9AE8;--F-SER:'Cormorant Garamond',Georgia,serif;--F-SAN:'Montserrat',system-ui,sans-serif}`;
   wrap.appendChild(st);
   document.body.appendChild(wrap);
   // Esperar a que las fuentes carguen antes de capturar
