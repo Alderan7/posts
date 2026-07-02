@@ -528,6 +528,42 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .aut-txt{display:flex;flex-direction:column;justify-content:center;padding:80px 80px 80px 50px;gap:24px;background:#1A1A1A}
 
 /* ─── BIBLIOTECA DE MEDIA ─── */
+/* ── Layouts plantilla feed (v12): pills, claves, testimonio, móvil ── */
+.pillzone{display:flex;flex-wrap:wrap;gap:16px;margin-top:auto;padding-top:30px}
+.pill{font-family:var(--F-SAN);font-weight:500;letter-spacing:.08em;text-transform:uppercase;
+  padding:16px 30px;border-radius:999px;border:1.5px solid;white-space:nowrap}
+.SD .pill{border-color:rgba(245,241,234,.35);color:#F5F1EA;background:rgba(245,241,234,.05)}
+.SL .pill{border-color:rgba(26,26,26,.3);color:#1A1A1A;background:rgba(26,26,26,.04)}
+.SB .pill{border-color:rgba(26,26,26,.4);color:#1A1A1A;background:rgba(255,255,255,.2)}
+.marcofoto{border-radius:28px;overflow:hidden;flex:1;min-height:0;margin-top:34px;position:relative}
+.SD .marcofoto{border:2px solid rgba(245,241,234,.22)}
+.SL .marcofoto{border:2px solid rgba(26,26,26,.15)}
+.marcofoto img{width:100%;height:100%;object-fit:cover;display:block}
+
+.clvzone{display:flex;flex-direction:column;gap:20px;margin-top:auto;padding-top:34px}
+.clvrow{display:flex;align-items:center;gap:22px;border-radius:16px;padding:24px 30px}
+.SL .clvrow{background:#1A1A1A;color:#F5F1EA}
+.SD .clvrow{background:#F5F1EA;color:#1A1A1A}
+.SB .clvrow{background:#1A1A1A;color:#F5F1EA}
+.clvnum{font-family:var(--F-SER);font-style:italic;font-size:34px;color:#38B6FF;min-width:36px;text-align:center;flex-shrink:0}
+.clvtxt{font-family:var(--F-SAN);font-weight:400;line-height:1.35}
+
+.tstzone{flex:1;display:flex;flex-direction:column;justify-content:center;gap:38px}
+.tststars{color:#38B6FF;font-size:46px;letter-spacing:12px;line-height:1}
+.tstq{font-family:var(--F-SAN);font-weight:300;line-height:1.4;letter-spacing:-.01em}
+.tstwho{display:flex;align-items:center;gap:20px}
+.tstavatar{width:92px;height:92px;border-radius:50%;overflow:hidden;border:2px solid #38B6FF;flex-shrink:0;background:rgba(56,182,255,.12);display:flex;align-items:center;justify-content:center}
+.tstavatar img{width:100%;height:100%;object-fit:cover}
+.tstname{font-family:var(--F-SAN);font-weight:600}
+.tstrole{font-family:var(--F-SAN);font-weight:300;opacity:.6}
+
+.phzone{flex:1;display:flex;align-items:center;justify-content:center;position:relative;min-height:0;padding:26px 0 10px}
+.phframe{width:380px;height:100%;max-height:780px;border-radius:54px;background:#0A0A0A;box-shadow:0 40px 90px rgba(0,0,0,.45);padding:14px;position:relative}
+.SD .phframe{border:2px solid rgba(245,241,234,.22)}
+.SL .phframe{border:2px solid rgba(26,26,26,.2)}
+.phnotch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:130px;height:26px;background:#0A0A0A;border-radius:0 0 16px 16px;z-index:2}
+.phscreen{width:100%;height:100%;border-radius:42px;overflow:hidden;background:#fff;display:flex;flex-direction:column;position:relative}
+
 #mediaLib{
   width:170px;flex-shrink:0;
   background:var(--UI-P);border-right:1px solid var(--UI-B);
@@ -754,7 +790,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <div class="tb-mono">RM</div>
     <div>
       <div class="tb-name">Rosa María Studio</div>
-      <div class="tb-sub">Generador de contenido · v11</div>
+      <div class="tb-sub">Generador de contenido · v12</div>
     </div>
     <div id="feedPosWrap" onclick="mostrarFeedInfo()" title="Posición actual en el feed — pulsa para info"
       style="display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;padding:3px 8px;border-radius:4px;border:1px solid var(--UI-B2);transition:border-color .15s;margin-left:4px;flex-shrink:0">
@@ -794,6 +830,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         <button onclick="expPPTX();toggleExpMenu()">🎨 PPTX — editable en Canva</button>
       </div>
     </div>
+    <button class="btn btn-out" id="btnMes" onclick="generarMes()" title="Fábrica: genera el contenido de varios días con ideas del banco y lo descarga en un ZIP">📅 Mes</button>
     <button class="btn btn-gen" id="btnGen" onclick="generar()">
       <span class="btn-gen-ico">⚡</span>
       <div class="spinner"></div>
@@ -2395,6 +2432,123 @@ function rCTA(d,n){
   <div class="BGN Cn" style="font-size:380px;opacity:.04">${n}</div>
 </div>`;}
 
+/* ── Layouts plantilla feed (v12) ── */
+
+// Pills: headline + foto enmarcada opcional + badges (portadas P1 / P9)
+function rPills(d,n){
+  const pillFs=Math.round(T.items*.66);
+  const pills=(d.items||[]).filter(Boolean).map(it=>`<span class="pill" style="font-size:${pillFs}px">${p(it)}</span>`).join('');
+  const url=getImgUrl(d.imgFondo);
+  const media=url?`<div class="marcofoto"><img src="${url}" alt=""></div>`:'';
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+  <div class="SH">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    ${logoHTML(d.fondo)}
+  </div>
+  <h1 class="TDmd Ct" style="margin-top:30px;font-size:${Math.min(T.head,86)}px">${pK(d.head)}</h1>
+  ${d.body?`<p class="TBdy Cm" style="font-size:${T.body}px;margin-top:18px">${p(d.body)}</p>`:''}
+  ${media}
+  <div class="pillzone">${pills}</div>
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    <span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta)}</span>
+  </div>
+</div>`;}
+
+// Claves numeradas: head + filas con número serif (portada P6)
+function rClaves(d,n){
+  const rows=(d.items||[]).filter(Boolean).map((it,i)=>`
+    <div class="clvrow"><div class="clvnum">${i+1}</div><div class="clvtxt" style="font-size:${T.items}px">${p(it)}</div></div>`).join('');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+  <div class="SH">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    ${logoHTML(d.fondo)}
+  </div>
+  <h1 class="TDmd Ct" style="margin-top:28px;font-size:${Math.min(T.head,84)}px">${pK(d.head)}</h1>
+  ${d.body?`<p class="TBdy Cm" style="font-size:${T.body}px;margin-top:16px">${p(d.body)}</p>`:''}
+  <div class="clvzone">${rows}</div>
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    <span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta)}</span>
+  </div>
+</div>`;}
+
+// Testimonio: estrellas + cita + avatar (portada P7)
+// d.body = "Nombre::Rol" — sustituir por citas REALES de clientes
+function rTestimonio(d,n){
+  const [nom,rol]=(d.body||'Cliente::Empresa de reformas · España').split('::');
+  const url=getImgUrl(d.imgFondo);
+  const avatar=url?`<img src="${url}" alt="">`
+    :`<span style="font-family:var(--F-SER);font-style:italic;font-size:36px;color:#38B6FF">${p((nom||'C').trim()[0]||'C')}</span>`;
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+  <div class="SH">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    ${logoHTML(d.fondo)}
+  </div>
+  <div class="tstzone">
+    <div class="tststars">★★★★★</div>
+    <h1 class="tstq Ct" style="font-size:${Math.min(T.head,64)}px">«${pK(d.head)}»</h1>
+    <div class="tstwho">
+      <div class="tstavatar">${avatar}</div>
+      <div>
+        <div class="tstname Ct" style="font-size:${Math.round(T.body*1.05)}px">${p(nom)}</div>
+        <div class="tstrole Ct" style="font-size:${Math.round(T.body*.85)}px">${p(rol||'')}</div>
+      </div>
+    </div>
+  </div>
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    <span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta)}</span>
+  </div>
+</div>`;}
+
+// Móvil: mockup de teléfono mostrando TU anuncio (portada P5, centro del grid)
+function rMovil(d,n){
+  const url=getImgUrl(d.imgFondo);
+  const shot=url?`<img src="${url}" style="width:100%;flex:1;object-fit:cover;min-height:0" alt="">`
+    :`<div style="flex:1;min-height:0;background:linear-gradient(135deg,#38B6FF,#1A9AE8);display:flex;align-items:center;justify-content:center"><span style="font-family:var(--F-SER);font-style:italic;font-size:64px;color:#fff">RM</span></div>`;
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+  <div class="SH">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    ${logoHTML(d.fondo)}
+  </div>
+  <h1 class="TDmd Ct" style="margin-top:24px;font-size:${Math.min(T.head,70)}px;text-align:center">${pK(d.head)}</h1>
+  <div class="phzone">
+    <div class="phframe"><div class="phnotch"></div>
+      <div class="phscreen">
+        <div style="display:flex;align-items:center;gap:10px;padding:20px 18px 12px">
+          <div style="width:34px;height:34px;border-radius:50%;background:#1A1A1A;color:#F5F1EA;display:flex;align-items:center;justify-content:center;font-family:var(--F-SER);font-style:italic;font-size:15px;flex-shrink:0">RM</div>
+          <div>
+            <div style="font-family:var(--F-SAN);font-weight:600;font-size:15px;color:#1A1A1A">${MARCA}</div>
+            <div style="font-family:var(--F-SAN);font-size:11px;color:rgba(26,26,26,.5)">Publicidad</div>
+          </div>
+        </div>
+        ${shot}
+        <div style="padding:14px 18px 18px;display:flex;flex-direction:column;gap:11px">
+          <div style="font-family:var(--F-SAN);font-size:14px;color:#1A1A1A;font-weight:500;line-height:1.35">${p(d.body||'Reformas de alto valor · Presupuesto en 24h')}</div>
+          <div style="background:#38B6FF;color:#fff;text-align:center;border-radius:8px;padding:11px;font-family:var(--F-SAN);font-weight:600;font-size:14px">Más información</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    <span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta)}</span>
+  </div>
+</div>`;}
+
 function renderTipo(d,n){
   switch(d.tipo){
     case'hook': case'post': return rHead(d,n);
@@ -2410,6 +2564,10 @@ function renderTipo(d,n){
     case'bafoto':           return rBAFoto(d,n);
     case'fototxt':          return rFotoTxt(d,n);
     case'autoridad':        return rAutoridad(d,n);
+    case'pills':            return rPills(d,n);
+    case'claves':           return rClaves(d,n);
+    case'testimonio':       return rTestimonio(d,n);
+    case'movil':            return rMovil(d,n);
     default:                return rHead(d,n);
   }
 }
@@ -2583,18 +2741,26 @@ function actualizarFeedLabel(){
   if(wrap) wrap.title = `Feed: posición ${p}/9 — ${FEED_TIPOS[p]?.nombre||''} — pulsa para info`;
 }
 
-// Descripción de cada posición del feed
+// Descripción de cada posición del feed — grid alterno #1A1A1A / #F5F1EA / foto
+// (plantilla de referencia: 9 tiles, P5 = centro con el móvil)
 const FEED_TIPOS = {
-  1:{ nombre:'Foto tuya + texto',    fondo_portada:'foto',  tema:'presentacion' },
-  2:{ nombre:'Texto negro',          fondo_portada:'dark',  tema:'educativo'    },
-  3:{ nombre:'Foto ambiente + texto',fondo_portada:'foto',  tema:'contexto'     },
-  4:{ nombre:'Stats / números',      fondo_portada:'light', tema:'resultados'   },
-  5:{ nombre:'Cita destacada',       fondo_portada:'dark',  tema:'cita'         },
-  6:{ nombre:'Servicio / lista',     fondo_portada:'light', tema:'servicio'     },
-  7:{ nombre:'Revelación',           fondo_portada:'dark',  tema:'revelacion'   },
-  8:{ nombre:'Proceso / educativo',  fondo_portada:'light', tema:'proceso'      },
-  9:{ nombre:'CTA + foto tuya',      fondo_portada:'foto',  tema:'cta_foto'     },
+  1:{ nombre:'Portada + pills',        fondo_portada:'dark',  tema:'presentacion' },
+  2:{ nombre:'Trabajar conmigo (foto)',fondo_portada:'light', tema:'metodo'       },
+  3:{ nombre:'Foto ambiente + titular',fondo_portada:'foto',  tema:'contexto'     },
+  4:{ nombre:'Beneficios / lista',     fondo_portada:'light', tema:'beneficios'   },
+  5:{ nombre:'Móvil — tu anuncio',     fondo_portada:'dark',  tema:'demo'         },
+  6:{ nombre:'3 claves numeradas',     fondo_portada:'light', tema:'educativo'    },
+  7:{ nombre:'Testimonio / caso',      fondo_portada:'dark',  tema:'prueba'       },
+  8:{ nombre:'Foto aspiracional',      fondo_portada:'foto',  tema:'deseo'        },
+  9:{ nombre:'CTA + pills',            fondo_portada:'dark',  tema:'conversion'   },
 };
+
+// ⚠ PLANTILLAS de testimonio — SUSTITUYE por citas reales de tus clientes
+const TESTIMONIOS_RM=[
+  {q:'Pasamos de depender del boca a boca a tener obras planificadas con dos meses de antelación.', n:'Cliente', r:'Empresa de reformas · Madrid'},
+  {q:'Por primera vez sé cuánto me cuesta conseguir una obra y cuánto me deja.', n:'Cliente', r:'Reformas integrales · Valencia'},
+  {q:'Dejamos de pelear presupuestos a la baja. Ahora llegan clientes que valoran el trabajo.', n:'Cliente', r:'Empresa familiar · Sevilla'},
+];
 
 function mostrarFeedInfo(){
   const pos = getFeedPos();
@@ -2929,9 +3095,13 @@ function buildCarrusel(angulo,ai,numSlides=7){
 
   switch(pos){
 
-    // P1 — Foto tuya + texto (presentación/autoridad)
+    // P1 — Portada + pills (presentación/autoridad, estilo plantilla)
     case 1:{
-      const portada = bloqueFotoPortada(ai,angulo);
+      const portada = {tipo:'pills',fondo:'dark',eye:'Media Buyer · Empresas de Reformas',
+        head: ai?ai.hook:rnd(BANCO.hooks[angulo]||BANCO.hooks.sistema),
+        body:'',
+        items:['Meta Ads','Google Ads','Estrategia a medida','Resultados medibles'],
+        cta:'Desliza →'};
       const medios = [
         {tipo:'hook',fondo:'dark',eye:'El problema que resuelvo',
           head:ai?ai.frase:rnd(BANCO.frases),
@@ -2951,9 +3121,12 @@ function buildCarrusel(angulo,ai,numSlides=7){
       break;
     }
 
-    // P2 — Texto negro (educativo/hook)
+    // P2 — Trabajar conmigo (light + tu foto, estilo plantilla)
     case 2:{
-      const portada = bloqueHook(ai,angulo,eye,cta);
+      const portada = {tipo:'fototxt',fondo:'light',eye:'Cómo es trabajar conmigo',
+        head:'Tú te centras en las obras.\nYo me centro en llenar tu agenda.',
+        body: ai?ai.hook_sub:'Estrategia que convierte. Resultados que se notan.',
+        items:[],cta:'Desliza →'};
       const medios = [
         bloqueLista(ai,angulo,'dark',eye,cta),
         bloqueFrase(ai,'dark',eye),
@@ -2984,9 +3157,14 @@ function buildCarrusel(angulo,ai,numSlides=7){
       break;
     }
 
-    // P4 — Stats / números (resultados)
+    // P4 — Beneficios / lista (light, estilo plantilla)
     case 4:{
-      const portada = bloqueStats(eye);
+      const portada = {tipo:'servicio',fondo:'light',eye:'Lo que consigues',
+        head:'Un sistema de captación\npensado para reformas.',body:'',
+        items:['Leads cualificados que sí pueden pagar tu trabajo.',
+          'Agenda previsible: obras planificadas con semanas de antelación.',
+          'Anuncios que hablan el idioma de tu cliente ideal.',
+          'Datos claros: sabes qué entra y cuánto cuesta.'],cta:'Los números →'};
       const medios = [
         bloqueStatsMetrica(),
         {tipo:'hook',fondo:'dark',eye:'Contexto — antes',
@@ -3008,9 +3186,12 @@ function buildCarrusel(angulo,ai,numSlides=7){
       break;
     }
 
-    // P5 — Cita destacada (reflexión/posicionamiento)
+    // P5 — Móvil con tu anuncio (centro del grid, estilo plantilla)
     case 5:{
-      const portada = bloqueFrase(ai,'dark',eye);
+      const portada = {tipo:'movil',fondo:'dark',eye:'Así te ve tu cliente ideal',
+        head:'Tu empresa, en el móvil\nde quien busca reformar.',
+        body:'Reformas de alto valor · Presupuesto en 24h',
+        items:[],cta:'Desliza →'};
       const medios = [
         {tipo:'hook',fondo:'dark',eye:'Por qué esto importa',
           head:ai?ai.hook:rnd(BANCO.hooks[angulo]||BANCO.hooks.sistema),
@@ -3025,9 +3206,15 @@ function buildCarrusel(angulo,ai,numSlides=7){
       break;
     }
 
-    // P6 — Servicio / lista (oferta)
+    // P6 — 3 claves numeradas (light, estilo plantilla)
     case 6:{
-      const portada = bloqueServicio(cta);
+      const portada = {tipo:'claves',fondo:'light',eye:'Antes de invertir',
+        head:'¿Invertir en publicidad?\n3 claves que debes saber.',body:'',
+        items:(ai&&ai.lista)?ai.lista.slice(0,3):[
+          'Define presupuesto: cuánto puedes invertir sin ahogar la caja.',
+          'Piensa a medio plazo: los sistemas rentables se construyen, no se improvisan.',
+          'Exige datos: si no puedes medirlo, no lo pagues.'],
+        cta:'Desliza →'};
       const medios = [
         {tipo:'lista',fondo:'light',eye:'Para quién es',
           head:'Este servicio es para ti si...',body:'',
@@ -3043,18 +3230,29 @@ function buildCarrusel(angulo,ai,numSlides=7){
       break;
     }
 
-    // P7 — Revelación (8 variantes)
+    // P7 — Testimonio / caso de éxito (dark, estilo plantilla)
+    // (la Revelación de 8 variantes sigue disponible en buildRevelacion)
     case 7:{
-      slides = buildRevelacion(ai,angulo,numSlides);
+      const t = rnd(TESTIMONIOS_RM);
+      const portada = {tipo:'testimonio',fondo:'dark',eye:'Lo que dicen mis clientes',
+        head:t.q, body:`${t.n}::${t.r}`, items:[], cta:'El caso completo →'};
+      const medios = [
+        bloqueStatsMetrica(),
+        bloqueStats(eye),
+        bloqueBA(),
+        bloqueProceso(cta),
+      ];
+      slides = comprimirSlides(portada, medios, bloqueCTA(ai,cta), numSlides);
       break;
     }
 
-    // P8 — Proceso / educativo (how-to)
+    // P8 — Foto aspiracional (full-bleed, estilo plantilla) + proceso interior
     case 8:{
       const proc = rnd(BANCO.procesos);
-      const portada = {tipo:'proceso',fondo:'light',eye:'Paso a paso',
-        head:'Cómo funciona mi estrategia\npara empresas de reformas.',
-        body:'',items:proc,cta:'Desliza para el detalle →'};
+      const portada = {tipo:'foto',fondo:'dark',eye:rnd(BANCO.eyebrows),
+        head:'El estándar que tu cliente\nespera ver antes de llamarte.',
+        body:'Tu mejor obra es tu mejor anuncio. Úsala.',
+        items:[],cta:'Desliza →',imgLayout:'bg-full',txtPos:'bottom'};
       const pasos = proc.map((p,i)=>{
         const [tit,desc]=p.split(':');
         return {tipo:'hook',fondo:i%2===0?'dark':'light',
@@ -3068,9 +3266,12 @@ function buildCarrusel(angulo,ai,numSlides=7){
       break;
     }
 
-    // P9 — CTA + foto tuya (conversión)
+    // P9 — CTA + pills (dark, estilo plantilla)
     case 9:{
-      const portada = bloqueCTAFoto(ai,cta);
+      const portada = {tipo:'pills',fondo:'dark',eye:'Trabaja conmigo',
+        head:'Una agenda llena no es suerte.\nEs estrategia.',body:'',
+        items:['Estrategia personalizada','Campañas Meta & Google','Optimización semanal','Reportes sin tecnicismos'],
+        cta:ai?`Escríbeme ${ai.cta_word} →`:`${cta} →`};
       const medios = [
         {tipo:'hook',fondo:'dark',eye:'Mi propuesta de valor',
           head:ai?ai.frase:rnd(BANCO.frases),
@@ -3832,6 +4033,116 @@ async function expTodos(){
   }
   await delay(1200);
   ov.classList.remove('on');
+}
+
+/* ═══════════════════════════════════════════
+   FÁBRICA — GENERAR MES COMPLETO (batch ZIP)
+   Recorre ideas NO usadas del banco de 365, genera cada pieza
+   con el motor de feed P1-P9 y lo empaqueta todo en un ZIP:
+   dia_XX_carrusel_Pn/ (imágenes + copy.txt) + calendario_mes.csv
+   ═══════════════════════════════════════════ */
+async function generarMes(dias){
+  if(typeof JSZip==='undefined'){ alert('JSZip no disponible. Revisa tu conexión.'); return; }
+  if(!dias){
+    const v=prompt(
+      '¿Cuántos días de contenido genero?\n(7 = semana · 15 = quincena · 30 = mes)\n\n'+
+      'Cada día usa una idea NUEVA del banco de 365 y avanza la posición del feed automáticamente.\n'+
+      'Los días de Reel generan la PORTADA + guion en copy.txt.','30');
+    if(v===null) return;
+    dias=parseInt(v)||0;
+  }
+  dias=Math.max(1,Math.min(dias,31));
+
+  const usadas=getUsadas();
+  let pendientes=BANCO_IDEAS.filter(i=>!usadas[i.dia]);
+  if(!pendientes.length) pendientes=BANCO_IDEAS.slice();
+  if(!pendientes.length){ alert('No hay ideas en el banco.'); return; }
+
+  const ov=document.getElementById('expOv'), msg=document.getElementById('expMsg'), bar=document.getElementById('expBar');
+  ov.classList.add('on'); bar.style.width='0%';
+
+  // Guardar lo que hay en pantalla para restaurarlo al final
+  const bakSlides=SLIDES.slice(), bakCur=cur;
+
+  const zip=new JSZip();
+  const numSlides=parseInt(document.getElementById('cNumSlidesTop')?.value||document.getElementById('cNumSlides')?.value)||7;
+  const cal=[['Dia idea','Formato','Pilar','Posicion feed','Hook','CTA','Busqueda visual','Carpeta']];
+  let totalImgs=0;
+
+  try{
+    for(let d=0; d<dias; d++){
+      const idea=pendientes[d % pendientes.length];
+      const angulo=anguloDesdeIdea(idea);
+      const esCarrusel=idea.formato==='Carrusel';
+      const pos=getFeedPos();
+
+      // Construir contenido sembrado con la idea real del banco
+      const slides=esCarrusel?buildCarrusel(angulo,null,numSlides):buildPost(angulo,null);
+      if(slides[0]){ slides[0].head=idea.hook; slides[0].eye=idea.objetivo||idea.pilar; }
+      const ult=slides[slides.length-1];
+      if(ult&&idea.cta){ ult.cta=idea.cta.length>40?'Escríbeme REFORMAS':idea.cta; }
+      SLIDES.length=0; slides.forEach(s=>SLIDES.push(s));
+      if(esCarrusel) avanzarFeedPos();
+
+      const tipoCarpeta=idea.formato==='Reel'?'reel_portada':esCarrusel?'carrusel':'post';
+      const carpeta=`dia_${String(d+1).padStart(2,'0')}_${tipoCarpeta}${esCarrusel?'_P'+pos:''}`;
+
+      for(let i=0;i<SLIDES.length;i++){
+        msg.textContent=`Día ${d+1}/${dias} — slide ${i+1}/${SLIDES.length}...`;
+        bar.style.width=Math.round((d+i/SLIDES.length)/dias*95)+'%';
+        const cv=await capture(i);
+        const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',.92));
+        zip.file(`${carpeta}/rm_${String(i+1).padStart(2,'0')}_1080x1350.jpg`,blob);
+        totalImgs++;
+        await delay(30);
+      }
+      zip.file(`${carpeta}/copy.txt`, copyDeIdea(idea));
+      const kw=((PEXELS_SUGERIDAS[angulo]||PEXELS_SUGERIDAS.default||[])[0])||'';
+      cal.push([idea.dia,idea.formato,idea.pilar,esCarrusel?'P'+pos:'—',idea.hook,idea.cta,kw,carpeta]);
+      marcarUsada(idea.dia);
+    }
+
+    msg.textContent='Empaquetando ZIP...'; bar.style.width='97%';
+    const csv='﻿'+cal.map(r=>r.map(c=>`"${String(c==null?'':c).replace(/"/g,'""')}"`).join(';')).join('\r\n');
+    zip.file('calendario_mes.csv',csv);
+    zip.file('LEEME.txt',
+`CONTENIDO GENERADO — ${MARCA}
+${dias} días · ${totalImgs} imágenes (1080x1350)
+
+- Cada carpeta dia_XX contiene las imágenes + copy.txt (texto listo para pegar).
+- Los carruseles llevan _P1.._P9: su posición en el grid del feed (plantilla 9 tiles).
+- Los días "reel_portada" son la PORTADA del reel: graba el vídeo siguiendo el guion del copy.txt.
+- calendario_mes.csv: ábrelo en Excel para planificar (separador ;).
+
+Publica con Meta Business Suite Planner (gratis) y programa todo el mes en una sentada.`);
+
+    const content=await zip.generateAsync({type:'blob'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(content);
+    a.download=`rm_contenido_${dias}dias.zip`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+    bar.style.width='100%';
+    msg.textContent=`✓ ${dias} días · ${totalImgs} imágenes en ZIP`;
+  }catch(e){
+    console.error(e);
+    msg.textContent='Error generando el mes: '+e.message;
+  }
+
+  // Restaurar el trabajo que había en pantalla
+  SLIDES.length=0; bakSlides.forEach(s=>SLIDES.push(s));
+  cur=Math.min(bakCur,Math.max(0,SLIDES.length-1));
+  if(SLIDES.length){ buildThumbs(); show(cur); scaleStage(); }
+  renderBanco(); actualizarFeedLabel();
+  await delay(1800);
+  ov.classList.remove('on');
+}
+
+// Texto listo para pegar en Instagram (+ guion si es Reel)
+function copyDeIdea(idea){
+  const esReel=idea.formato==='Reel';
+  const guion=esReel?`\n\n— GUION REEL —\nEstructura: ${idea.estructura}\nIdea visual: ${idea.visual}\nÁngulo: ${idea.angulo}`:'';
+  return `${idea.hook}\n\n${idea.idea}\n\n${idea.cta}${guion}\n\n#reformas #empresadereformas #marketingparareformas #metaads #googleads`;
 }
 
 /* ═══════════════════════════════════════════
