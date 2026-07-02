@@ -534,6 +534,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
   display:flex;flex-direction:column;overflow:hidden;
 }
 #mediaLib.hidden{display:none}
+#mediaLib.drag{box-shadow:inset 0 0 0 2px var(--UI-A);background:rgba(56,182,255,.06)}
 .mlib-top{
   padding:8px 8px 6px;border-bottom:1px solid var(--UI-B);
   display:flex;flex-direction:column;gap:6px;flex-shrink:0;
@@ -4161,13 +4162,25 @@ document.addEventListener('DOMContentLoaded',async()=>{
   // Auto-cargar TODAS las imágenes de la carpeta FOTOS PROFESIONALES (requiere servidor http)
   precargarCarpeta('FOTOS PROFESIONALES');
 
-  // Drag & drop en la biblioteca
-  const drop = document.getElementById('mlibDrop');
-  drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('drag'); });
-  drop.addEventListener('dragleave',()=> drop.classList.remove('drag'));
-  drop.addEventListener('drop', e=>{
-    e.preventDefault(); drop.classList.remove('drag');
-    cargarImagenes(e.dataTransfer.files);
+  // ── Drag & drop de fotos ──────────────────────────────
+  // 1) Evitar que el navegador ABRA la imagen si se suelta fuera de la zona
+  //    (comportamiento por defecto que sacaba de la app).
+  ['dragover','drop'].forEach(ev =>
+    window.addEventListener(ev, e=>{ e.preventDefault(); }, false));
+
+  // 2) Todo el panel de fotos es zona de soltado (no solo la etiqueta pequeña).
+  const panel = document.getElementById('mediaLib');
+  const drop  = document.getElementById('mlibDrop');
+  const marcar   = ()=>{ drop.classList.add('drag'); panel.classList.add('drag'); };
+  const desmarcar= ()=>{ drop.classList.remove('drag'); panel.classList.remove('drag'); };
+
+  panel.addEventListener('dragenter', e=>{ e.preventDefault(); marcar(); });
+  panel.addEventListener('dragover',  e=>{ e.preventDefault(); e.dataTransfer.dropEffect='copy'; marcar(); });
+  panel.addEventListener('dragleave', e=>{ if(!panel.contains(e.relatedTarget)) desmarcar(); });
+  panel.addEventListener('drop', e=>{
+    e.preventDefault(); desmarcar();
+    const files = e.dataTransfer.files;
+    if(files && files.length) cargarImagenes(files);
   });
 });
 
