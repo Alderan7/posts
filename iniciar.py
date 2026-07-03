@@ -18,6 +18,13 @@ import threading
 import webbrowser
 import http.server
 import socketserver
+import mimetypes
+
+# Windows a veces registra .css/.js como text/plain -> Chrome rechaza el CSS
+# y la pagina sale SIN estilos. Forzamos los tipos correctos.
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("text/javascript", ".js")
+mimetypes.add_type("application/json", ".json")
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -61,8 +68,21 @@ def main():
     Handler = http.server.SimpleHTTPRequestHandler
 
     class Silencioso(Handler):
+        # Forzar tipos correctos aunque el registro de Windows diga otra cosa
+        extensions_map = {
+            **Handler.extensions_map,
+            ".css": "text/css",
+            ".js": "text/javascript",
+            ".mjs": "text/javascript",
+            ".json": "application/json",
+            ".html": "text/html",
+        }
         def log_message(self, *a):    # no llenar la consola de líneas
             pass
+        def end_headers(self):
+            # Evitar que el navegador cachee versiones antiguas
+            self.send_header("Cache-Control", "no-store, must-revalidate")
+            super().end_headers()
 
     try:
         with socketserver.TCPServer(("", puerto), Silencioso) as httpd:
