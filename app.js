@@ -2639,6 +2639,85 @@ async function buscarVideosPexels(page){
   }
 }
 
+/* ─── Música libre de derechos (Jamendo, Creative Commons) ─── */
+function getJamendoKey(){ return (localStorage.getItem('jamendo_key')|| (window.RM_CONFIG&&RM_CONFIG.jamendo_key) || '').trim(); }
+function guardarKeyJamendo(v){
+  localStorage.setItem('jamendo_key',(v||'').trim());
+  const st=document.getElementById('musStatus');
+  if(st){ if(getJamendoKey()){ st.style.color='#38B6FF'; st.textContent='✓ Client ID guardado. Busca música arriba.'; }
+    else { st.style.color='var(--UI-M)'; st.textContent='Gratis en developer.jamendo.com (crea una app → Client ID).'; } }
+}
+
+let _musQ='', _musPage=0, _musAudio=null;
+function verMasMusica(){ buscarMusica(_musPage+1); }
+
+async function buscarMusica(page){
+  page = page || 0;
+  const status=document.getElementById('musStatus');
+  const q=(page>0)?_musQ:(document.getElementById('musQ')?.value?.trim());
+  if(!q){ if(status){status.style.color='#ff9f43';status.textContent='Escribe qué música buscar.';} return; }
+  const key=getJamendoKey();
+  if(!key){ if(status){status.style.color='#ff9f43';status.textContent='Pega tu Client ID de Jamendo (gratis en developer.jamendo.com).';} return; }
+  _musQ=q; _musPage=page;
+
+  const box=document.getElementById('musResults'), grid=document.getElementById('musGrid');
+  box.style.display='flex';
+  if(page===0) grid.innerHTML='<div class="mlib-empty">🔍 Buscando música...</div>';
+
+  try{
+    const PER=20, offset=page*PER;
+    const url=`https://api.jamendo.com/v3.0/tracks/?client_id=${key}&format=json&limit=${PER}&offset=${offset}`
+            + `&search=${encodeURIComponent(q)}&audioformat=mp32&order=popularity_total&include=musicinfo`;
+    const r=await fetch(url);
+    const d=await r.json();
+    if(d.headers?.status!=='success'){ grid.innerHTML=`<div class="mlib-empty" style="color:#ff6b6b">❌ Client ID inválido o sin acceso.</div>`; return; }
+    const tracks=d.results||[];
+    if(!tracks.length){ if(page===0) grid.innerHTML='<div class="mlib-empty">Sin música.<br>Prueba otro término.</div>'; return; }
+    const fmt=s=>{s=Math.round(s||0);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
+    const filas=tracks.map(t=>{
+      const dl=(t.audiodownload_allowed?t.audiodownload:t.audio)||t.audio;
+      const nombre=(t.name||'').replace(/'/g,'’'), artista=(t.artist_name||'').replace(/'/g,'’');
+      return `<div style="display:flex;align-items:center;gap:8px;background:#0A0A0A;border:1px solid var(--UI-B);border-radius:5px;padding:6px 8px">
+        <button onclick="reproMusica('${(t.audio||'').replace(/'/g,'%27')}',this)" title="Escuchar" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;border:none;background:var(--UI-A);color:#fff;cursor:pointer;font-size:11px">▶</button>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:10px;color:var(--UI-T);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nombre}</div>
+          <div style="font-size:8px;color:var(--UI-M);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${artista} · ${fmt(t.duration)}</div>
+        </div>
+        <button onclick="descargarMusica('${(dl||'').replace(/'/g,'%27')}','${nombre.replace(/[^a-z0-9]/gi,'_').slice(0,30)}')" title="Descargar" style="flex-shrink:0;width:26px;height:26px;border-radius:5px;border:1px solid var(--UI-B2);background:var(--UI-B);color:var(--UI-A);cursor:pointer;font-size:12px">⬇</button>
+      </div>`;
+    }).join('');
+    const btnOld=document.getElementById('musMasBtn'); if(btnOld) btnOld.remove();
+    if(page===0) grid.innerHTML=filas; else grid.insertAdjacentHTML('beforeend',filas);
+    if(tracks.length>=PER) grid.insertAdjacentHTML('beforeend',
+      `<button id="musMasBtn" onclick="verMasMusica()" style="padding:7px;font-size:9px;font-weight:600;background:var(--UI-B);border:1px solid var(--UI-A);color:var(--UI-A);border-radius:4px;cursor:pointer">Ver más ↓</button>`);
+    if(status){ status.style.color='#38B6FF'; status.textContent='▶ escucha · ⬇ descarga (a Descargas → reel-video/videos_entrada/).'; }
+  }catch(e){
+    grid.innerHTML=`<div class="mlib-empty" style="color:#ff6b6b">Error: ${e.message}</div>`;
+  }
+}
+
+// Reproducir/parar preview
+function reproMusica(url, btn){
+  if(_musAudio){ _musAudio.pause(); document.querySelectorAll('#musGrid button').forEach(b=>{ if(b.textContent==='⏸') b.textContent='▶'; }); }
+  if(btn && btn.textContent==='⏸'){ btn.textContent='▶'; _musAudio=null; return; }
+  _musAudio=new Audio(url); _musAudio.play().catch(()=>{});
+  if(btn){ btn.textContent='⏸'; _musAudio.onended=()=>{ btn.textContent='▶'; }; }
+}
+
+// Descargar mp3
+async function descargarMusica(url, nombre){
+  if(!url) return;
+  const status=document.getElementById('musStatus');
+  if(status){ status.style.color='#38B6FF'; status.textContent='Descargando música...'; }
+  try{
+    const res=await fetch(url); const blob=await res.blob();
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download=`musica_${nombre||'jamendo'}.mp3`; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+    if(status){ status.style.color='#38B6FF'; status.textContent='✓ Descargada. Muévela a reel-video/videos_entrada/ (o úsala en IG).'; }
+  }catch(e){ window.open(url,'_blank'); if(status){ status.style.color='#ff9f43'; status.textContent='Se abrió en otra pestaña: guárdala con clic derecho.'; } }
+}
+
 // Descarga el mp4 al ordenador (va a Descargas; muévelo a reel-video/videos_entrada/)
 async function descargarVideoPexels(url, slug, dur){
   if(!url) return;
@@ -3645,7 +3724,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
   if(window.RM_CONFIG){
     if(RM_CONFIG.groq_key && !localStorage.getItem('groq_key')) localStorage.setItem('groq_key', RM_CONFIG.groq_key);
     if(RM_CONFIG.pixabay_key && !localStorage.getItem('pixabay_key')) localStorage.setItem('pixabay_key', RM_CONFIG.pixabay_key);
+    if(RM_CONFIG.jamendo_key && !localStorage.getItem('jamendo_key')) localStorage.setItem('jamendo_key', RM_CONFIG.jamendo_key);
   }
+  const jk=document.getElementById('jamendoKey');
+  if(jk){ jk.value=getJamendoKey(); guardarKeyJamendo(jk.value); }
   // Restaurar key de Groq y reflejar estado
   const gk=document.getElementById('groqKey');
   if(gk){ gk.value = getGroqKey(); guardarKeyGroq(gk.value); }
