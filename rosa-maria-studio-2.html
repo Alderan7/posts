@@ -4266,6 +4266,15 @@ async function generarMes(dias){
       }
       zip.file(`${carpeta}/copy.txt`, copyDeIdea(idea));
       const kw=((PEXELS_SUGERIDAS[angulo]||PEXELS_SUGERIDAS.default||[])[0])||'';
+      // Para días de Reel: datos estructurados que consume reel-video/reel_video.py --mes
+      if(idea.formato==='Reel'){
+        const cta=(idea.cta && idea.cta.length<=40) ? idea.cta : 'Escríbeme REFORMAS';
+        zip.file(`${carpeta}/reel.json`, JSON.stringify({
+          dia: idea.dia, hook: idea.hook,
+          sub: idea.deseo ? `Para ${idea.deseo}` : '',
+          cta, busqueda: kw, orden: d+1
+        }, null, 2));
+      }
       cal.push([idea.dia,idea.formato,idea.pilar,esCarrusel?'P'+pos:'—',idea.hook,idea.cta,kw,carpeta]);
       marcarUsada(idea.dia);
     }
@@ -4280,6 +4289,8 @@ ${dias} días · ${totalImgs} imágenes (1080x1350)
 - Cada carpeta dia_XX contiene las imágenes + copy.txt (texto listo para pegar).
 - Los carruseles llevan _P1.._P9: su posición en el grid del feed (plantilla 9 tiles).
 - Los días "reel_portada" son la PORTADA del reel: graba el vídeo siguiendo el guion del copy.txt.
+  Llevan ademas un reel.json que el modulo reel-video puede usar para montar el video automatico:
+      py reel_video.py --mes "ruta a esta carpeta"
 - calendario_mes.csv: ábrelo en Excel para planificar (separador ;).
 
 Publica con Meta Business Suite Planner (gratis) y programa todo el mes en una sentada.`);

@@ -64,6 +64,21 @@ py reel_video.py --color dark --hook "Estrategia que convierte" --cta "Hablemos"
 
 Los reels salen en `salida/`.
 
+### Desde el ZIP "Generar Mes" (automático) ⭐
+El botón **📅 Mes** del Studio genera un ZIP con los días del mes. Los días de
+Reel incluyen un `reel.json` (gancho, subtítulo, CTA). Para montar todos esos
+reels de golpe:
+
+1. Descomprime `rm_contenido_XXdias.zip` en una carpeta.
+2. (Opcional) mete clips de fondo en `videos_entrada/` — se reparten por orden;
+   si no hay clips, se usa fondo de color de marca.
+3. Ejecuta:
+   ```powershell
+   py reel_video.py --mes "C:\ruta\a\rm_contenido_30dias"
+   ```
+Genera `reel_dia_01.mp4`, `reel_dia_04.mp4`… en `salida/`, con el texto ya
+tomado de cada `reel.json`. Cero copiar y pegar.
+
 ---
 
 ## 3) Flujo recomendado (rápido)
@@ -90,6 +105,7 @@ Los reels salen en `salida/`.
 | `--out` | nombre del archivo de salida |
 | `--font` | ruta a fuente TTF |
 | `--lote` | procesa toda la carpeta `videos_entrada/` |
+| `--mes CARPETA` | monta los reels de un ZIP "Generar Mes" descomprimido (lee cada `reel.json`) |
 
 ---
 

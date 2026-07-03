@@ -332,6 +332,49 @@ def modo_lote(args):
                    salida=out, font=args.font)
 
 
+def modo_mes(args, carpeta):
+    """Lee la carpeta descomprimida del ZIP 'Generar Mes' del Studio y monta
+    los reels de los días de Reel. Cada día trae un reel.json {hook,sub,cta}.
+
+    Fondo de cada reel (en este orden):
+      1) clip de videos_entrada/ (por orden; se reparten y se reciclan)
+      2) si no hay clips → fondo de color de marca (--color)
+    """
+    import glob
+    if not os.path.isdir(carpeta):
+        sys.exit(f"✖ No existe la carpeta: {carpeta}")
+
+    # Buscar reel.json en cualquier subcarpeta (dia_XX_reel_portada/)
+    jsons = sorted(glob.glob(os.path.join(carpeta, "**", "reel.json"), recursive=True))
+    if not jsons:
+        sys.exit("✖ No hay reel.json en la carpeta. ¿Generaste el mes con días de Reel?\n"
+                 "  (Descomprime el ZIP rm_contenido_XXdias.zip y apunta --mes a esa carpeta)")
+
+    clips = sorted([os.path.join(DIR_ENTRADA, f) for f in os.listdir(DIR_ENTRADA)
+                    if f.lower().endswith((".mp4", ".mov", ".webm", ".mkv", ".avi"))]) \
+        if os.path.isdir(DIR_ENTRADA) else []
+
+    logo = args.logo or _logo_por_defecto()
+    print(f"Mes: {len(jsons)} reel(s) · {len(clips)} clip(s) de fondo disponibles\n")
+
+    import json
+    for i, jf in enumerate(jsons, 1):
+        try:
+            data = json.load(open(jf, encoding="utf-8"))
+        except Exception as e:
+            print(f"  (aviso) {jf}: json ilegible ({e}); salto")
+            continue
+        dia = data.get("dia", i)
+        video = clips[(i - 1) % len(clips)] if clips else None
+        out = f"reel_dia_{int(dia):02d}.mp4"
+        origen = os.path.basename(os.path.dirname(jf))
+        print(f"[{i}/{len(jsons)}] {origen}  ({'clip: '+os.path.basename(video) if video else 'fondo color'})")
+        crear_reel(video=video, color=args.color,
+                   hook=data.get("hook", ""), sub=data.get("sub", ""), cta=data.get("cta", ""),
+                   logo=logo, musica=args.music, duracion=args.duration, salida=out, font=args.font)
+    print(f"\n✓ {len(jsons)} reels en {DIR_SALIDA}")
+
+
 def _logo_por_defecto():
     """Usa el logo blanco transparente del repo si existe (../logo-rm-blanco-iso.png)."""
     cand = os.path.join(AQUI, "..", "logo-rm-blanco-iso.png")
@@ -351,9 +394,13 @@ def main():
     ap.add_argument("--out", default="reel.mp4", help="nombre de salida")
     ap.add_argument("--font", help="ruta a fuente TTF (por defecto busca Montserrat/sistema)")
     ap.add_argument("--lote", action="store_true", help="procesa toda la carpeta videos_entrada/")
+    ap.add_argument("--mes", metavar="CARPETA",
+                    help="carpeta del ZIP 'Generar Mes' descomprimido: monta los reels de los días de Reel")
     args = ap.parse_args()
 
-    if args.lote:
+    if args.mes:
+        modo_mes(args, args.mes)
+    elif args.lote:
         modo_lote(args)
     else:
         crear_reel(video=args.video, color=args.color, hook=args.hook, sub=args.sub,
