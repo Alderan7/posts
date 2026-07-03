@@ -58,6 +58,103 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 DIR_ENTRADA = os.path.join(AQUI, "videos_entrada")
 DIR_SALIDA  = os.path.join(AQUI, "salida")
 
+# Key de Pexels (la misma del Studio, gratis). Se puede sobreescribir con
+# --pexels-key o la variable de entorno PEXELS_KEY.
+PEXELS_KEY_DEFAULT = "DQlg4GAqeCIIF3CkZpcFQBopg7PztGO8uKcVXHi8XnYCyWDSEo1QvyqC"
+
+
+def pexels_key(cli=None):
+    return (cli or os.environ.get("PEXELS_KEY") or PEXELS_KEY_DEFAULT).strip()
+
+
+def _es_error_ssl(e):
+    import ssl, urllib.error
+    if isinstance(e, ssl.SSLError):
+        return True
+    if isinstance(e, urllib.error.URLError) and isinstance(getattr(e, "reason", None), ssl.SSLError):
+        return True
+    return "SSL" in str(e) or "CERTIFICATE" in str(e)
+
+
+def _url_abrir(url, headers=None, timeout=25):
+    """Abre una URL https. Intenta con verificación de certificado y, si falla
+    por SSL (típico con antivirus que intercepta HTTPS), reintenta sin verificar."""
+    import ssl, urllib.request
+    h = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"}
+    h.update(headers or {})
+    req = urllib.request.Request(url, headers=h)
+    # 1) verificado (con certifi si está disponible)
+    try:
+        try:
+            import certifi
+            ctx = ssl.create_default_context(cafile=certifi.where())
+        except Exception:
+            ctx = ssl.create_default_context()
+        return urllib.request.urlopen(req, timeout=timeout, context=ctx)
+    except Exception as e:
+        if not _es_error_ssl(e):
+            raise
+        # 2) reintento sin verificar (red con antivirus/proxy que rompe el cert)
+        ctx = ssl._create_unverified_context()
+        return urllib.request.urlopen(req, timeout=timeout, context=ctx)
+
+
+def buscar_video_pexels(query, key, dest_dir=None):
+    """Busca un vídeo vertical en Pexels por `query`, descarga el mejor archivo
+    (HD vertical, alto <= 1920) y devuelve su ruta local. None si falla.
+    Cachea por consulta en videos_entrada/ para no re-descargar."""
+    import json, re, urllib.parse
+    dest_dir = dest_dir or DIR_ENTRADA
+    os.makedirs(dest_dir, exist_ok=True)
+    slug = re.sub(r"[^a-z0-9]+", "_", (query or "reel").lower()).strip("_")[:40] or "reel"
+    destino = os.path.join(dest_dir, f"pexels_{slug}.mp4")
+    if os.path.exists(destino) and os.path.getsize(destino) > 10000:
+        return destino  # ya descargado antes
+
+    url = ("https://api.pexels.com/videos/search?query="
+           + urllib.parse.quote(query or "home renovation")
+           + "&per_page=8&orientation=portrait&size=medium")
+    try:
+        with _url_abrir(url, headers={"Authorization": key}) as r:
+            data = json.load(r)
+    except Exception as e:
+        print(f"    (aviso) Pexels no respondió para '{query}': {e}")
+        return None
+
+    vids = data.get("videos") or []
+    if not vids:
+        print(f"    (aviso) Pexels sin resultados para '{query}'")
+        return None
+
+    # Elegir el mejor archivo: vertical (h>w), calidad hd, alto <= 1920 lo mayor posible
+    mejor, mejor_score = None, -1
+    for v in vids[:5]:
+        for f in v.get("video_files", []):
+            w, h = f.get("width") or 0, f.get("height") or 0
+            if not w or not h or h < w:      # descartar horizontales
+                continue
+            score = h if h <= 1920 else 1920 - (h - 1920)   # penaliza pasarse de 1920
+            if f.get("quality") == "hd":
+                score += 200
+            if score > mejor_score:
+                mejor, mejor_score = f, score
+    if not mejor:
+        # sin verticales claros: coger el primero disponible
+        mejor = (vids[0].get("video_files") or [None])[0]
+    if not mejor or not mejor.get("link"):
+        return None
+
+    try:
+        print(f"    ↓ Pexels: '{query}' ({mejor.get('width')}x{mejor.get('height')})")
+        import shutil
+        with _url_abrir(mejor["link"], timeout=90) as r, open(destino, "wb") as f:
+            shutil.copyfileobj(r, f)
+        return destino if os.path.getsize(destino) > 10000 else None
+    except Exception as e:
+        print(f"    (aviso) fallo al descargar vídeo Pexels: {e}")
+        return None
+
 
 # ── Utilidades ───────────────────────────────────────────────────────────
 def _check_moviepy():
@@ -334,11 +431,13 @@ def modo_lote(args):
 
 def modo_mes(args, carpeta):
     """Lee la carpeta descomprimida del ZIP 'Generar Mes' del Studio y monta
-    los reels de los días de Reel. Cada día trae un reel.json {hook,sub,cta}.
+    los reels de los días de Reel. Cada día trae un reel.json {hook,sub,cta,busqueda}.
 
     Fondo de cada reel (en este orden):
-      1) clip de videos_entrada/ (por orden; se reparten y se reciclan)
-      2) si no hay clips → fondo de color de marca (--color)
+      1) clip de videos_entrada/ (por orden) si los hay y NO se usa Pexels
+      2) vídeo de Pexels descargado por la palabra 'busqueda' del día (por defecto)
+      3) fondo de color de marca (--color) si nada de lo anterior
+    Usa --sin-pexels para no descargar de Pexels (solo clips locales/color).
     """
     import glob
     if not os.path.isdir(carpeta):
@@ -355,7 +454,10 @@ def modo_mes(args, carpeta):
         if os.path.isdir(DIR_ENTRADA) else []
 
     logo = args.logo or _logo_por_defecto()
-    print(f"Mes: {len(jsons)} reel(s) · {len(clips)} clip(s) de fondo disponibles\n")
+    usar_pexels = not getattr(args, "sin_pexels", False)
+    key = pexels_key(getattr(args, "pexels_key", None))
+    print(f"Mes: {len(jsons)} reel(s) · {len(clips)} clip(s) locales · "
+          f"Pexels: {'sí' if usar_pexels else 'no'}\n")
 
     import json
     for i, jf in enumerate(jsons, 1):
@@ -365,7 +467,10 @@ def modo_mes(args, carpeta):
             print(f"  (aviso) {jf}: json ilegible ({e}); salto")
             continue
         dia = data.get("dia", i)
+        # 1) clip local · 2) vídeo de Pexels por keyword · 3) color
         video = clips[(i - 1) % len(clips)] if clips else None
+        if not video and usar_pexels:
+            video = buscar_video_pexels(data.get("busqueda") or data.get("hook", ""), key)
         out = f"reel_dia_{int(dia):02d}.mp4"
         origen = os.path.basename(os.path.dirname(jf))
         print(f"[{i}/{len(jsons)}] {origen}  ({'clip: '+os.path.basename(video) if video else 'fondo color'})")
@@ -396,6 +501,12 @@ def main():
     ap.add_argument("--lote", action="store_true", help="procesa toda la carpeta videos_entrada/")
     ap.add_argument("--mes", metavar="CARPETA",
                     help="carpeta del ZIP 'Generar Mes' descomprimido: monta los reels de los días de Reel")
+    ap.add_argument("--buscar", metavar="PALABRA",
+                    help="descarga un vídeo de fondo de Pexels por esa palabra (en vez de --video)")
+    ap.add_argument("--pexels-key", dest="pexels_key",
+                    help="API key de Pexels (por defecto usa la del Studio o env PEXELS_KEY)")
+    ap.add_argument("--sin-pexels", dest="sin_pexels", action="store_true",
+                    help="en --mes: no descargar de Pexels (solo clips locales/color)")
     args = ap.parse_args()
 
     if args.mes:
@@ -403,7 +514,10 @@ def main():
     elif args.lote:
         modo_lote(args)
     else:
-        crear_reel(video=args.video, color=args.color, hook=args.hook, sub=args.sub,
+        video = args.video
+        if not video and args.buscar:
+            video = buscar_video_pexels(args.buscar, pexels_key(args.pexels_key))
+        crear_reel(video=video, color=args.color, hook=args.hook, sub=args.sub,
                    cta=args.cta, logo=args.logo or _logo_por_defecto(),
                    musica=args.music, duracion=args.duration, salida=args.out, font=args.font)
 

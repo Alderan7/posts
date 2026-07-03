@@ -50,6 +50,15 @@ py reel_video.py --video videos_entrada/obra.mp4 `
 py reel_video.py --color dark --hook "Estrategia que convierte" --cta "Hablemos"
 ```
 
+### Con vídeo de fondo automático de Pexels (por palabra clave) ⭐
+No hace falta tener clips: busca y descarga uno de Pexels (gratis, misma key
+que las imágenes):
+```powershell
+py reel_video.py --buscar "home renovation" --hook "Tu mejor obra es tu mejor anuncio" --cta "Escríbeme REFORMAS"
+```
+- El vídeo se guarda en `videos_entrada/` (se reutiliza si repites la búsqueda).
+- `--pexels-key TU_KEY` para usar tu propia key (o variable de entorno `PEXELS_KEY`).
+
 ### En lote (varios clips de golpe)
 1. Mete tus clips en `videos_entrada/`.
 2. Edita `textos.csv` (separador `;`):
@@ -70,12 +79,14 @@ Reel incluyen un `reel.json` (gancho, subtítulo, CTA). Para montar todos esos
 reels de golpe:
 
 1. Descomprime `rm_contenido_XXdias.zip` en una carpeta.
-2. (Opcional) mete clips de fondo en `videos_entrada/` — se reparten por orden;
-   si no hay clips, se usa fondo de color de marca.
-3. Ejecuta:
+2. Ejecuta:
    ```powershell
    py reel_video.py --mes "C:\ruta\a\rm_contenido_30dias"
    ```
+   Para cada día descarga **solo** un vídeo de fondo de Pexels según su palabra
+   clave (`busqueda` del `reel.json`). Metraje real, cero trabajo manual.
+   - Si prefieres tus propios clips, mételos en `videos_entrada/` (se usan antes).
+   - `--sin-pexels` para no descargar (solo clips locales o color de marca).
 Genera `reel_dia_01.mp4`, `reel_dia_04.mp4`… en `salida/`, con el texto ya
 tomado de cada `reel.json`. Cero copiar y pegar.
 
