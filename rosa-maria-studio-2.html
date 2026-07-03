@@ -391,8 +391,12 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .slide-logo-img{
   height:var(--logo-h,46px);width:auto;object-fit:contain;display:block;opacity:1;
 }
-/* Fondo oscuro/azul: sombra sutil para separar el logo blanco del fondo */
-.SD .slide-logo-img,.SB .slide-logo-img{filter:drop-shadow(0 1px 3px rgba(0,0,0,.45))}
+/* Fondo oscuro/azul: forzar blanco puro + halo para que el trazo fino resalte */
+.SD .slide-logo-img,.SB .slide-logo-img{
+  filter:brightness(1.7) contrast(1.05)
+         drop-shadow(0 0 2px rgba(255,255,255,.35))
+         drop-shadow(0 2px 6px rgba(0,0,0,.55));
+}
 .rm{font-family:var(--F-SER);font-style:italic;font-size:24px;letter-spacing:.04em}
 .SD .rm{color:rgba(245,241,234,.28)} .SL .rm{color:rgba(26,26,26,.22)} .SB .rm{color:rgba(26,26,26,.4)}
 
