@@ -792,10 +792,15 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       <div class="tb-name">Rosa María Studio</div>
       <div class="tb-sub">Generador de contenido · v12</div>
     </div>
-    <div id="feedPosWrap" onclick="mostrarFeedInfo()" title="Posición actual en el feed — pulsa para info"
-      style="display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;padding:3px 8px;border-radius:4px;border:1px solid var(--UI-B2);transition:border-color .15s;margin-left:4px;flex-shrink:0">
-      <span style="font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:var(--UI-M)">Feed</span>
-      <span id="feedPosLabel" style="font-size:11px;font-weight:700;color:var(--UI-A);line-height:1">P1</span>
+    <div style="display:flex;flex-direction:column;gap:2px;margin-left:4px;flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:3px">
+        <span style="font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:var(--UI-M)">Posición feed</span>
+        <span onclick="mostrarFeedInfo()" title="Ver el mapa del feed" style="cursor:pointer;font-size:8px;color:var(--UI-M);border:1px solid var(--UI-B2);border-radius:50%;width:12px;height:12px;display:inline-flex;align-items:center;justify-content:center">?</span>
+      </div>
+      <select id="feedPosSel" onchange="cambiarFeedSel(this.value)" title="Elige qué tipo de post generar (o Auto para avanzar por el feed)"
+        style="background:var(--UI-B);border:1px solid var(--UI-A);color:var(--UI-A);padding:3px 5px;border-radius:4px;font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer">
+        <option value="">Auto ▸ P1</option>
+      </select>
     </div>
   </div>
 
@@ -2653,6 +2658,9 @@ async function generar(){
   await delay(250);
 
   const numSlides = parseInt(document.getElementById('cNumSlidesTop')?.value || document.getElementById('cNumSlides')?.value)||7;
+  // Si el usuario forzó una posición de feed, fijarla antes de construir
+  const forz = getFeedForzada();
+  if(modo==='carrusel' && forz) setFeedPos(parseInt(forz));
   const nuevo = modo==='post' ? buildPost(angulo,aiData) : buildCarrusel(angulo,aiData,numSlides);
   SLIDES.length=0;
   nuevo.forEach(s=>SLIDES.push(s));
@@ -2668,8 +2676,8 @@ async function generar(){
   document.getElementById('navCnt').textContent=
     modo==='post'?'1 / 1':`1 / ${SLIDES.length}`;
 
-  // Avanzar contador de feed y actualizar label
-  if(modo==='carrusel') avanzarFeedPos();
+  // Avanzar contador de feed SOLO en modo Auto (si está forzado, se queda fijo)
+  if(modo==='carrusel' && !getFeedForzada()) avanzarFeedPos();
   actualizarFeedLabel();
 
   // Actualizar panel Copy y tags Pexels
@@ -2733,12 +2741,29 @@ function getFeedPos(){ return parseInt(localStorage.getItem(FEED_KEY)||'1')||1; 
 function setFeedPos(p){ localStorage.setItem(FEED_KEY, String(((p-1)%9)+1)); }
 function avanzarFeedPos(){ setFeedPos(getFeedPos()+1); }
 
+// Posición FORZADA por el selector ('' = Auto, avanza por el feed)
+let feedForzada = '';
+function getFeedForzada(){ return feedForzada; }
+function cambiarFeedSel(v){
+  feedForzada = v;
+  if(v){ setFeedPos(parseInt(v)); }   // fijar la posición elegida
+  actualizarFeedLabel();
+}
+
 function actualizarFeedLabel(){
   const p = getFeedPos();
-  const el = document.getElementById('feedPosLabel');
-  if(el) el.textContent = `P${p}`;
-  const wrap = document.getElementById('feedPosWrap');
-  if(wrap) wrap.title = `Feed: posición ${p}/9 — ${FEED_TIPOS[p]?.nombre||''} — pulsa para info`;
+  const sel = document.getElementById('feedPosSel');
+  if(sel){
+    // Poblar opciones una sola vez
+    if(sel.options.length <= 1){
+      let html = `<option value="">Auto ▸ siguiente</option>`;
+      for(let i=1;i<=9;i++) html += `<option value="${i}">P${i} · ${FEED_TIPOS[i]?.nombre||''}</option>`;
+      sel.innerHTML = html;
+    }
+    sel.value = feedForzada;
+    // Reflejar posición actual en la opción Auto
+    if(sel.options[0]) sel.options[0].textContent = `Auto ▸ P${p}`;
+  }
 }
 
 // Descripción de cada posición del feed — grid alterno #1A1A1A / #F5F1EA / foto
