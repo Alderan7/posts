@@ -1521,6 +1521,7 @@ Responde SOLO en JSON válido sin markdown:
 
 /* ─── Clave Groq (IA de copy) — guardada solo en el navegador ─── */
 function getGroqKey(){ return (localStorage.getItem('groq_key')||'').trim(); }
+function getPixabayKey(){ return (localStorage.getItem('pixabay_key')|| (window.RM_CONFIG&&RM_CONFIG.pixabay_key) || '').trim(); }
 function guardarKeyGroq(v){
   localStorage.setItem('groq_key', (v||'').trim());
   const st=document.getElementById('groqStatus');
@@ -2499,17 +2500,38 @@ async function buscarVideosPexels(){
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
     if(!data.videos?.length){ grid.innerHTML='<div class="mlib-empty">Sin vídeos.<br>Prueba otro término.</div>'; return; }
-    grid.innerHTML = data.videos.map(v=>{
-      // mejor archivo vertical <=1920
+    const tarjeta = (poster, link, dur, fuente) =>
+      `<div class="mlib-item pexels-item" title="📹 ${dur||''}s · ${fuente} — clic para descargar"
+        onclick="descargarVideoPexels('${(link||'').replace(/'/g,'%27')}','${q.replace(/[^a-z0-9]/gi,'_')}',${dur||0})">
+        <img src="${poster}" loading="lazy" alt="">
+        <div class="mlib-use">⬇ ${fuente} ${dur||''}s</div>
+      </div>`;
+
+    let html = data.videos.map(v=>{
       const f = (v.video_files||[]).filter(x=>x.height>=x.width).sort((a,b)=>b.height-a.height)
                   .find(x=>x.height<=1920) || (v.video_files||[])[0] || {};
-      const poster = v.image;
-      return `<div class="mlib-item pexels-item" title="📹 ${v.duration}s · ${v.user?.name||''} — clic para descargar"
-        onclick="descargarVideoPexels('${(f.link||'').replace(/'/g,'%27')}','${q.replace(/[^a-z0-9]/gi,'_')}',${v.duration||0})">
-        <img src="${poster}" loading="lazy" alt="">
-        <div class="mlib-use">⬇ ${v.duration||''}s</div>
-      </div>`;
+      return tarjeta(v.image, f.link, v.duration, 'Pexels');
     }).join('');
+
+    // Segunda fuente: Pixabay (si hay key) — más variedad
+    const pk = getPixabayKey();
+    if(pk){
+      try{
+        const rp = await fetch(`https://pixabay.com/api/videos/?key=${pk}&q=${encodeURIComponent(q)}&per_page=12`);
+        if(rp.ok){
+          const dp = await rp.json();
+          html += (dp.hits||[]).map(h=>{
+            const vs = h.videos||{};
+            // preferir vertical; si no, el que haya
+            const cand = [vs.large,vs.medium,vs.small,vs.tiny].filter(Boolean);
+            const vert = cand.find(x=>x.height>=x.width) || cand[0] || {};
+            const poster = vert.thumbnail || (vs.tiny&&vs.tiny.thumbnail) || '';
+            return tarjeta(poster, vert.url, h.duration, 'Pixabay');
+          }).join('');
+        }
+      }catch(_){/* Pixabay opcional */}
+    }
+    grid.innerHTML = html || '<div class="mlib-empty">Sin vídeos.</div>';
   }catch(e){
     if(!esLocalhost()){ grid.innerHTML=`<div class="mlib-empty" style="color:#ff9f43;line-height:1.8">⚠️ Abre con <b style="color:#38B6FF">iniciar.py</b><br>para buscar vídeos.</div>`; }
     else { grid.innerHTML=`<div class="mlib-empty" style="color:#ff6b6b">Error: ${e.message}</div>`; }
@@ -3517,6 +3539,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
   // Restaurar API key (guardada o por defecto)
   const ki=document.getElementById('pexelsKey');
   if(ki) ki.value = localStorage.getItem('pexels_key') || PEXELS_KEY_DEFAULT;
+  // Sembrar keys desde config.local.js (fijas, no en el repo) si no hay guardadas
+  if(window.RM_CONFIG){
+    if(RM_CONFIG.groq_key && !localStorage.getItem('groq_key')) localStorage.setItem('groq_key', RM_CONFIG.groq_key);
+    if(RM_CONFIG.pixabay_key && !localStorage.getItem('pixabay_key')) localStorage.setItem('pixabay_key', RM_CONFIG.pixabay_key);
+  }
   // Restaurar key de Groq y reflejar estado
   const gk=document.getElementById('groqKey');
   if(gk){ gk.value = getGroqKey(); guardarKeyGroq(gk.value); }

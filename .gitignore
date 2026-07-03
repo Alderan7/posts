@@ -1,0 +1,11 @@
+# Claves privadas — NUNCA subir al repo público
+config.local.js
+
+# Descargas de prueba
+rm_contenido_*.zip
+
+# Reel-video: clips y salidas (pesan mucho)
+reel-video/videos_entrada/*
+reel-video/salida/*
+!reel-video/videos_entrada/.gitkeep
+!reel-video/salida/.gitkeep
