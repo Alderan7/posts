@@ -391,11 +391,15 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .slide-logo-img{
   height:var(--logo-h,46px);width:auto;object-fit:contain;display:block;opacity:1;
 }
-/* Fondo oscuro/azul: forzar blanco puro + halo para que el trazo fino resalte */
-.SD .slide-logo-img,.SB .slide-logo-img{
+/* Fondo negro: forzar blanco puro + halo para que el trazo fino resalte */
+.SD .slide-logo-img{
   filter:brightness(1.7) contrast(1.05)
          drop-shadow(0 0 2px rgba(255,255,255,.35))
          drop-shadow(0 2px 6px rgba(0,0,0,.55));
+}
+/* Fondo azul: logo NEGRO con halo claro para separarlo del azul */
+.SB .slide-logo-img{
+  filter:brightness(.15) drop-shadow(0 0 3px rgba(255,255,255,.5));
 }
 .rm{font-family:var(--F-SER);font-style:italic;font-size:24px;letter-spacing:.04em}
 .SD .rm{color:rgba(245,241,234,.28)} .SL .rm{color:rgba(26,26,26,.22)} .SB .rm{color:rgba(26,26,26,.4)}
@@ -1670,9 +1674,9 @@ function setLogoTam(px){
   if(typeof buildThumbs==='function' && SLIDES.length) buildThumbs();
 }
 
-// Isotipo RM según fondo: blanco en oscuro/azul, negro en claro
+// Isotipo RM según fondo: BLANCO solo en negro/oscuro; NEGRO en azul y claro
 function logoHTML(fondo){
-  const src = (fondo==='light') ? 'logo-rm-negro-iso.png' : 'logo-rm-blanco-iso.png';
+  const src = (fondo==='light' || fondo==='blue') ? 'logo-rm-negro-iso.png' : 'logo-rm-blanco-iso.png';
   const h = getLogoTam();
   return `<div class="logo-wrap" style="--logo-h:${h}px"><img class="slide-logo-img" src="${src}" alt="RM" onerror="this.outerHTML='<span class=\\'rm\\'>RM</span>'"></div>`;
 }
