@@ -627,13 +627,15 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 }
 .mlib-item:hover .mlib-del{opacity:1}
 .mlib-item .mlib-use{
-  position:absolute;bottom:0;left:0;right:0;
-  background:var(--UI-A);color:#fff;
-  font-size:8px;font-weight:600;letter-spacing:.05em;
-  text-align:center;padding:3px;opacity:0;transition:opacity .15s;
-  cursor:pointer;border:none;
+  position:absolute;inset:0;
+  background:rgba(56,182,255,.55);color:#fff;
+  font-size:11px;font-weight:700;letter-spacing:.05em;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .12s;
+  cursor:pointer;pointer-events:none;
 }
 .mlib-item:hover .mlib-use{opacity:1}
+.mlib-item:active{transform:scale(.96)}
 .mlib-empty{
   grid-column:1/-1;font-size:9px;color:var(--UI-M);
   text-align:center;padding:16px 0;line-height:1.6;
@@ -1703,10 +1705,10 @@ function renderMediaGrid(){
     return;
   }
   grid.innerHTML = MEDIA.map(m=>`
-    <div class="mlib-item" id="mitem-${m.id}" onclick="seleccionarMedia(${m.id})">
+    <div class="mlib-item" id="mitem-${m.id}" title="Clic para usar esta foto" onclick="usarMedia(${m.id})">
       <img src="${m.url}" alt="${m.name}">
       <button class="mlib-del" onclick="event.stopPropagation();borrarMedia(${m.id})">✕</button>
-      <button class="mlib-use" onclick="event.stopPropagation();usarMedia(${m.id})">Usar</button>
+      <div class="mlib-use">✓ Usar</div>
     </div>`).join('');
 }
 
@@ -3708,9 +3710,10 @@ async function buscarPexelsTermino(q){
       return;
     }
     grid.innerHTML = data.photos.map(ph=>`
-      <div class="mlib-item pexels-item" title="📷 ${ph.photographer}">
+      <div class="mlib-item pexels-item" title="Clic para usar · 📷 ${ph.photographer}"
+        onclick="importarFotoPexels('${(ph.src.large2x||ph.src.large).replace(/'/g,'%27')}','${ph.photographer.replace(/['"]/g,'')}')">
         <img src="${ph.src.medium}" loading="lazy" alt="${ph.alt||''}">
-        <button class="mlib-use" onclick="importarFotoPexels('${(ph.src.large2x||ph.src.large).replace(/'/g,'%27')}','${ph.photographer.replace(/['"]/g,'')}')">Usar</button>
+        <div class="mlib-use">✓ Usar</div>
       </div>`).join('');
   }catch(e){
     // Falló el fetch — casi seguro CORS desde file://
