@@ -893,6 +893,26 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       </div>
       <div id="pexelsStatus" style="font-size:8px;margin-top:3px;line-height:1.5;color:var(--UI-M)"></div>
       <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px" id="pexelsTags"></div>
+
+      <!-- Generar imagen con IA (Pollinations — gratis, sin key) -->
+      <div style="border-top:1px solid var(--UI-B);margin-top:8px;padding-top:8px">
+        <div style="font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--UI-M);margin-bottom:4px">✨ Crear imagen con IA</div>
+        <div class="pexels-bar">
+          <input type="text" id="iaPrompt" placeholder="cocina moderna reformada, luz natural..." onkeydown="if(event.key==='Enter')generarImagenIA()">
+          <button id="iaBtn" onclick="generarImagenIA()" title="Generar imagen con IA (gratis)">✨</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
+          <select id="iaFormato" style="flex:1;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:4px;border-radius:4px;font-size:9px;font-family:'Montserrat',sans-serif;cursor:pointer">
+            <option value="1080x1350">Vertical 4:5 (feed)</option>
+            <option value="1080x1920">Vertical 9:16 (reel)</option>
+            <option value="1080x1080">Cuadrado 1:1</option>
+          </select>
+          <label style="font-size:8px;color:var(--UI-M);display:flex;align-items:center;gap:3px;cursor:pointer" title="Añade estilo fotográfico de reformas al prompt">
+            <input type="checkbox" id="iaEstilo" checked style="accent-color:var(--UI-A)">estilo reformas
+          </label>
+        </div>
+        <div id="iaStatus" style="font-size:8px;margin-top:4px;line-height:1.5;color:var(--UI-M)"></div>
+      </div>
     </div>
 
     <!-- Grid: fotos subidas -->
@@ -3728,6 +3748,64 @@ async function buscarPexelsTermino(q){
       grid.innerHTML = `<div class="mlib-empty" style="color:#ff6b6b">Error: ${e.message}</div>`;
     }
   }
+}
+
+/* ─── Generar imagen con IA (Pollinations.ai — gratis, sin API key) ─── */
+async function generarImagenIA(){
+  const prompt = document.getElementById('iaPrompt')?.value?.trim();
+  const status = document.getElementById('iaStatus');
+  const btn = document.getElementById('iaBtn');
+  if(!prompt){ if(status){status.style.color='#ff9f43';status.textContent='Escribe qué imagen quieres.';} return; }
+
+  const [w,h] = (document.getElementById('iaFormato')?.value || '1080x1350').split('x').map(Number);
+  const conEstilo = document.getElementById('iaEstilo')?.checked;
+  // Estilo fotográfico coherente con la marca (opcional)
+  const estilo = conEstilo
+    ? ', professional interior photography, modern home renovation, natural light, elegant, high quality, photorealistic, cinematic'
+    : '';
+  const full = prompt + estilo;
+  const seed = Math.floor(Math.random()*1e6);   // semilla → cada generación distinta
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(full)}`
+            + `?width=${w}&height=${h}&seed=${seed}&nologo=true&model=flux`;
+
+  if(btn){ btn.disabled=true; btn.textContent='⏳'; }
+  if(status){ status.style.color='#38B6FF'; status.textContent='Generando con IA… (10-25s)'; }
+
+  // Intenta descargar la imagen a dataURL (con 1 reintento; Pollinations a veces 403 y luego responde)
+  async function intentar(){
+    const res = await fetch(url);
+    if(!res.ok) throw Object.assign(new Error('HTTP '+res.status), {status:res.status});
+    const blob = await res.blob();
+    if(blob.size < 800) throw new Error('respuesta vacía');
+    return await new Promise((r,rej)=>{ const rd=new FileReader(); rd.onload=e=>r(e.target.result); rd.onerror=rej; rd.readAsDataURL(blob); });
+  }
+
+  let ultimoErr;
+  for(let intento=1; intento<=2; intento++){
+    try{
+      const dataUrl = await intentar();
+      const id = ++mediaIdCounter;
+      MEDIA.push({id, url:dataUrl, name:`IA · ${prompt.slice(0,24)}`});
+      renderMediaGrid();
+      if(status){ status.style.color='#38B6FF'; status.textContent='✓ Imagen creada — clic en ella para usarla'; }
+      if(asignandoTarget) asignarImagen(id, asignandoTarget);
+      if(btn){ btn.disabled=false; btn.textContent='✨'; }
+      return;
+    }catch(e){ ultimoErr=e; if(intento===1) await delay(2500); }
+  }
+
+  // Falló las 2 veces
+  if(status){
+    status.style.color='#ff9f43';
+    if(ultimoErr?.status===403){
+      status.textContent='⚠ El servicio de IA rechazó la petición (403). Reintenta en 1 min; si sigue, tu red puede estar bloqueada.';
+    }else if(!esLocalhost()){
+      status.textContent='⚠ Abre con iniciar.bat (localhost) para crear imágenes IA.';
+    }else{
+      status.textContent='No se pudo generar: '+(ultimoErr?.message||'error');
+    }
+  }
+  if(btn){ btn.disabled=false; btn.textContent='✨'; }
 }
 
 async function importarFotoPexels(url, autor){
