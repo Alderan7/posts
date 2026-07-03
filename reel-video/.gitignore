@@ -1,0 +1,4 @@
+# No versionar vídeos ni salidas (pesan mucho)
+videos_entrada/*
+salida/*
+!.gitkeep

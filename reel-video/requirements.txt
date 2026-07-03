@@ -1,0 +1,5 @@
+# Módulo de vídeo para Reels — Rosa María Media
+# Instalar con:  py -m pip install -r requirements.txt
+moviepy>=2.0.0
+Pillow>=10.0
+numpy>=1.26
