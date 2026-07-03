@@ -413,6 +413,16 @@
     <!-- TAB: GENERAR -->
     <div class="rpanel" id="tab-generar">
       <div class="csec">
+        <div class="csec-h">✨ Copy con IA (Groq · gratis)</div>
+        <div class="crow">
+          <label>API Key de Groq</label>
+          <input type="password" id="groqKey" placeholder="gsk_..." oninput="guardarKeyGroq(this.value)"
+            style="background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:5px 7px;border-radius:4px;font-size:10px;font-family:'Montserrat',sans-serif;width:100%">
+        </div>
+        <div id="groqStatus" style="font-size:8px;margin-top:3px;line-height:1.5;color:var(--UI-M)">Sin key: se usa el banco de copys.</div>
+        <div style="font-size:8px;color:var(--UI-M);margin-top:3px">Consigue una gratis en <b style="color:var(--UI-A)">groq.com</b> → API Keys. Se guarda solo en tu navegador.</div>
+      </div>
+      <div class="csec">
         <div class="csec-h">Pilar de contenido</div>
         <div class="crow">
           <label>Pilar estratégico</label>

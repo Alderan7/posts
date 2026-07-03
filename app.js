@@ -1499,19 +1499,35 @@ Responde SOLO en JSON válido sin markdown:
   "cta_word": "UNA PALABRA en mayúsculas para el CTA (ej: SISTEMA, AGENDA, OBRAS)"
 }`;
 
-  const res=await fetch('https://api.anthropic.com/v1/messages',{
+  const key = getGroqKey();
+  if(!key) throw new Error('sin-key');   // sin key → generar() usa el banco local
+
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
     body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
-      max_tokens:1000,
+      model:'llama-3.3-70b-versatile',
+      temperature:0.9,
+      max_tokens:1200,
+      response_format:{type:'json_object'},
       messages:[{role:'user',content:prompt}]
     })
   });
   if(!res.ok) throw new Error(`HTTP ${res.status}`);
   const data=await res.json();
-  const txt=data.content?.[0]?.text||'';
+  const txt=data.choices?.[0]?.message?.content||'';
   return JSON.parse(txt.replace(/```json|```/g,'').trim());
+}
+
+/* ─── Clave Groq (IA de copy) — guardada solo en el navegador ─── */
+function getGroqKey(){ return (localStorage.getItem('groq_key')||'').trim(); }
+function guardarKeyGroq(v){
+  localStorage.setItem('groq_key', (v||'').trim());
+  const st=document.getElementById('groqStatus');
+  if(st){
+    if(getGroqKey()){ st.style.color='#38B6FF'; st.textContent='✓ IA activada — cada generación usa copy nuevo'; }
+    else { st.style.color='var(--UI-M)'; st.textContent='Sin key: se usa el banco de copys.'; }
+  }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -3427,6 +3443,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
   // Restaurar API key (guardada o por defecto)
   const ki=document.getElementById('pexelsKey');
   if(ki) ki.value = localStorage.getItem('pexels_key') || PEXELS_KEY_DEFAULT;
+  // Restaurar key de Groq y reflejar estado
+  const gk=document.getElementById('groqKey');
+  if(gk){ gk.value = getGroqKey(); guardarKeyGroq(gk.value); }
   const angulo=rnd(Object.keys(BANCO.angulos));
   const slides=buildCarrusel(angulo,null,7);
   slides.forEach(s=>SLIDES.push(s));
