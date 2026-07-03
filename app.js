@@ -3044,6 +3044,7 @@ async function generarMes(dias){
   const numSlides=parseInt(document.getElementById('cNumSlidesTop')?.value||document.getElementById('cNumSlides')?.value)||7;
   const cal=[['Dia idea','Formato','Pilar','Posicion feed','Hook','CTA','Busqueda visual','Carpeta']];
   let totalImgs=0;
+  const usarIA = !!getGroqKey();   // si hay key de Groq, cada día lleva copy único
 
   try{
     for(let d=0; d<dias; d++){
@@ -3052,11 +3053,22 @@ async function generarMes(dias){
       const esCarrusel=idea.formato==='Carrusel';
       const pos=getFeedPos();
 
-      // Construir contenido sembrado con la idea real del banco
-      const slides=esCarrusel?buildCarrusel(angulo,null,numSlides):buildPost(angulo,null);
-      if(slides[0]){ slides[0].head=idea.hook; slides[0].eye=idea.objetivo||idea.pilar; }
+      // Copy con IA (Groq) si hay key; si falla/limita, se usa el banco de la idea
+      let aiDia=null;
+      if(usarIA){
+        msg.textContent=`Día ${d+1}/${dias} — escribiendo copy con IA...`;
+        try{ aiDia=await fetchAI(angulo); }
+        catch(e){ aiDia=null; /* 429/red → banco para este día */ }
+      }
+
+      // Construir contenido (sembrado con IA o con la idea del banco)
+      const slides=esCarrusel?buildCarrusel(angulo,aiDia,numSlides):buildPost(angulo,aiDia);
+      if(slides[0]){ slides[0].head=(aiDia&&aiDia.hook)||idea.hook; slides[0].eye=idea.objetivo||idea.pilar; }
       const ult=slides[slides.length-1];
-      if(ult&&idea.cta){ ult.cta=idea.cta.length>40?'Escríbeme REFORMAS':idea.cta; }
+      if(ult){
+        ult.cta = (aiDia&&aiDia.cta_word) ? `Escríbeme ${aiDia.cta_word}`
+                : (idea.cta && idea.cta.length>40 ? 'Escríbeme REFORMAS' : (idea.cta||ult.cta));
+      }
       SLIDES.length=0; slides.forEach(s=>SLIDES.push(s));
       if(esCarrusel) avanzarFeedPos();
 
@@ -3072,18 +3084,20 @@ async function generarMes(dias){
         totalImgs++;
         await delay(30);
       }
-      zip.file(`${carpeta}/copy.txt`, copyDeIdea(idea));
+      zip.file(`${carpeta}/copy.txt`, copyDeIdea(idea, aiDia));
       const kw=((PEXELS_SUGERIDAS[angulo]||PEXELS_SUGERIDAS.default||[])[0])||'';
+      const hookFinal = (aiDia&&aiDia.hook)||idea.hook;
+      const ctaFinal  = (aiDia&&aiDia.cta_word) ? `Escríbeme ${aiDia.cta_word}`
+                      : ((idea.cta&&idea.cta.length<=40)?idea.cta:'Escríbeme REFORMAS');
       // Para días de Reel: datos estructurados que consume reel-video/reel_video.py --mes
       if(idea.formato==='Reel'){
-        const cta=(idea.cta && idea.cta.length<=40) ? idea.cta : 'Escríbeme REFORMAS';
         zip.file(`${carpeta}/reel.json`, JSON.stringify({
-          dia: idea.dia, hook: idea.hook,
-          sub: idea.deseo ? `Para ${idea.deseo}` : '',
-          cta, busqueda: kw, orden: d+1
+          dia: idea.dia, hook: hookFinal,
+          sub: (aiDia&&aiDia.hook_sub) || (idea.deseo ? `Para ${idea.deseo}` : ''),
+          cta: ctaFinal, busqueda: kw, orden: d+1
         }, null, 2));
       }
-      cal.push([idea.dia,idea.formato,idea.pilar,esCarrusel?'P'+pos:'—',idea.hook,idea.cta,kw,carpeta]);
+      cal.push([idea.dia,idea.formato,idea.pilar,esCarrusel?'P'+pos:'—',hookFinal,ctaFinal,kw,carpeta]);
       marcarUsada(idea.dia);
     }
 
@@ -3125,11 +3139,14 @@ Publica con Meta Business Suite Planner (gratis) y programa todo el mes en una s
   ov.classList.remove('on');
 }
 
-// Texto listo para pegar en Instagram (+ guion si es Reel)
-function copyDeIdea(idea){
+// Texto listo para pegar en Instagram (+ guion si es Reel). Usa copy de IA si se pasa.
+function copyDeIdea(idea, ai){
   const esReel=idea.formato==='Reel';
+  const hook = (ai&&ai.hook)||idea.hook;
+  const cuerpo = (ai&&ai.cta_body)||idea.idea;
+  const cta = (ai&&ai.cta_word)?`Escríbeme ${ai.cta_word}`:idea.cta;
   const guion=esReel?`\n\n— GUION REEL —\nEstructura: ${idea.estructura}\nIdea visual: ${idea.visual}\nÁngulo: ${idea.angulo}`:'';
-  return `${idea.hook}\n\n${idea.idea}\n\n${idea.cta}${guion}\n\n#reformas #empresadereformas #marketingparareformas #metaads #googleads`;
+  return `${hook}\n\n${cuerpo}\n\n${cta}${guion}\n\n#reformas #empresadereformas #marketingparareformas #metaads #googleads`;
 }
 
 /* ═══════════════════════════════════════════
