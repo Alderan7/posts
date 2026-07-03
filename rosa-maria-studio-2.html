@@ -2242,6 +2242,8 @@ function switchTab(id, btn){
   document.querySelectorAll('.rpanel').forEach(p=>p.classList.remove('on'));
   btn.classList.add('on');
   document.getElementById('tab-'+id).classList.add('on');
+  // El COPY se reconstruye con el contenido actual al abrir su pestaña
+  if(id==='copy' && SLIDES.length) refrescarCopy();
 }
 
 function abrirTabEditar(){
@@ -3515,25 +3517,60 @@ function buildPost(angulo,ai){
 /* ═══════════════════════════════════════════
    PANEL COPY
    ═══════════════════════════════════════════ */
-function actualizarCopy(angulo, ai){
-  const copyData = BANCO.instagramCopy[angulo] || BANCO.instagramCopy.default;
-  const hook = ai ? ai.hook : (BANCO.hooks[angulo]?BANCO.hooks[angulo][0]:'');
-  const caption = copyData.caption;
-  const hashtags = copyData.hashtags;
+// Contexto de la última generación, para poder refrescar el COPY al vuelo
+let COPY_CTX = { angulo:'sistema', ai:null };
 
+function actualizarCopy(angulo, ai){
+  COPY_CTX = { angulo: angulo||COPY_CTX.angulo, ai: ai||null };
+  refrescarCopy();
+}
+
+// Construye el COPY a partir del CONTENIDO REAL en pantalla (SLIDES + modo)
+function refrescarCopy(){
   const container = document.getElementById('copyContent');
+  if(!container) return;
+  const angulo = COPY_CTX.angulo;
+  const ai = COPY_CTX.ai;
+  const copyData = BANCO.instagramCopy[angulo] || BANCO.instagramCopy.default;
+  const esc = s => String(s==null?'':s).replace(/[<>]/g,'');
+
+  // Hook REAL = titular del primer slide generado (lo que se ve en la imagen)
+  const hookReal = (SLIDES[0]?.head) || (ai?ai.hook:'') || (BANCO.hooks[angulo]?.[0]) || '';
+  const ctaReal  = (SLIDES[SLIDES.length-1]?.cta || '').replace(/\s*[→↓👇]+\s*$/,'').trim();
+
+  // Etiqueta de formato coherente con lo generado
+  const fmt = modo==='reel' ? '🎬 Reel'
+            : modo==='post' ? '📄 Post'
+            : `🗂 Carrusel · ${SLIDES.length} slides`;
+
+  // ── Caption: arranca con el HOOK real + desarrollo del banco (sin su hook) ──
+  const partes = (copyData.caption||'').split('\n\n');
+  const cuerpo = partes.length>1 ? partes.slice(1).join('\n\n') : (copyData.caption||'');
+  let caption = hookReal ? `${hookReal}\n\n${cuerpo}` : (copyData.caption||'');
+  if(ctaReal && !caption.includes(ctaReal)) caption += `\n\n${ctaReal} 👇`;
+  const hashtags = copyData.hashtags||'';
+
+  // ── Reel: además mostrar el GUION generado ──
+  const bloqueGuion = (modo==='reel' && typeof ULTIMO_GUION!=='undefined' && ULTIMO_GUION) ? `
+    <div class="copy-label" style="margin-top:4px">Guión del reel</div>
+    <div class="copy-text" style="white-space:pre-wrap;font-size:10px">${esc(ULTIMO_GUION)}</div>
+    <button class="cbtn" onclick="copiar(this.previousElementSibling.textContent)">📋 Copiar guión</button>` : '';
+
   container.innerHTML = `
-    <div class="copy-label">Hook (headline)</div>
-    <div class="copy-text">${hook}</div>
+    <div style="display:inline-block;font-size:8px;font-weight:700;letter-spacing:.08em;color:var(--UI-A);background:rgba(56,182,255,.12);padding:3px 8px;border-radius:4px;margin-bottom:2px">${fmt}</div>
+    <div style="font-size:8px;color:var(--UI-M);margin:2px 0 4px">Texto tomado de lo que ves en pantalla ahora</div>
+    <div class="copy-label">Hook (headline del slide 1)</div>
+    <div class="copy-text">${esc(hookReal)}</div>
     <button class="cbtn" onclick="copiar(this.previousElementSibling.textContent)">📋 Copiar hook</button>
+    ${bloqueGuion}
     <div class="copy-label">Caption Instagram</div>
-    <div class="copy-text">${caption}</div>
+    <div class="copy-text" style="white-space:pre-wrap">${esc(caption)}</div>
     <button class="cbtn" onclick="copiar(this.previousElementSibling.textContent)">📋 Copiar caption</button>
     <div class="copy-label">Hashtags</div>
     <div class="copy-text hashtags">${hashtags}</div>
     <button class="cbtn" onclick="copiar(this.previousElementSibling.textContent)">📋 Copiar hashtags</button>
     <div class="copy-label" style="margin-top:4px">Todo junto</div>
-    <button class="cbtn" onclick="copiarTodo('${angulo}','${encodeURIComponent(hook)}')">📋 Copiar caption + hashtags</button>
+    <button class="cbtn" onclick="copiar(\`${esc(caption).replace(/`/g,'')}\n\n${hashtags}\`)">📋 Copiar caption + hashtags</button>
   `;
 
   actualizarPromptsMJ(angulo);
