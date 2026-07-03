@@ -385,12 +385,14 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 
 /* Isotipo RM en posts normales — firma en esquina (PNG transparente real) */
 .logo-wrap{
-  width:46px;height:42px;
+  min-width:46px;height:var(--logo-h,46px);
   flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;
 }
 .slide-logo-img{
-  height:42px;width:auto;object-fit:contain;display:block;opacity:.85;
+  height:var(--logo-h,46px);width:auto;object-fit:contain;display:block;opacity:1;
 }
+/* Fondo oscuro/azul: sombra sutil para separar el logo blanco del fondo */
+.SD .slide-logo-img,.SB .slide-logo-img{filter:drop-shadow(0 1px 3px rgba(0,0,0,.45))}
 .rm{font-family:var(--F-SER);font-style:italic;font-size:24px;letter-spacing:.04em}
 .SD .rm{color:rgba(245,241,234,.28)} .SL .rm{color:rgba(26,26,26,.22)} .SB .rm{color:rgba(26,26,26,.4)}
 
@@ -1136,6 +1138,20 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         </div>
         <div class="tml"><span>Guías de zona segura</span></div>
       </div>
+
+      <div class="csec">
+        <div class="csec-h"><span>Logo RM</span><span id="logoTamLbl" style="color:var(--UI-A);font-weight:700">Normal</span></div>
+        <div class="crow">
+          <label>Tamaño en todos los slides</label>
+          <input type="range" id="logoTam" min="34" max="120" step="2" value="46" oninput="setLogoTam(this.value)">
+        </div>
+        <div style="display:flex;gap:5px;margin-top:6px">
+          <button class="btn btn-gh" style="flex:1;padding:4px" onclick="setLogoTam(40)">S</button>
+          <button class="btn btn-gh" style="flex:1;padding:4px" onclick="setLogoTam(56)">M</button>
+          <button class="btn btn-gh" style="flex:1;padding:4px" onclick="setLogoTam(78)">L</button>
+          <button class="btn btn-gh" style="flex:1;padding:4px" onclick="setLogoTam(104)">XL</button>
+        </div>
+      </div>
     </div>
 
     <!-- TAB: GENERAR -->
@@ -1638,10 +1654,23 @@ function slideH(){ return modo==='reel' ? 'h192' : 'h135' }   // 1920 en reel, 1
 function spClass(){ return modo==='reel' ? 'SPreel' : 'SP' }  // padding con zonas seguras en reel
 function delay(ms){return new Promise(r=>setTimeout(r,ms))}
 
+// Tamaño del logo en slides (px de alto), persistente
+function getLogoTam(){ return parseInt(localStorage.getItem('rm_logo_tam')||'46')||46; }
+function setLogoTam(px){
+  px=Math.max(30,Math.min(140,parseInt(px)||46));
+  localStorage.setItem('rm_logo_tam', String(px));
+  const sl=document.getElementById('logoTam'); if(sl) sl.value=px;
+  const lbl=document.getElementById('logoTamLbl');
+  if(lbl) lbl.textContent = px<=44?'S':px<=64?'M':px<=90?'L':'XL';
+  if(typeof show==='function' && SLIDES.length) show(cur);   // re-render con el nuevo tamaño
+  if(typeof buildThumbs==='function' && SLIDES.length) buildThumbs();
+}
+
 // Isotipo RM según fondo: blanco en oscuro/azul, negro en claro
 function logoHTML(fondo){
   const src = (fondo==='light') ? 'logo-rm-negro-iso.png' : 'logo-rm-blanco-iso.png';
-  return `<div class="logo-wrap"><img class="slide-logo-img" src="${src}" alt="RM" onerror="this.outerHTML='<span class=\\'rm\\'>RM</span>'"></div>`;
+  const h = getLogoTam();
+  return `<div class="logo-wrap" style="--logo-h:${h}px"><img class="slide-logo-img" src="${src}" alt="RM" onerror="this.outerHTML='<span class=\\'rm\\'>RM</span>'"></div>`;
 }
 
 /* ═══════════════════════════════════════════
@@ -4580,6 +4609,7 @@ async function expPPTX(){
 document.addEventListener('DOMContentLoaded',async()=>{
   actualizarAngulos();
   actualizarFeedLabel(); // Mostrar posición actual del feed
+  setLogoTam(getLogoTam()); // Restaurar tamaño de logo guardado
   // Restaurar API key (guardada o por defecto)
   const ki=document.getElementById('pexelsKey');
   if(ki) ki.value = localStorage.getItem('pexels_key') || PEXELS_KEY_DEFAULT;
