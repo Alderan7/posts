@@ -2480,6 +2480,63 @@ async function buscarPexelsTermino(q){
   }
 }
 
+/* ─── Buscar vídeos de fondo para reels (Pexels Videos, misma key) ─── */
+async function buscarVideosPexels(){
+  const q = document.getElementById('vidQ')?.value?.trim();
+  const status = document.getElementById('vidStatus');
+  if(!q){ if(status){status.style.color='#ff9f43';status.textContent='Escribe qué vídeo buscar.';} return; }
+  const key = (document.getElementById('pexelsKey')?.value?.trim()) || localStorage.getItem('pexels_key') || PEXELS_KEY_DEFAULT;
+
+  const box = document.getElementById('vidResults');
+  const grid = document.getElementById('vidGrid');
+  box.style.display='flex'; grid.innerHTML='<div class="mlib-empty">🔍 Buscando vídeos...</div>';
+  if(status){ status.style.color='var(--UI-M)'; status.textContent='Clic en un vídeo para descargarlo.'; }
+
+  try{
+    const res = await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(q)}&per_page=12&orientation=portrait`,
+      { headers:{ Authorization:key } });
+    if(res.status===401){ grid.innerHTML='<div class="mlib-empty" style="color:#ff6b6b">❌ API Key incorrecta</div>'; return; }
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    if(!data.videos?.length){ grid.innerHTML='<div class="mlib-empty">Sin vídeos.<br>Prueba otro término.</div>'; return; }
+    grid.innerHTML = data.videos.map(v=>{
+      // mejor archivo vertical <=1920
+      const f = (v.video_files||[]).filter(x=>x.height>=x.width).sort((a,b)=>b.height-a.height)
+                  .find(x=>x.height<=1920) || (v.video_files||[])[0] || {};
+      const poster = v.image;
+      return `<div class="mlib-item pexels-item" title="📹 ${v.duration}s · ${v.user?.name||''} — clic para descargar"
+        onclick="descargarVideoPexels('${(f.link||'').replace(/'/g,'%27')}','${q.replace(/[^a-z0-9]/gi,'_')}',${v.duration||0})">
+        <img src="${poster}" loading="lazy" alt="">
+        <div class="mlib-use">⬇ ${v.duration||''}s</div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    if(!esLocalhost()){ grid.innerHTML=`<div class="mlib-empty" style="color:#ff9f43;line-height:1.8">⚠️ Abre con <b style="color:#38B6FF">iniciar.py</b><br>para buscar vídeos.</div>`; }
+    else { grid.innerHTML=`<div class="mlib-empty" style="color:#ff6b6b">Error: ${e.message}</div>`; }
+  }
+}
+
+// Descarga el mp4 al ordenador (va a Descargas; muévelo a reel-video/videos_entrada/)
+async function descargarVideoPexels(url, slug, dur){
+  if(!url) return;
+  const status = document.getElementById('vidStatus');
+  if(status){ status.style.color='#38B6FF'; status.textContent='Descargando vídeo...'; }
+  try{
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `pexels_${slug}_${dur}s.mp4`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+    if(status){ status.style.color='#38B6FF'; status.textContent='✓ Descargado. Muévelo a reel-video/videos_entrada/'; }
+  }catch(e){
+    // Fallback: abrir en pestaña para guardar manualmente
+    window.open(url,'_blank');
+    if(status){ status.style.color='#ff9f43'; status.textContent='Se abrió en otra pestaña: guárdalo con clic derecho.'; }
+  }
+}
+
 /* ─── Generar imagen con IA (Pollinations.ai — gratis, sin API key) ─── */
 async function generarImagenIA(){
   const prompt = document.getElementById('iaPrompt')?.value?.trim();

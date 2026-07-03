@@ -139,6 +139,16 @@
         </div>
         <div id="iaStatus" style="font-size:8px;margin-top:4px;line-height:1.5;color:var(--UI-M)"></div>
       </div>
+
+      <!-- Buscar vídeos de fondo para reels (Pexels Vídeos, misma key) -->
+      <div style="border-top:1px solid var(--UI-B);margin-top:8px;padding-top:8px">
+        <div style="font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--UI-M);margin-bottom:4px">🎬 Vídeos para reels</div>
+        <div class="pexels-bar">
+          <input type="text" id="vidQ" placeholder="reforma, obra, cocina..." onkeydown="if(event.key==='Enter')buscarVideosPexels()">
+          <button onclick="buscarVideosPexels()" title="Buscar vídeos de fondo (Pexels)">🎬</button>
+        </div>
+        <div id="vidStatus" style="font-size:8px;margin-top:3px;line-height:1.5;color:var(--UI-M)">Descarga clips para el módulo de reels.</div>
+      </div>
     </div>
 
     <!-- Grid: fotos subidas -->
@@ -150,6 +160,12 @@
     <div id="pexelsResults" style="display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0">
       <div style="font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--UI-M);padding:5px 7px;border-top:1px solid var(--UI-B);flex-shrink:0">Resultados Pexels</div>
       <div class="mlib-grid" id="pexelsGrid" style="overflow-y:auto;flex:1"></div>
+    </div>
+
+    <!-- Resultados vídeos Pexels -->
+    <div id="vidResults" style="display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0">
+      <div style="font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--UI-M);padding:5px 7px;border-top:1px solid var(--UI-B);flex-shrink:0">Vídeos — clic para descargar</div>
+      <div class="mlib-grid" id="vidGrid" style="overflow-y:auto;flex:1"></div>
     </div>
 
   </div>
