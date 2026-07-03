@@ -28,6 +28,76 @@ const ANGULO_LABELS = {
   resultados: 'Resultados reales con datos',
 };
 
+/* ═══════════════════════════════════════════
+   NICHOS DE MARCA — Reformas / Marca Personal
+   La marca personal: estratega de crecimiento que combina
+   fiscalidad + marketing + IA. Idea de fondo: por qué unas
+   empresas crecen y otras no.
+   ═══════════════════════════════════════════ */
+const NICHO = {
+  reformas: {
+    nombre:'Reformas',
+    eye:'Media Buyer · Empresas de Reformas',
+    hashtags:'#reformas #empresadereformas #marketingparareformas #metaads #googleads #reformasintegrales',
+    persona:'media buyer estratégica especializada en Meta Ads y Google Ads para empresas de reformas en España',
+    lector:'un gerente o dueño de empresa de reformas (40-55 años), saturado, escéptico con el marketing, dependiente del boca a boca, con familia que le espera en casa',
+    tono:'elegante, directo, lenguaje de negocio. NUNCA tecnicismos (CTR, CPL, funnel, pixel). Habla de tus obras rentables, tu agenda cubierta, tus clientes de calidad, tu estabilidad, tu tiempo, tu familia, tu autoridad',
+    ctaEj:'SISTEMA, AGENDA, OBRAS',
+    pills:['Meta Ads','Google Ads','Estrategia a medida','Resultados medibles'],
+    p2head:'Tú te centras en las obras.\nYo me centro en llenar tu agenda.',
+    p2sub:'Estrategia que convierte. Resultados que se notan.',
+    usaBanco:true
+  },
+  personal: {
+    nombre:'Marca Personal',
+    eye:'Estrategia · Fiscalidad · Marketing · IA',
+    hashtags:'#crecimientoempresarial #estrategiaempresarial #marketingdigital #inteligenciaartificial #pymes #autonomos #negocios',
+    persona:'estratega de crecimiento empresarial: empezaste como asesora fiscal viendo negocios desde dentro (sus números y resultados) y descubriste que muchas empresas buenas no crecen simplemente porque el mercado no sabe que existen. Hoy combinas FISCALIDAD, MARKETING e INTELIGENCIA ARTIFICIAL para ayudar a las empresas a crecer de forma sostenible',
+    lector:'un autónomo, profesional independiente o dueño de pyme (servicios, despachos, reformas y más) que hace bien su trabajo pero no consigue crecer, va saturado y sin tiempo, y está escéptico con el humo del marketing',
+    tono:'estratégico, analítico, directo y elegante. Sin humo ni promesas vacías. Conectas los números con la visibilidad y la tecnología. Tu gran idea de fondo: por qué unas empresas crecen y otras se estancan',
+    ctaEj:'CRECER, ESTRATEGIA, DATOS',
+    pills:['Estrategia','Datos y fiscalidad','Marketing','Inteligencia Artificial'],
+    p2head:'Tú te centras en tu trabajo.\nYo, en que tu empresa crezca.',
+    p2sub:'Números, visibilidad y tecnología que hacen crecer tu negocio.',
+    usaBanco:false,
+    angulos:{
+      crecimiento:'por qué unas empresas crecen y otras se estancan aunque hagan bien su trabajo',
+      visibilidad:'una empresa excelente que el mercado no conoce no puede crecer',
+      datos:'tomar decisiones por números reales y no por intuición',
+      ia:'usar la inteligencia artificial para producir más en menos tiempo',
+      estrategia:'combinar fiscalidad, marketing e IA para crecer de forma sostenible',
+      autoridad:'posicionarte como referente para atraer mejores clientes',
+    },
+    labels:{
+      crecimiento:'Por qué unas empresas crecen',
+      visibilidad:'Ser visible para crecer',
+      datos:'Decisiones basadas en datos',
+      ia:'IA aplicada a tu negocio',
+      estrategia:'Estrategia de crecimiento global',
+      autoridad:'Autoridad y posicionamiento',
+    },
+    pilares:{
+      dolor:['crecimiento','visibilidad','datos'],
+      educativo:['datos','ia','estrategia'],
+      autoridad:['autoridad','estrategia','crecimiento'],
+      conversion:['estrategia','visibilidad','autoridad'],
+      reframe:['crecimiento','datos','ia'],
+      servicio:['estrategia','ia','autoridad'],
+      objecion:['visibilidad','datos','crecimiento'],
+    }
+  }
+};
+let _nicho = (localStorage.getItem('rm_nicho')==='personal') ? 'personal' : 'reformas';
+function getNicho(){ return _nicho; }
+function N(){ return NICHO[_nicho] || NICHO.reformas; }
+function marcaEye(){ return N().eye; }
+function setNicho(v){
+  _nicho = (v==='personal') ? 'personal' : 'reformas';
+  localStorage.setItem('rm_nicho', _nicho);
+  const lbl = document.getElementById('nichoLbl'); if(lbl) lbl.textContent = N().nombre;
+  if(typeof actualizarAngulos==='function') actualizarAngulos();
+}
+
 const BANCO = {
   angulos: {
     bocaboca:   "dependencia del boca a boca y por qué destruye la estabilidad de una empresa de reformas",
@@ -896,7 +966,7 @@ function rAutoridad(d,n){
   <div class="aut-txt">
     <div style="display:flex;align-items:center;gap:12px">
       <div class="abar"></div>
-      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'Media Buyer · Reformas')}</span>
+      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||marcaEye())}</span>
     </div>
     <h1 class="TDsm Ct" style="font-size:${Math.min(T.head,78)}px;margin-top:16px">${pK(d.head)}</h1>
     ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px">${p(d.body)}</p>`:''}
@@ -936,10 +1006,13 @@ function abrirTabEditar(){
    ═══════════════════════════════════════════ */
 function actualizarAngulos(){
   const pilar = document.getElementById('cPilar').value;
-  const angulos = PILARES_MAP[pilar] || [];
+  const cfg = N();
+  const mapa = cfg.pilares || PILARES_MAP;
+  const labels = cfg.labels || ANGULO_LABELS;
+  const angulos = mapa[pilar] || [];
   const sel = document.getElementById('cAngulo');
   sel.innerHTML = '<option value="auto">⚡ Automático (aleatorio)</option>' +
-    angulos.map(a=>`<option value="${a}">${ANGULO_LABELS[a]||a}</option>`).join('');
+    angulos.map(a=>`<option value="${a}">${labels[a]||a}</option>`).join('');
 }
 
 /* ═══════════════════════════════════════════
@@ -1420,7 +1493,9 @@ async function generar(){
 
   const pilar = document.getElementById('cPilar').value;
   const selAngulo = document.getElementById('cAngulo').value;
-  const posibles = PILARES_MAP[pilar] || Object.keys(BANCO.angulos);
+  const mapaPilar = N().pilares || PILARES_MAP;
+  const anguloBank = N().angulos || BANCO.angulos;
+  const posibles = mapaPilar[pilar] || Object.keys(anguloBank);
   const angulo = (selAngulo === 'auto' || !selAngulo)
     ? rnd(posibles)
     : selAngulo;
@@ -1472,14 +1547,16 @@ async function generar(){
 }
 
 async function fetchAI(angulo){
-  const desc=BANCO.angulos[angulo]||BANCO.angulos.sistema;
-  const prompt=`Eres Rosa María, media buyer estratégica especializada en Meta Ads y Google Ads para empresas de reformas en España.
+  const cfg=N();
+  const angs=cfg.angulos||BANCO.angulos;
+  const desc=angs[angulo]||Object.values(angs)[0];
+  const prompt=`Eres Rosa María, ${cfg.persona}.
 
-Escribes DIRIGIÉNDOTE EN SEGUNDA PERSONA (tú/tu) directamente al lector: un gerente o dueño de empresa de reformas (40-55 años), saturado, escéptico con el marketing, dependiente del boca a boca, con familia que le espera en casa. Le hablas de TÚ, como si lo tuvieras delante.
+Escribes DIRIGIÉNDOTE EN SEGUNDA PERSONA (tú/tu) directamente al lector: ${cfg.lector}. Le hablas de TÚ, como si lo tuvieras delante.
 
-REGLA CRÍTICA: NUNCA uses nombres propios (nada de "Javier" ni similares). NUNCA hables del lector en tercera persona ("el reformista", "el dueño", "una empresa me dijo"). SIEMPRE en segunda persona: "tú", "tu empresa", "tu agenda", "tus obras", "te pasa", "llevas años...".
+REGLA CRÍTICA: NUNCA uses nombres propios. NUNCA hables del lector en tercera persona. SIEMPRE en segunda persona: "tú", "tu empresa", "tu negocio", "te pasa", "llevas años...".
 
-Tu tono: elegante, directo, lenguaje de negocio. NUNCA tecnicismos (CTR, CPL, funnel, pixel). Habla de: tus obras rentables, tu agenda cubierta, tus clientes de calidad, tu estabilidad, tu tiempo, tu familia, tu autoridad, tu control.
+Tu tono: ${cfg.tono}.
 
 Genera copy para un carrusel de Instagram sobre: "${desc}".
 
@@ -1496,7 +1573,7 @@ Responde SOLO en JSON válido sin markdown:
   "debate_b": "opción B (frase corta)",
   "cta_head": "headline del CTA final (puede tener \\n)",
   "cta_body": "subtítulo CTA (1-2 frases)",
-  "cta_word": "UNA PALABRA en mayúsculas para el CTA (ej: SISTEMA, AGENDA, OBRAS)"
+  "cta_word": "UNA PALABRA en mayúsculas para el CTA (ej: ${cfg.ctaEj})"
 }`;
 
   const key = getGroqKey();
@@ -1686,7 +1763,7 @@ function bloqueBA(){
 }
 function bloqueFotoPortada(ai,angulo){
   const h=BANCO.hooks[angulo]||BANCO.hooks.sistema;
-  return {tipo:'autoridad',fondo:'dark',eye:'Media Buyer · Empresas de Reformas',
+  return {tipo:'autoridad',fondo:'dark',eye:marcaEye(),
     head:ai?ai.hook:rnd(h),
     body:ai?ai.hook_sub:'',
     items:[],cta:'Desliza →'};
@@ -1921,10 +1998,10 @@ function buildCarrusel(angulo,ai,numSlides=7){
 
     // P1 — Portada + pills (presentación/autoridad, estilo plantilla)
     case 1:{
-      const portada = {tipo:'pills',fondo:'dark',eye:'Media Buyer · Empresas de Reformas',
+      const portada = {tipo:'pills',fondo:'dark',eye:marcaEye(),
         head: ai?ai.hook:rnd(BANCO.hooks[angulo]||BANCO.hooks.sistema),
         body:'',
-        items:['Meta Ads','Google Ads','Estrategia a medida','Resultados medibles'],
+        items:N().pills,
         cta:'Desliza →'};
       const medios = [
         {tipo:'hook',fondo:'dark',eye:'El problema que resuelvo',
@@ -1948,8 +2025,8 @@ function buildCarrusel(angulo,ai,numSlides=7){
     // P2 — Trabajar conmigo (light + tu foto, estilo plantilla)
     case 2:{
       const portada = {tipo:'fototxt',fondo:'light',eye:'Cómo es trabajar conmigo',
-        head:'Tú te centras en las obras.\nYo me centro en llenar tu agenda.',
-        body: ai?ai.hook_sub:'Estrategia que convierte. Resultados que se notan.',
+        head:N().p2head,
+        body: ai?ai.hook_sub:N().p2sub,
         items:[],cta:'Desliza →'};
       const medios = [
         bloqueLista(ai,angulo,'dark',eye,cta),
@@ -2093,8 +2170,8 @@ function buildCarrusel(angulo,ai,numSlides=7){
     // P9 — CTA + pills (dark, estilo plantilla)
     case 9:{
       const portada = {tipo:'pills',fondo:'dark',eye:'Trabaja conmigo',
-        head:'Una agenda llena no es suerte.\nEs estrategia.',body:'',
-        items:['Estrategia personalizada','Campañas Meta & Google','Optimización semanal','Reportes sin tecnicismos'],
+        head: ai?ai.cta_head:'El crecimiento no es suerte.\nEs estrategia.',body:'',
+        items:N().pills,
         cta:ai?`Escríbeme ${ai.cta_word} →`:`${cta} →`};
       const medios = [
         {tipo:'hook',fondo:'dark',eye:'Mi propuesta de valor',
@@ -2242,7 +2319,7 @@ function refrescarCopy(){
   const cuerpo = partes.length>1 ? partes.slice(1).join('\n\n') : (copyData.caption||'');
   let caption = hookReal ? `${hookReal}\n\n${cuerpo}` : (copyData.caption||'');
   if(ctaReal && !caption.includes(ctaReal)) caption += `\n\n${ctaReal} 👇`;
-  const hashtags = copyData.hashtags||'';
+  const hashtags = (getNicho()==='personal') ? N().hashtags : (copyData.hashtags||N().hashtags);
 
   // ── Reel: además mostrar el GUION generado ──
   const bloqueGuion = (modo==='reel' && typeof ULTIMO_GUION!=='undefined' && ULTIMO_GUION) ? `
@@ -3533,6 +3610,7 @@ async function expPPTX(){
    INIT
    ═══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded',async()=>{
+  const ns=document.getElementById('nichoSel'); if(ns) ns.value=getNicho();
   actualizarAngulos();
   actualizarFeedLabel(); // Mostrar posición actual del feed
   setLogoTam(getLogoTam()); // Restaurar tamaño de logo guardado

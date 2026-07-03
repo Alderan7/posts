@@ -39,6 +39,14 @@
       <div class="tb-name">Rosa María Studio</div>
       <div class="tb-sub">Generador de contenido · v12</div>
     </div>
+    <div style="display:flex;flex-direction:column;gap:2px;margin-left:8px;flex-shrink:0">
+      <span style="font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:var(--UI-M)">Marca</span>
+      <select id="nichoSel" onchange="setNicho(this.value)" title="Elige para qué marca generas contenido"
+        style="background:var(--UI-B);border:1px solid var(--UI-A);color:var(--UI-A);padding:3px 5px;border-radius:4px;font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer">
+        <option value="reformas">🏗 Reformas</option>
+        <option value="personal">👤 Marca Personal</option>
+      </select>
+    </div>
     <div style="display:flex;flex-direction:column;gap:2px;margin-left:4px;flex-shrink:0">
       <div style="display:flex;align-items:center;gap:3px">
         <span style="font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:var(--UI-M)">Posición feed</span>
