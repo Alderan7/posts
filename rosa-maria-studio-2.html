@@ -3682,7 +3682,7 @@ function actualizarTagsPexels(angulo){
   if(st){
     if(!esLocalhost()){
       st.style.color = '#ff9f43';
-      st.textContent = '⚠ Doble clic en iniciar.bat para activar búsqueda';
+      st.textContent = '⚠ Doble clic en iniciar.py para activar búsqueda';
     } else {
       st.style.color = '#38B6FF';
       st.textContent = '✓ Conectado — busca cualquier foto';
@@ -3741,7 +3741,7 @@ async function buscarPexelsTermino(q){
       grid.innerHTML = `<div class="mlib-empty" style="color:#ff9f43;line-height:1.8">
         ⚠️ Tu navegador bloquea Pexels<br>al abrir el archivo directo.<br><br>
         <b style="color:var(--UI-T)">Solución:</b> doble clic en<br>
-        <b style="color:#38B6FF">iniciar.bat</b> (carpeta POSTS)<br><br>
+        <b style="color:#38B6FF">iniciar.py</b> (carpeta POSTS)<br><br>
         <span style="font-size:8px;color:var(--UI-M)">Abre el generador en localhost<br>y Pexels funciona al instante</span>
       </div>`;
     } else {
@@ -3800,7 +3800,7 @@ async function generarImagenIA(){
     if(ultimoErr?.status===403){
       status.textContent='⚠ El servicio de IA rechazó la petición (403). Reintenta en 1 min; si sigue, tu red puede estar bloqueada.';
     }else if(!esLocalhost()){
-      status.textContent='⚠ Abre con iniciar.bat (localhost) para crear imágenes IA.';
+      status.textContent='⚠ Abre con iniciar.py (localhost) para crear imágenes IA.';
     }else{
       status.textContent='No se pudo generar: '+(ultimoErr?.message||'error');
     }
