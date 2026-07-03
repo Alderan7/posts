@@ -25,12 +25,13 @@ Fuentes: Montserrat (principal) + Playfair Display (acentos).
 ### Generador web (lo que se abre en el navegador)
 | Archivo | Qué es |
 |---|---|
-| **`rosa-maria-studio-2.html`** | Estructura de la página (la app). Enlaza los 3 de abajo. |
-| **`estilo.css`** | Todo el diseño (colores, tipografías, layouts de slides). |
+| **`rosa-maria-studio-2.html`** | La app: estructura + todo el CSS incrustado (así se ve bien se abra como se abra). Enlaza los 2 de abajo. |
 | **`app.js`** | Toda la lógica: generar posts/carruseles/reels, motor de feed P1–P9, biblioteca de fotos, Pexels, IA de imágenes, exportar (PNG/ZIP/PPTX), fábrica "Generar Mes". |
 | **`datos-ideas.js`** | Banco de 365 ideas de contenido (`window.IDEAS_365`). |
 
-> Estos 4 archivos van **siempre juntos** en la misma carpeta.
+> Estos 3 archivos van **siempre juntos** en la misma carpeta.
+> (El CSS va dentro del HTML a propósito: en Windows algunos equipos rechazan
+> un `.css` externo por el tipo MIME y la página saldría sin estilos.)
 
 ### Módulo de reels en vídeo (Python, aparte)
 | Ruta | Qué es |
