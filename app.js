@@ -2506,7 +2506,17 @@ async function buscarPexels(){
   buscarPexelsTermino(q);
 }
 
-async function buscarPexelsTermino(q){
+let _pexQ='', _pexPage=1;
+function verMasFotos(){ buscarPexelsTermino(_pexQ, _pexPage+1); }
+
+// Botón "Ver más" reutilizable (id único por grid)
+function botonVerMas(fn, id){
+  return `<button id="${id}" onclick="${fn}()" style="grid-column:1/-1;padding:7px;margin-top:4px;font-size:9px;font-weight:600;background:var(--UI-B);border:1px solid var(--UI-A);color:var(--UI-A);border-radius:4px;cursor:pointer">Ver más ↓</button>`;
+}
+
+async function buscarPexelsTermino(q, page){
+  page = page || 1;
+  _pexQ = q; _pexPage = page;
   const qInput = document.getElementById('pexelsQ');
   if(qInput) qInput.value = q;
 
@@ -2520,11 +2530,12 @@ async function buscarPexelsTermino(q){
   const resultsBox = document.getElementById('pexelsResults');
   const grid = document.getElementById('pexelsGrid');
   resultsBox.style.display = 'flex';
-  grid.innerHTML = '<div class="mlib-empty">🔍 Buscando...</div>';
+  if(page===1) grid.innerHTML = '<div class="mlib-empty">🔍 Buscando...</div>';
 
   try{
+    const PER=24;
     const res = await fetch(
-      `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=16&orientation=portrait`,
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=${PER}&page=${page}&orientation=portrait`,
       { headers:{ 'Authorization': key } }
     );
     if(res.status === 401){
@@ -2534,15 +2545,19 @@ async function buscarPexelsTermino(q){
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if(!data.photos?.length){
-      grid.innerHTML = '<div class="mlib-empty">Sin resultados.<br>Prueba otro término.</div>';
+      if(page===1) grid.innerHTML = '<div class="mlib-empty">Sin resultados.<br>Prueba otro término.</div>';
+      const b=document.getElementById('pexMasBtn'); if(b) b.remove();
       return;
     }
-    grid.innerHTML = data.photos.map(ph=>`
+    const itemsHTML = data.photos.map(ph=>`
       <div class="mlib-item pexels-item" title="Clic para usar · 📷 ${ph.photographer}"
         onclick="importarFotoPexels('${(ph.src.large2x||ph.src.large).replace(/'/g,'%27')}','${ph.photographer.replace(/['"]/g,'')}')">
         <img src="${ph.src.medium}" loading="lazy" alt="${ph.alt||''}">
         <div class="mlib-use">✓ Usar</div>
       </div>`).join('');
+    const btnOld=document.getElementById('pexMasBtn'); if(btnOld) btnOld.remove();
+    if(page===1) grid.innerHTML = itemsHTML; else grid.insertAdjacentHTML('beforeend', itemsHTML);
+    if(data.photos.length >= PER) grid.insertAdjacentHTML('beforeend', botonVerMas('verMasFotos','pexMasBtn'));
   }catch(e){
     // Falló el fetch — casi seguro CORS desde file://
     if(!esLocalhost()){
@@ -2558,33 +2573,39 @@ async function buscarPexelsTermino(q){
   }
 }
 
-/* ─── Buscar vídeos de fondo para reels (Pexels Videos, misma key) ─── */
-async function buscarVideosPexels(){
-  const q = document.getElementById('vidQ')?.value?.trim();
+/* ─── Buscar vídeos de fondo para reels (Pexels + Pixabay) ─── */
+let _vidQ='', _vidPage=1;
+function verMasVideos(){ buscarVideosPexels(_vidPage+1); }
+
+async function buscarVideosPexels(page){
   const status = document.getElementById('vidStatus');
+  page = page || 1;
+  const q = (page>1) ? _vidQ : (document.getElementById('vidQ')?.value?.trim());
   if(!q){ if(status){status.style.color='#ff9f43';status.textContent='Escribe qué vídeo buscar.';} return; }
+  _vidQ = q; _vidPage = page;
   const key = (document.getElementById('pexelsKey')?.value?.trim()) || localStorage.getItem('pexels_key') || PEXELS_KEY_DEFAULT;
 
   const box = document.getElementById('vidResults');
   const grid = document.getElementById('vidGrid');
-  box.style.display='flex'; grid.innerHTML='<div class="mlib-empty">🔍 Buscando vídeos...</div>';
+  box.style.display='flex';
+  if(page===1) grid.innerHTML='<div class="mlib-empty">🔍 Buscando vídeos...</div>';
   if(status){ status.style.color='var(--UI-M)'; status.textContent='Clic en un vídeo para descargarlo.'; }
 
+  const tarjeta = (poster, link, dur, fuente) =>
+    `<div class="mlib-item pexels-item" title="📹 ${dur||''}s · ${fuente} — clic para descargar"
+      onclick="descargarVideoPexels('${(link||'').replace(/'/g,'%27')}','${q.replace(/[^a-z0-9]/gi,'_')}',${dur||0})">
+      <img src="${poster}" loading="lazy" alt="">
+      <div class="mlib-use">⬇ ${fuente} ${dur||''}s</div>
+    </div>`;
+
   try{
-    const res = await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(q)}&per_page=12&orientation=portrait`,
+    const PER=16;
+    const res = await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(q)}&per_page=${PER}&page=${page}&orientation=portrait`,
       { headers:{ Authorization:key } });
     if(res.status===401){ grid.innerHTML='<div class="mlib-empty" style="color:#ff6b6b">❌ API Key incorrecta</div>'; return; }
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
-    if(!data.videos?.length){ grid.innerHTML='<div class="mlib-empty">Sin vídeos.<br>Prueba otro término.</div>'; return; }
-    const tarjeta = (poster, link, dur, fuente) =>
-      `<div class="mlib-item pexels-item" title="📹 ${dur||''}s · ${fuente} — clic para descargar"
-        onclick="descargarVideoPexels('${(link||'').replace(/'/g,'%27')}','${q.replace(/[^a-z0-9]/gi,'_')}',${dur||0})">
-        <img src="${poster}" loading="lazy" alt="">
-        <div class="mlib-use">⬇ ${fuente} ${dur||''}s</div>
-      </div>`;
-
-    let html = data.videos.map(v=>{
+    let html = (data.videos||[]).map(v=>{
       const f = (v.video_files||[]).filter(x=>x.height>=x.width).sort((a,b)=>b.height-a.height)
                   .find(x=>x.height<=1920) || (v.video_files||[])[0] || {};
       return tarjeta(v.image, f.link, v.duration, 'Pexels');
@@ -2594,12 +2615,11 @@ async function buscarVideosPexels(){
     const pk = getPixabayKey();
     if(pk){
       try{
-        const rp = await fetch(`https://pixabay.com/api/videos/?key=${pk}&q=${encodeURIComponent(q)}&per_page=12`);
+        const rp = await fetch(`https://pixabay.com/api/videos/?key=${pk}&q=${encodeURIComponent(q)}&per_page=${PER}&page=${page}`);
         if(rp.ok){
           const dp = await rp.json();
           html += (dp.hits||[]).map(h=>{
             const vs = h.videos||{};
-            // preferir vertical; si no, el que haya
             const cand = [vs.large,vs.medium,vs.small,vs.tiny].filter(Boolean);
             const vert = cand.find(x=>x.height>=x.width) || cand[0] || {};
             const poster = vert.thumbnail || (vs.tiny&&vs.tiny.thumbnail) || '';
@@ -2608,7 +2628,11 @@ async function buscarVideosPexels(){
         }
       }catch(_){/* Pixabay opcional */}
     }
-    grid.innerHTML = html || '<div class="mlib-empty">Sin vídeos.</div>';
+
+    const btnOld=document.getElementById('vidMasBtn'); if(btnOld) btnOld.remove();
+    if(!html){ if(page===1) grid.innerHTML='<div class="mlib-empty">Sin vídeos.<br>Prueba otro término.</div>'; return; }
+    if(page===1) grid.innerHTML = html; else grid.insertAdjacentHTML('beforeend', html);
+    if((data.videos?.length||0) >= PER) grid.insertAdjacentHTML('beforeend', botonVerMas('verMasVideos','vidMasBtn'));
   }catch(e){
     if(!esLocalhost()){ grid.innerHTML=`<div class="mlib-empty" style="color:#ff9f43;line-height:1.8">⚠️ Abre con <b style="color:#38B6FF">iniciar.py</b><br>para buscar vídeos.</div>`; }
     else { grid.innerHTML=`<div class="mlib-empty" style="color:#ff6b6b">Error: ${e.message}</div>`; }
