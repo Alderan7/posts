@@ -1561,8 +1561,9 @@ function setPromptFmt(f,btn){
   const w=document.getElementById('pmSlidesWrap'); if(w) w.style.display = (f==='carrusel')?'flex':'none';
 }
 
-// Tipos de slide que la IA puede usar (renderizan sin imagen)
-const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta'];
+// Tipos de slide que la IA puede usar (foto/fototxt/autoridad llevan imagen)
+const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad'];
+const TIPOS_IA_FOTO=['foto','fototxt','autoridad'];
 
 async function generarDesdePrompt(){
   const prompt=(document.getElementById('promptTxt')?.value||'').trim();
@@ -1585,20 +1586,23 @@ Devuelve SOLO JSON válido, sin markdown:
   "guion": "solo si es reel: guion de 20-25s (gancho/desarrollo/cierre)",
   "slides": [
     {
-      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta",
+      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt",
       "fondo": "dark | light | blue",
       "eye": "eyebrow corto (kicker en mayúsculas conceptual)",
       "head": "titular del slide (puedes usar \\n)",
       "body": "subtítulo o explicación corta (opcional)",
       "items": [],
+      "img": "SOLO si el tipo es foto/fototxt: 2-3 palabras EN INGLÉS para buscar la foto de fondo (ej: 'modern office', 'accountant desk', 'happy entrepreneur')",
       "cta": "texto de pie / conector corto"
     }
   ]
 }
 
-items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚMERO::etiqueta" (ej "+40%::Más clientes"); proceso=3-4 "Título:descripción"; servicio=3-5 frases; debate=exactamente 2 opciones; claves=3 frases; pills=3-4 etiquetas cortas; hook/frase/cta=[] vacío.
+items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚMERO::etiqueta" (ej "+40%::Más clientes"); proceso=3-4 "Título:descripción"; servicio=3-5 frases; debate=exactamente 2 opciones; claves=3 frases; pills=3-4 etiquetas cortas; hook/frase/cta/foto/fototxt=[] vacío.
 
-REGLAS: 1er slide = gancho potente. Último = CTA claro con una palabra de acción. Alterna fondos con criterio (no todo igual). Usa el tipo "stats" solo si el tema pide cifras. Nada de tecnicismos vacíos.`;
+TIPOS CON FOTO (hazlo VISUAL): usa "foto" (imagen a pantalla completa con el titular encima) o "fototxt" (imagen arriba + texto abajo) en 1-3 slides — SIEMPRE con su campo "img" en inglés. Ideal para portada y cierre.
+
+REGLAS: 1er slide = gancho potente (mejor si es foto). Último = CTA claro con una palabra de acción. Alterna fondos con criterio. Usa "stats" solo si el tema pide cifras. Nada de tecnicismos vacíos.`;
 
   if(btn) btn.classList.add('loading');
   if(status){ status.style.color='#38B6FF'; status.textContent='Diseñando con IA…'; }
@@ -1618,10 +1622,22 @@ REGLAS: 1er slide = gancho potente. Último = CTA claro con una palabra de acci�
       let tipo=TIPOS_IA.includes(s.tipo)?s.tipo:'hook';
       let fondo=['dark','light','blue'].includes(s.fondo)?s.fondo:'dark';
       let items=Array.isArray(s.items)?s.items.filter(x=>x!=null&&String(x).trim()):[];
-      return { tipo, fondo, eye:String(s.eye||'').slice(0,60), head:String(s.head||'').slice(0,180),
+      const slide={ tipo, fondo, eye:String(s.eye||'').slice(0,60), head:String(s.head||'').slice(0,180),
         body:String(s.body||'').slice(0,240), items, cta:String(s.cta||'').slice(0,60) };
+      if(TIPOS_IA_FOTO.includes(tipo)){ slide.img=String(s.img||s.head||'').slice(0,50); slide.overlay='dark'; slide.imgLayout='bg-full'; slide.txtPos='bottom'; slide.ovOpacity=68; }
+      return slide;
     }).filter(s=>s.head||s.items.length);
     if(!arr.length) throw new Error('la IA no devolvió slides');
+
+    // Descargar e incrustar las fotos de Pexels de los slides con imagen
+    const conFoto=arr.filter(s=>TIPOS_IA_FOTO.includes(s.tipo)&&s.img);
+    if(conFoto.length){
+      if(status){ status.style.color='#38B6FF'; status.textContent=`Buscando ${conFoto.length} imagen(es)…`; }
+      await Promise.all(conFoto.map(async s=>{
+        const id=await fetchPexelsFoto(s.img);
+        if(id) s.imgFondo=id; else { s.tipo='hook'; } // sin foto → cae a texto
+      }));
+    }
 
     if(fmt==='reel'){
       const s0=arr[0];
@@ -4037,6 +4053,23 @@ function pushMedia(url, name){
   const id = ++mediaIdCounter;
   MEDIA.push({id, url, name});
   return id;
+}
+
+// Trae UNA foto de Pexels por palabra clave y la incrusta en la biblioteca.
+// Devuelve el id (para asignar como fondo) o null si falla.
+async function fetchPexelsFoto(query){
+  try{
+    const key=(document.getElementById('pexelsKey')?.value?.trim())||localStorage.getItem('pexels_key')||PEXELS_KEY_DEFAULT;
+    const res=await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query||'business')}&per_page=8&orientation=portrait`,{headers:{Authorization:key}});
+    if(!res.ok) return null;
+    const data=await res.json();
+    const fotos=data.photos||[];
+    if(!fotos.length) return null;
+    const ph=fotos[Math.floor(Math.random()*fotos.length)];   // variedad
+    const dataUrl=await fetchDataURL(ph.src.large2x||ph.src.large||ph.src.medium);
+    if(!dataUrl) return null;
+    return pushMedia(dataUrl, `IA · ${(query||'foto').slice(0,20)}`);
+  }catch(e){ return null; }
 }
 
 // Precarga simple (perfil, feed): descarga y añade a la biblioteca.
