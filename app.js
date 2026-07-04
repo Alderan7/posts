@@ -2222,6 +2222,29 @@ function buildCarrusel(angulo,ai,numSlides=7){
     }
   }
 
+  return aplicarCoherencia(slides);
+}
+
+/* ══════════════════════════════════════════════════════
+   COHERENCIA DE CARRUSEL — ritmo de fondos + hilo narrativo
+   ══════════════════════════════════════════════════════ */
+const CONECTORES = ['Sigue →','Continúa →','Hay más →','Casi lo tienes →','No pares →'];
+function aplicarCoherencia(slides){
+  // Fondos con RITMO: alternar oscuro/claro en slides de texto (evita saltos
+  // aleatorios). Los slides con fondo fijo por diseño (foto/stats/móvil/
+  // testimonio) NO se tocan; solo sincronizan el ritmo.
+  const flex = new Set(['hook','post','frase','lista','debate','cta','claves','servicio','proceso','pills']);
+  let ritmo = 'dark';
+  slides.forEach((s,i)=>{
+    if(i===0){ ritmo = (s.fondo==='light') ? 'light' : 'dark'; }            // portada intacta
+    else if(flex.has(s.tipo)){ ritmo = (ritmo==='dark') ? 'light' : 'dark'; s.fondo = ritmo; }
+    else { ritmo = (s.fondo==='light') ? 'light' : 'dark'; }                // sincronizar con fondo fijo
+
+    // HILO narrativo: los intermedios invitan a seguir; el último mantiene su CTA fuerte.
+    if(i>0 && i<slides.length-1 && !['debate','ba','cta'].includes(s.tipo)){
+      s.cta = CONECTORES[i % CONECTORES.length];
+    }
+  });
   return slides;
 }
 
