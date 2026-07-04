@@ -1408,6 +1408,64 @@ function rReel(d,n){
   </div>
 </div>`;}
 
+/* ── LAYOUTS EDITORIALES (estilo revista, para prompt libre) ── */
+
+// Portada tipo revista: bloque de imagen/color arriba + titular grande abajo
+function rRevista(d,n){
+  const url=getImgUrl(d.imgFondo);
+  const top = url
+    ? `<div style="height:56%;position:relative;overflow:hidden"><img src="${url}" style="width:100%;height:100%;object-fit:cover" alt=""></div>`
+    : `<div style="height:56%;background:#38B6FF;display:flex;align-items:flex-end;padding:60px"><span class="rm" style="color:rgba(255,255,255,.85);font-size:120px">RM</span></div>`;
+  return`<div class="slide ${fc(d.fondo)} ${slideH()}" style="display:flex;flex-direction:column;overflow:hidden">
+    ${top}
+    <div style="flex:1;padding:64px 72px;display:flex;flex-direction:column;justify-content:center;gap:22px">
+      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'')}</span>
+      <h1 class="TDlg Ct" style="font-size:${Math.min(T.head+8,104)}px">${pK(d.head)}</h1>
+      ${d.body?`<p class="TBdy Cb" style="font-size:${T.body}px">${p(d.body)}</p>`:''}
+      <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center;padding-top:20px">
+        <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+        ${logoHTML(d.fondo)}
+      </div>
+    </div>
+  </div>`;
+}
+
+// Índice / "Contents": título + filas numeradas
+function rIndice(d,n){
+  const rows=(d.items||[]).filter(Boolean).slice(0,6).map((it,i)=>`
+    <div style="display:flex;align-items:baseline;gap:18px;padding:16px 0;border-bottom:1px solid ${d.fondo==='light'?'rgba(26,26,26,.12)':'rgba(245,241,234,.14)'}">
+      <span style="font-family:var(--F-SER);font-style:italic;color:#38B6FF;font-size:${Math.round(T.stat*.5)}px;min-width:52px">${String(i+1).padStart(2,'0')}</span>
+      <span class="TBdy Ct" style="font-size:${T.items}px;line-height:1.3">${p(it)}</span>
+    </div>`).join('');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'Contenido')}</span></div>${logoHTML(d.fondo)}</div>
+    <h1 class="TDlg Ct" style="margin-top:22px;font-size:${Math.min(T.head,96)}px">${pK(d.head||'Índice')}</h1>
+    <div style="margin-top:28px;display:flex;flex-direction:column">${rows}</div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// EXPERIMENTAL — composición libre: la IA coloca elementos por coordenadas (%).
+function rLibre(d,n){
+  const els=(d.elementos||[]).map(e=>{
+    const x=Math.max(0,Math.min(100,+e.x||0)), y=Math.max(0,Math.min(100,+e.y||0));
+    const w=Math.max(1,Math.min(100,+e.w||30)), h=(+e.h||0);
+    const base=`position:absolute;left:${x}%;top:${y}%;width:${w}%;`;
+    if(e.t==='rect') return `<div style="${base}height:${h||10}%;background:${e.bg||'#38B6FF'};border-radius:${e.r||0}px"></div>`;
+    if(e.t==='img'){ const u=getImgUrl(e.img)|| (e.img&&/^https?:|^data:/.test(e.img)?e.img:null);
+      return u?`<div style="${base}height:${h||30}%;overflow:hidden;border-radius:${e.r||0}px"><img src="${u}" style="width:100%;height:100%;object-fit:cover"></div>`:''; }
+    // texto
+    const fam = e.font==='serif' ? 'var(--F-SER)' : 'var(--F-SAN)';
+    const st  = e.font==='serif' ? 'font-style:italic;' : '';
+    return `<div style="${base}${st}font-family:${fam};color:${e.color||'#1A1A1A'};font-size:${e.size||36}px;font-weight:${e.weight||600};text-align:${e.align||'left'};line-height:1.15;white-space:pre-wrap">${p(e.texto||'')}</div>`;
+  }).join('');
+  const bg=d.bg||(d.fondo==='light'?'#F5F1EA':d.fondo==='blue'?'#38B6FF':'#1A1A1A');
+  return`<div class="slide ${slideH()}" style="position:relative;overflow:hidden;background:${bg}">
+    ${els}
+    <div style="position:absolute;left:72px;bottom:44px;font-family:var(--F-SER);font-style:italic;font-size:${T.cta}px;color:${d.fondo==='light'?'rgba(26,26,26,.4)':'rgba(245,241,234,.4)'}">${HANDLE}</div>
+  </div>`;
+}
+
 function renderTipo(d,n){
   if(d.tipo==='reel') return rReel(d,n);
   switch(d.tipo){
@@ -1428,6 +1486,9 @@ function renderTipo(d,n){
     case'claves':           return rClaves(d,n);
     case'testimonio':       return rTestimonio(d,n);
     case'movil':            return rMovil(d,n);
+    case'revista':          return rRevista(d,n);
+    case'indice':           return rIndice(d,n);
+    case'libre':            return rLibre(d,n);
     default:                return rHead(d,n);
   }
 }
@@ -1561,9 +1622,9 @@ function setPromptFmt(f,btn){
   const w=document.getElementById('pmSlidesWrap'); if(w) w.style.display = (f==='carrusel')?'flex':'none';
 }
 
-// Tipos de slide que la IA puede usar (foto/fototxt/autoridad llevan imagen)
-const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad'];
-const TIPOS_IA_FOTO=['foto','fototxt','autoridad'];
+// Tipos de slide que la IA puede usar (foto/fototxt/autoridad/revista llevan imagen)
+const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice'];
+const TIPOS_IA_FOTO=['foto','fototxt','autoridad','revista'];
 
 async function generarDesdePrompt(){
   const prompt=(document.getElementById('promptTxt')?.value||'').trim();
@@ -1575,6 +1636,8 @@ async function generarDesdePrompt(){
   const fmt=_promptFmt;
   const n = fmt==='carrusel' ? (parseInt(document.getElementById('pmSlides')?.value)||6) : 1;
   const cfg=N();
+  const libre=document.getElementById('pmLibre')?.checked;
+  if(libre){ return generarLibre(prompt, fmt, n, cfg, status, btn); }   // modo experimental
   const contrato=`Eres Rosa María, ${cfg.persona}. Tono: ${cfg.tono}. Escribes en 2ª persona (tú).
 
 DISEÑA un ${fmt==='carrusel'?`carrusel de ${n} slides`:fmt==='reel'?'reel (portada + guion)':'post de 1 slide'} de Instagram para: "${prompt}".
@@ -1586,7 +1649,7 @@ Devuelve SOLO JSON válido, sin markdown:
   "guion": "solo si es reel: guion de 20-25s (gancho/desarrollo/cierre)",
   "slides": [
     {
-      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt",
+      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt | revista | indice",
       "fondo": "dark | light | blue",
       "eye": "eyebrow corto (kicker en mayúsculas conceptual)",
       "head": "titular del slide (puedes usar \\n)",
@@ -1600,7 +1663,8 @@ Devuelve SOLO JSON válido, sin markdown:
 
 items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚMERO::etiqueta" (ej "+40%::Más clientes"); proceso=3-4 "Título:descripción"; servicio=3-5 frases; debate=exactamente 2 opciones; claves=3 frases; pills=3-4 etiquetas cortas; hook/frase/cta/foto/fototxt=[] vacío.
 
-TIPOS CON FOTO (hazlo VISUAL): usa "foto" (imagen a pantalla completa con el titular encima) o "fototxt" (imagen arriba + texto abajo) en 1-3 slides — SIEMPRE con su campo "img" en inglés. Ideal para portada y cierre.
+TIPOS CON FOTO (hazlo VISUAL): usa "foto" (imagen a pantalla completa con el titular encima), "fototxt" (imagen arriba + texto abajo) o "revista" (PORTADA editorial: imagen grande arriba + titular abajo) en 1-3 slides — SIEMPRE con su campo "img" en inglés. La portada ideal es "revista".
+LAYOUT "indice": índice tipo revista ("Contenido"), items = 3-6 temas del carrusel (uno por línea). Úsalo como 2º slide si encaja.
 
 REGLAS: 1er slide = gancho potente (mejor si es foto). Último = CTA claro con una palabra de acción. Alterna fondos con criterio. Usa "stats" solo si el tema pide cifras. Nada de tecnicismos vacíos.`;
 
@@ -1663,6 +1727,49 @@ REGLAS: 1er slide = gancho potente (mejor si es foto). Último = CTA claro con u
   }finally{
     if(btn) btn.classList.remove('loading');
   }
+}
+
+// EXPERIMENTAL — la IA compone por coordenadas (elementos absolutos)
+async function generarLibre(prompt, fmt, n, cfg, status, btn){
+  const cnt = fmt==='carrusel' ? n : 1;
+  const contrato=`Eres Rosa María, ${cfg.persona}. Diseña un ${fmt} de Instagram (lienzo 1080x1350) para: "${prompt}".
+Componlo LIBREMENTE como un diseñador editorial (estilo revista): bloques de color, foto, titulares grandes, números. Paleta de marca: negro #1A1A1A, crema #F5F1EA, azul #38B6FF (usa solo estos + blanco).
+
+Devuelve SOLO JSON: { "caption":"...", "hashtags":"#...", "slides":[ { "bg":"#hex de fondo", "elementos":[ ELEMENTO, ... ] } ] } con ${cnt} slide(s).
+ELEMENTO = {
+ "t": "text" | "rect" | "img",
+ "x": 0-100, "y": 0-100, "w": 0-100,   // posición y ancho en % del lienzo
+ "h": 0-100,                            // alto en % (para rect/img)
+ "texto": "solo si t=text",
+ "img": "solo si t=img: 2-3 palabras EN INGLÉS para buscar la foto",
+ "size": px de fuente (text), "weight": 300-800, "color":"#hex", "align":"left|center|right",
+ "font": "sans" | "serif",              // serif = elegante (numeros, citas)
+ "bg": "#hex (rect)", "r": radio de esquina px
+}
+REGLAS: no solapes texto ilegible; deja márgenes (~6%); 1 titular grande por slide; usa 1-2 rect de color o 1 img como fondo/bloque; máximo 6 elementos por slide. Coordenadas coherentes (que quepa dentro de 0-100).`;
+  if(btn) btn.classList.add('loading');
+  if(status){ status.style.color='#38B6FF'; status.textContent='Componiendo (modo libre)…'; }
+  try{
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
+      body:JSON.stringify({model:'llama-3.3-70b-versatile',temperature:0.9,max_tokens:3000,response_format:{type:'json_object'},messages:[{role:'user',content:contrato}]})});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const out=JSON.parse((await res.json()).choices?.[0]?.message?.content.replace(/```json|```/g,'').trim()||'{}');
+    let arr=Array.isArray(out.slides)?out.slides:[];
+    if(!arr.length) throw new Error('sin slides');
+    // descargar imágenes de los elementos img
+    for(const s of arr){ for(const e of (s.elementos||[])){ if(e.t==='img' && e.img && !/^https?:|^data:/.test(e.img)){ const id=await fetchPexelsFoto(e.img); if(id) e.img=id; } } }
+    const slides=arr.slice(0,cnt).map(s=>({tipo:'libre', fondo:'dark', bg:s.bg, elementos:(s.elementos||[]).slice(0,8)}));
+    SLIDES.length=0; slides.forEach(s=>SLIDES.push(s));
+    setModo(fmt==='carrusel'?'carrusel':fmt==='reel'?'reel':'post');
+    cur=0; buildThumbs(); show(0); scaleStage();
+    COPY_CTX={angulo:'sistema',ai:null,idea:(out.caption?{caption:out.caption,hashtags:out.hashtags,cta:''}:null)};
+    refrescarCopy();
+    if(status){ status.style.color='#38B6FF'; status.textContent='✓ Diseño libre creado (experimental).'; }
+    cerrarPromptModal(); abrirTabEditar();
+    toast2('✓ Diseño libre (experimental) — ajústalo si hace falta');
+  }catch(e){ if(status){ status.style.color='#ff6b6b'; status.textContent='No se pudo (libre): '+e.message; } }
+  finally{ if(btn) btn.classList.remove('loading'); }
 }
 
 async function fetchAI(angulo){

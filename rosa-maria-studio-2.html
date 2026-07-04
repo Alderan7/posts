@@ -938,6 +938,9 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
             <option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
           </select>
         </div>
+        <label style="font-size:10px;color:var(--UI-M);display:flex;align-items:center;gap:5px;cursor:pointer" title="La IA compone libremente por coordenadas (más creativo, pero puede descuadrar)">
+          <input type="checkbox" id="pmLibre" style="accent-color:var(--UI-A)">🎨 modo libre (experimental)
+        </label>
         <button class="btn btn-gen" id="pmGen" onclick="generarDesdePrompt()" style="margin-left:auto"><span class="spinner"></span><span id="pmGenTxt">⚡ Diseñar</span></button>
       </div>
       <div id="promptStatus" style="font-size:11px;color:var(--UI-M);line-height:1.5">La IA (Groq) diseña el contenido entero según tu descripción. Necesitas tu key de Groq activa.</div>
@@ -1446,6 +1449,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=22"></script>
+<script src="app.js?v=23"></script>
 </body>
 </html>
