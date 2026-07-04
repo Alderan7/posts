@@ -1562,6 +1562,8 @@ Tu tono: ${cfg.tono}.
 
 Genera copy para un carrusel de Instagram sobre: "${desc}".
 
+La "caption" es CLAVE: NO debe repetir el texto que ya se ve en la imagen (el hook). Debe COMPLEMENTARLO: aporta contexto, una micro-historia real, un porqué o una reflexión que amplíe la idea. Escrita en primera persona (yo) hacia el lector (tú), cercana y con criterio. 3-6 frases. Termina invitando a comentar/guardar/escribir.
+
 Responde SOLO en JSON válido sin markdown:
 {
   "hook": "headline impactante (puede tener \\n para saltos de línea)",
@@ -1575,7 +1577,8 @@ Responde SOLO en JSON válido sin markdown:
   "debate_b": "opción B (frase corta)",
   "cta_head": "headline del CTA final (puede tener \\n)",
   "cta_body": "subtítulo CTA (1-2 frases)",
-  "cta_word": "UNA PALABRA en mayúsculas para el CTA (ej: ${cfg.ctaEj})"
+  "cta_word": "UNA PALABRA en mayúsculas para el CTA (ej: ${cfg.ctaEj})",
+  "caption": "caption de Instagram que COMPLEMENTA la imagen sin repetir el hook (3-6 frases, 1ª persona, termina invitando a interactuar)"
 }`;
 
   const key = getGroqKey();
@@ -1704,9 +1707,28 @@ function bloqueLista(ai,angulo,fondo,eye,cta){
     head:ai?ai.lista_head:'Lo que necesita tu cliente ideal para contratar sin pedir descuento.',
     body:'',items:ai&&ai.lista?ai.lista:rnd(l),cta:`${cta} →`};
 }
+// Sets de números por nicho (para marca personal no encajan los de reformas)
+const STATS_PERSONAL=[
+  ["+3x::Visibilidad en 90 días","-40%::Tiempo en tareas repetitivas","+27%::Clientes que sí encajan","x2::Decisiones con datos"],
+  ["+150%::Alcance orgánico","5h::Ahorradas por semana con IA","+18%::Margen tras revisar números","+40%::Oportunidades cualificadas"],
+  ["+62%::Consultas cualificadas","-30%::Coste de captación","3::Sistemas automatizados","+22%::Rentabilidad"],
+];
+function bancoStats(){
+  return (getNicho()==='personal') ? rnd(STATS_PERSONAL) : rnd(BANCO.stats);
+}
 function bloqueStats(eye){
-  return {tipo:'stats',fondo:'light',eye:'Resultados que hablan',
-    head:'',body:'',items:rnd(BANCO.stats),cta:''};
+  return {tipo:'stats',fondo:'light',eye: getNicho()==='personal'?'Números que importan':'Resultados que hablan',
+    head:'',body:'',items:bancoStats(),cta:''};
+}
+
+// Devuelve un slide de STATS solo ~12% de las veces; el resto, una alternativa
+// variada (frase / lista / proceso). Así los números salen "3-4 veces en 365".
+function quizasStats(eye,angulo,cta){
+  if(Math.random()<0.12) return bloqueStats(eye);
+  const alt=rnd(['frase','lista','proceso']);
+  if(alt==='frase')   return bloqueFrase(null,'light',eye);
+  if(alt==='proceso') return bloqueProceso(cta||rnd(BANCO.ctas));
+  return bloqueLista(null,angulo||'sistema','light',eye,cta||rnd(BANCO.ctas));
 }
 function bloqueStatsMetrica(){
   return {tipo:'lista',fondo:'light',eye:'Qué significa cada número',
@@ -2017,7 +2039,7 @@ function buildCarrusel(angulo,ai,numSlides=7){
             'Tú te centras en las obras. Yo me centro en llenar tu agenda.'],cta:'Cómo lo hago →'},
         {tipo:'proceso',fondo:'light',eye:'Cómo lo resuelvo',
           head:'El proceso, sin humo.',body:'',items:rnd(BANCO.procesos),cta:'Los resultados →'},
-        bloqueStats(eye),
+        quizasStats(eye,angulo,cta),
         bloqueCTAFoto(ai,cta),
       ];
       slides = comprimirSlides(portada, medios, bloqueCTAFoto(ai,cta), numSlides);
@@ -2054,7 +2076,7 @@ function buildCarrusel(angulo,ai,numSlides=7){
         {tipo:'proceso',fondo:'light',eye:'Cómo aplicarlo',
           head:'Los pasos que cambian el resultado.',body:'',
           items:rnd(BANCO.procesos),cta:'El resultado →'},
-        bloqueStats(eye),
+        quizasStats(eye,angulo,cta),
       ];
       slides = comprimirSlides(portada, medios, bloqueCTA(ai,cta), numSlides);
       break;
@@ -2127,7 +2149,7 @@ function buildCarrusel(angulo,ai,numSlides=7){
             'Quieres escalar sin que todo dependa de ti.'],cta:'Cómo funciona →'},
         bloqueProceso(cta),
         bloqueVsAgencia(cta),
-        bloqueStats(eye),
+        quizasStats(eye,angulo,cta),
       ];
       slides = comprimirSlides(portada, medios, bloqueCTA(ai,cta), numSlides);
       break;
@@ -2141,7 +2163,7 @@ function buildCarrusel(angulo,ai,numSlides=7){
         head:t.q, body:`${t.n}::${t.r}`, items:[], cta:'El caso completo →'};
       const medios = [
         bloqueStatsMetrica(),
-        bloqueStats(eye),
+        quizasStats(eye,angulo,cta),
         bloqueBA(),
         bloqueProceso(cta),
       ];
@@ -2162,8 +2184,7 @@ function buildCarrusel(angulo,ai,numSlides=7){
           eye:`Paso ${i+1} de ${proc.length}`,
           head:tit,body:desc||'',items:[],cta:i<proc.length-1?'Siguiente →':'El resultado →'};
       });
-      const resultado = {tipo:'stats',fondo:'light',eye:'El resultado final',
-        head:'',body:'',items:rnd(BANCO.stats),cta:''};
+      const resultado = quizasStats(eye,angulo,cta);   // stats raro; si no, cierre variado
       const medios = [...pasos, resultado];
       slides = comprimirSlides(portada, medios, bloqueCTA(ai,cta), numSlides);
       break;
@@ -2186,7 +2207,7 @@ function buildCarrusel(angulo,ai,numSlides=7){
         {tipo:'lista',fondo:'light',eye:'Por qué ahora es diferente',
           head:'Lo que hace que este sistema funcione donde otros fallan.',body:'',
           items:rnd(BANCO.procesos),cta:'Los números →'},
-        bloquePruebaSocial(),
+        quizasStats(eye,angulo,cta),
       ];
       slides = comprimirSlides(portada, medios, {tipo:'cta',fondo:'dark',eye:'Escríbeme',
         head:'Una sola palabra.\nTe cuento cómo lo haría para tu empresa.',
@@ -2218,7 +2239,7 @@ function buildCarruselLegacy(angulo,ai,numSlides=7){
     {tipo:'ba',fondo:seq[1],eye:'',head:'',body:'',items:[`Antes: ${ba[0]}`,`Después: ${ba[1]}`],cta:'Sigue →'},
     {tipo:'frase',fondo:seq[2],eye:'Esto nadie lo dice',head:ai?ai.frase:rnd(BANCO.frases),body:ai?ai.frase_sub:rnd(BANCO.subtitulos),items:[],cta:'¿Incómodo? Bien. →'},
     {tipo:'lista',fondo:seq[3],eye,head:ai?ai.lista_head:'Lo que necesita tu cliente ideal.',body:'',items:ai&&ai.lista?ai.lista:rnd(listaArr),cta:`${cta} →`},
-    {tipo:'stats',fondo:'light',eye:'Resultados que hablan',head:'',body:'',items:rnd(BANCO.stats),cta:''},
+    {tipo:'stats',fondo:'light',eye:'Resultados que hablan',head:'',body:'',items:bancoStats(),cta:''},
     {tipo:'debate',fondo:seq[5],eye:'Tú decides',head:ai?ai.debate_q:deb[0],body:'',items:[ai?ai.debate_a:deb[1],ai?ai.debate_b:deb[2]],cta:'Comenta ↓'},
     {tipo:'cta',fondo:seq[6],eye:'Siguiente paso',head:ai?ai.cta_head:`Si quieres clientes que pagan lo que vales,\nescríbeme.`,body:ai?ai.cta_body:'',items:[],cta:ai?`Escríbeme ${ai.cta_word} →`:`${cta} →`},
   ];
@@ -2316,16 +2337,20 @@ function refrescarCopy(){
             : modo==='post' ? '📄 Post'
             : `🗂 Carrusel · ${SLIDES.length} slides`;
 
-  // ── Caption ── Si viene de una idea del banco, usar su caption/hashtags REALES
+  // ── Caption ── La caption COMPLEMENTA la imagen (no repite el hook).
+  //   Prioridad: idea del banco > caption de IA > caption del banco local.
   let caption, hashtags;
   if(COPY_CTX.idea && COPY_CTX.idea.caption){
     caption = COPY_CTX.idea.caption;
     if(COPY_CTX.idea.cta && !caption.includes(COPY_CTX.idea.cta)) caption += `\n\n${COPY_CTX.idea.cta}`;
     hashtags = COPY_CTX.idea.hashtags || N().hashtags;
+  } else if(ai && ai.caption){
+    caption = ai.caption;
+    if(ctaReal && !caption.toLowerCase().includes(ctaReal.toLowerCase().slice(0,12))) caption += `\n\n${ctaReal} 👇`;
+    hashtags = (getNicho()==='personal') ? N().hashtags : (copyData.hashtags||N().hashtags);
   } else {
-    const partes = (copyData.caption||'').split('\n\n');
-    const cuerpo = partes.length>1 ? partes.slice(1).join('\n\n') : (copyData.caption||'');
-    caption = hookReal ? `${hookReal}\n\n${cuerpo}` : (copyData.caption||'');
+    // Banco local: usar la caption propia (su apertura ya complementa; NO anteponer el hook)
+    caption = copyData.caption||'';
     if(ctaReal && !caption.includes(ctaReal)) caption += `\n\n${ctaReal} 👇`;
     hashtags = (getNicho()==='personal') ? N().hashtags : (copyData.hashtags||N().hashtags);
   }
