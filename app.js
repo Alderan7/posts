@@ -96,6 +96,8 @@ function setNicho(v){
   localStorage.setItem('rm_nicho', _nicho);
   const lbl = document.getElementById('nichoLbl'); if(lbl) lbl.textContent = N().nombre;
   if(typeof actualizarAngulos==='function') actualizarAngulos();
+  _filtroPilarNicho='';   // forzar repoblar el filtro de pilares del banco
+  if(typeof renderBanco==='function') renderBanco();
 }
 
 const BANCO = {
@@ -2314,12 +2316,19 @@ function refrescarCopy(){
             : modo==='post' ? '📄 Post'
             : `🗂 Carrusel · ${SLIDES.length} slides`;
 
-  // ── Caption: arranca con el HOOK real + desarrollo del banco (sin su hook) ──
-  const partes = (copyData.caption||'').split('\n\n');
-  const cuerpo = partes.length>1 ? partes.slice(1).join('\n\n') : (copyData.caption||'');
-  let caption = hookReal ? `${hookReal}\n\n${cuerpo}` : (copyData.caption||'');
-  if(ctaReal && !caption.includes(ctaReal)) caption += `\n\n${ctaReal} 👇`;
-  const hashtags = (getNicho()==='personal') ? N().hashtags : (copyData.hashtags||N().hashtags);
+  // ── Caption ── Si viene de una idea del banco, usar su caption/hashtags REALES
+  let caption, hashtags;
+  if(COPY_CTX.idea && COPY_CTX.idea.caption){
+    caption = COPY_CTX.idea.caption;
+    if(COPY_CTX.idea.cta && !caption.includes(COPY_CTX.idea.cta)) caption += `\n\n${COPY_CTX.idea.cta}`;
+    hashtags = COPY_CTX.idea.hashtags || N().hashtags;
+  } else {
+    const partes = (copyData.caption||'').split('\n\n');
+    const cuerpo = partes.length>1 ? partes.slice(1).join('\n\n') : (copyData.caption||'');
+    caption = hookReal ? `${hookReal}\n\n${cuerpo}` : (copyData.caption||'');
+    if(ctaReal && !caption.includes(ctaReal)) caption += `\n\n${ctaReal} 👇`;
+    hashtags = (getNicho()==='personal') ? N().hashtags : (copyData.hashtags||N().hashtags);
+  }
 
   // ── Reel: además mostrar el GUION generado ──
   const bloqueGuion = (modo==='reel' && typeof ULTIMO_GUION!=='undefined' && ULTIMO_GUION) ? `
@@ -3317,8 +3326,8 @@ async function generarMes(dias){
   dias=Math.max(1,Math.min(dias,31));
 
   const usadas=getUsadas();
-  let pendientes=BANCO_IDEAS.filter(i=>!usadas[i.dia]);
-  if(!pendientes.length) pendientes=BANCO_IDEAS.slice();
+  let pendientes=bancoIdeas().filter(i=>!usadas[i.dia]);
+  if(!pendientes.length) pendientes=bancoIdeas().slice();
   if(!pendientes.length){ alert('No hay ideas en el banco.'); return; }
 
   const ov=document.getElementById('expOv'), msg=document.getElementById('expMsg'), bar=document.getElementById('expBar');
@@ -3439,14 +3448,18 @@ function copyDeIdea(idea, ai){
 /* ═══════════════════════════════════════════
    BANCO DE 365 IDEAS
    ═══════════════════════════════════════════ */
-const BANCO_IDEAS = window.IDEAS_365 || [];
+// Banco de ideas según el nicho activo (reformas / marca personal)
+function bancoIdeas(){
+  return (getNicho()==='personal') ? (window.IDEAS_PERSONAL||[]) : (window.IDEAS_365||[]);
+}
+function usadasKey(){ return (getNicho()==='personal') ? 'ideas_usadas_personal' : 'ideas_usadas'; }
 
 function getUsadas(){
-  try{ return JSON.parse(localStorage.getItem('ideas_usadas')||'{}'); }
+  try{ return JSON.parse(localStorage.getItem(usadasKey())||'{}'); }
   catch(e){ return {}; }
 }
 function setUsadas(obj){
-  localStorage.setItem('ideas_usadas', JSON.stringify(obj));
+  localStorage.setItem(usadasKey(), JSON.stringify(obj));
 }
 function marcarUsada(dia){
   const u=getUsadas(); u[dia]={fecha:Date.now()}; setUsadas(u);
@@ -3467,6 +3480,11 @@ const MAP_PILAR_ANGULO = {
 };
 
 function anguloDesdeIdea(idea){
+  // Marca personal: mapear por Pilar
+  if(getNicho()==='personal'){
+    const p=(idea.pilar||'').toLowerCase();
+    return MAP_PILAR_PERSONAL[p] || rnd(Object.keys(N().angulos||{crecimiento:1}));
+  }
   const dolor=(idea.dolor||'').toLowerCase();
   for(const k in MAP_PILAR_ANGULO){ if(dolor.includes(k.split(' ')[0])) return MAP_PILAR_ANGULO[k]; }
   const pil=(idea.pilar||'').toLowerCase();
@@ -3480,24 +3498,42 @@ function anguloDesdeIdea(idea){
   return rnd(Object.keys(BANCO.angulos));
 }
 
+// Rellenar el filtro de pilares con los del banco activo (una vez por nicho)
+let _filtroPilarNicho='';
+function actualizarFiltroPilar(){
+  if(_filtroPilarNicho===getNicho()) return;
+  _filtroPilarNicho=getNicho();
+  const sel=document.getElementById('bancoFiltroPilar'); if(!sel) return;
+  const pilares=[...new Set(bancoIdeas().map(i=>i.pilar))].filter(Boolean);
+  sel.innerHTML='<option value="">Todos pilares</option>'+pilares.map(p=>`<option value="${p}">${p}</option>`).join('');
+}
+
+// Mapear pilar del banco personal → ángulo del nicho personal
+const MAP_PILAR_PERSONAL={
+  'marketing':'visibilidad', 'fiscalidad':'datos', 'mentalidad':'autoridad',
+  'storytelling':'crecimiento', 'ia':'ia', 'marca personal':'autoridad', 'venta':'estrategia',
+};
+
 function renderBanco(){
   const list=document.getElementById('bancoList');
-  if(!list || !BANCO_IDEAS.length){
+  if(!list || !bancoIdeas().length){
     if(list) list.innerHTML='<div class="banco-empty">No se cargó el banco de ideas.<br>El banco va incrustado en el HTML; recarga la página.</div>';
     return;
   }
+  actualizarFiltroPilar();
   const usadas=getUsadas();
   const q=(document.getElementById('bancoSearch')?.value||'').toLowerCase();
   const fFmt=document.getElementById('bancoFiltroFormato')?.value||'';
   const fPil=document.getElementById('bancoFiltroPilar')?.value||'';
   const ocultar=document.getElementById('bancoOcultarUsadas')?.checked;
 
-  // Contador
+  // Contador (dinámico según el banco del nicho)
+  const total=bancoIdeas().length||365;
   const totalUsadas=Object.keys(usadas).length;
-  document.getElementById('bancoCount').textContent=`${totalUsadas}/365`;
-  document.getElementById('bancoBar').style.width=(totalUsadas/365*100)+'%';
+  document.getElementById('bancoCount').textContent=`${totalUsadas}/${total}`;
+  document.getElementById('bancoBar').style.width=(totalUsadas/total*100)+'%';
 
-  let filtradas=BANCO_IDEAS.filter(it=>{
+  let filtradas=bancoIdeas().filter(it=>{
     if(fFmt && it.formato!==fFmt) return false;
     if(fPil && it.pilar!==fPil) return false;
     if(ocultar && usadas[it.dia]) return false;
@@ -3537,35 +3573,43 @@ function renderBanco(){
 }
 
 function usarIdeaBanco(dia){
-  const idea=BANCO_IDEAS.find(i=>String(i.dia)===String(dia));
+  const idea=bancoIdeas().find(i=>String(i.dia)===String(dia));
   if(!idea) return;
   const angulo=anguloDesdeIdea(idea);
-  // Construir carrusel base
-  const numSlides=parseInt(document.getElementById('cNumSlides')?.value)||7;
-  const slides=buildCarrusel(angulo,null,numSlides);
-  // Sobrescribir con contenido REAL de la idea
-  if(slides[0]){
-    slides[0].head=idea.hook;
-    slides[0].eye=idea.objetivo||idea.pilar;
+  const fmt=(idea.formato||'').toLowerCase();
+
+  // Respetar el formato de la idea (Reel / Post / Carrusel)
+  const numSlides=parseInt(document.getElementById('cNumSlidesTop')?.value||document.getElementById('cNumSlides')?.value)||7;
+  let slides;
+  if(fmt.includes('reel')){
+    setModo('reel'); slides=buildReel(angulo,null);
+    // Guion real de la idea (del banco) en lugar del genérico
+    if(idea.guion) ULTIMO_GUION=`🎬 GUION — ${idea.idea}\n\n${idea.guion}\n\n— CAPTION —\n${idea.caption||''}\n\n${idea.hashtags||''}`;
+  }else if(fmt.includes('post')){
+    setModo('post'); slides=buildPost(angulo,null);
+  }else{
+    setModo('carrusel'); slides=buildCarrusel(angulo,null,numSlides);
   }
-  // Último slide = CTA real de la idea
+
+  // Sembrar con el contenido REAL de la idea
+  if(slides[0]){ slides[0].head=idea.hook; slides[0].eye=idea.objetivo||idea.pilar; }
+  const ctaCorto = idea.cta && idea.cta.length>40 ? (getNicho()==='personal'?'Escríbeme INFO':'Escríbeme') : (idea.cta||'');
   const ult=slides[slides.length-1];
-  if(ult && idea.cta){
-    ult.cta=idea.cta.length>40?'Escríbeme REFORMAS':idea.cta;
-    ult.body=idea.cta;
-  }
+  if(ult && ctaCorto) ult.cta=ctaCorto;
+
   SLIDES.length=0;
   slides.forEach(s=>SLIDES.push(s));
   cur=0;
   buildThumbs();
   show(0);
   scaleStage();
-  actualizarCopy(angulo,null);
+  // COPY con la caption/hashtags REALES de la idea
+  COPY_CTX={ angulo, ai:null, idea };
+  refrescarCopy();
   // Marcar como usada
   marcarUsada(dia);
   renderBanco();
-  toast2(`✓ Idea ${String(dia).padStart(3,'0')} cargada y marcada como usada`);
-  // Saltar a Editar
+  toast2(`✓ Idea ${String(dia).padStart(3,'0')} cargada (${idea.formato}) y marcada como usada`);
   abrirTabEditar();
 }
 
@@ -3576,8 +3620,18 @@ function repostIdea(dia){
 }
 
 function verIdeaCompleta(dia){
-  const it=BANCO_IDEAS.find(i=>String(i.dia)===String(dia));
+  const it=bancoIdeas().find(i=>String(i.dia)===String(dia));
   if(!it) return;
+  if(getNicho()==='personal'){
+    alert(`DÍA ${it.dia} · ${it.formato} · ${it.pilar}\n`+
+      `\n▸ TEMA:\n${it.idea}`+
+      `\n\n▸ GANCHO:\n${it.hook}`+
+      `\n\n▸ GUION / ESTRUCTURA:\n${it.guion||''}`+
+      `\n\n▸ CAPTION:\n${it.caption||''}`+
+      `\n\n▸ HASHTAGS:\n${it.hashtags||''}`+
+      `\n\n▸ CTA:\n${it.cta||''}`);
+    return;
+  }
   alert(`DÍA ${it.dia} · ${it.formato} · ${it.pilar}\n`+
     `\n▸ AVATAR: ${it.avatar}`+
     `\n▸ DOLOR: ${it.dolor}`+
@@ -3595,7 +3649,7 @@ function usarSiguienteIdea(){
   const usadas=getUsadas();
   const fFmt=document.getElementById('bancoFiltroFormato')?.value||'';
   const fPil=document.getElementById('bancoFiltroPilar')?.value||'';
-  const sig=BANCO_IDEAS.find(it=>{
+  const sig=bancoIdeas().find(it=>{
     if(usadas[it.dia]) return false;
     if(fFmt && it.formato!==fFmt) return false;
     if(fPil && it.pilar!==fPil) return false;
