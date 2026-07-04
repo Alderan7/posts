@@ -2509,13 +2509,33 @@ async function buscarPexels(){
 let _pexQ='', _pexPage=1;
 function verMasFotos(){ buscarPexelsTermino(_pexQ, _pexPage+1); }
 
-// Mostrar SOLO un panel de resultados (para que tenga espacio y el botón se vea)
-function soloResultado(id){
+// Abrir el modal de resultados mostrando SOLO el panel indicado
+function soloResultado(id, titulo){
   ['pexelsResults','vidResults','musResults'].forEach(x=>{
-    const el=document.getElementById(x); if(el) el.style.display=(x===id)?'flex':'none';
+    const el=document.getElementById(x); if(el) el.style.display=(x===id)?'block':'none';
   });
-  const mg=document.getElementById('mlibGrid'); if(mg) mg.style.display = id?'none':'';
+  const modal=document.getElementById('resModal');
+  if(modal){
+    modal.classList.add('on');
+    const t=document.getElementById('resModalTitle'); if(t&&titulo) t.textContent=titulo;
+    const body=modal.querySelector('.resm-body');
+    if(body && !body._scrollWired){
+      body._scrollWired=true;
+      body.addEventListener('scroll',()=>{
+        if(body.scrollTop+body.clientHeight >= body.scrollHeight-120){
+          // scroll infinito: cargar la siguiente página del panel activo
+          const b=document.querySelector('#resModal button[id$="MasBtn"]');
+          if(b && !b._cargando){ b._cargando=true; b.click(); }
+        }
+      });
+    }
+  }
 }
+function cerrarModalRes(){
+  const m=document.getElementById('resModal'); if(m) m.classList.remove('on');
+  if(_musAudio){ _musAudio.pause(); _musAudio=null; }
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') cerrarModalRes(); });
 
 // Botón "Ver más" reutilizable (id único por grid)
 function botonVerMas(fn, id){
@@ -2537,7 +2557,7 @@ async function buscarPexelsTermino(q, page){
 
   const resultsBox = document.getElementById('pexelsResults');
   const grid = document.getElementById('pexelsGrid');
-  soloResultado('pexelsResults');
+  soloResultado('pexelsResults', '📷 Fotos: '+q);
   if(page===1) grid.innerHTML = '<div class="mlib-empty">🔍 Buscando...</div>';
 
   try{
@@ -2595,7 +2615,7 @@ async function buscarVideosPexels(page){
 
   const box = document.getElementById('vidResults');
   const grid = document.getElementById('vidGrid');
-  soloResultado('vidResults');
+  soloResultado('vidResults', '🎬 Vídeos: '+q);
   if(page===1) grid.innerHTML='<div class="mlib-empty">🔍 Buscando vídeos...</div>';
   if(status){ status.style.color='var(--UI-M)'; status.textContent='Clic en un vídeo para descargarlo.'; }
 
@@ -2669,7 +2689,7 @@ async function buscarMusica(page){
   _musQ=q; _musPage=page;
 
   const box=document.getElementById('musResults'), grid=document.getElementById('musGrid');
-  soloResultado('musResults');
+  soloResultado('musResults', '🎵 Música: '+q);
   if(page===0) grid.innerHTML='<div class="mlib-empty">🔍 Buscando música...</div>';
 
   try{
