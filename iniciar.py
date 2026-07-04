@@ -84,8 +84,14 @@ def main():
             self.send_header("Cache-Control", "no-store, must-revalidate")
             super().end_headers()
 
+    # Servidor MULTIHILO: evita que se reseteen conexiones al cargar varios
+    # archivos a la vez (CSS/JS/datos grandes en paralelo).
+    class ServidorHilos(socketserver.ThreadingMixIn, socketserver.TCPServer):
+        daemon_threads = True
+        allow_reuse_address = True
+
     try:
-        with socketserver.TCPServer(("", puerto), Silencioso) as httpd:
+        with ServidorHilos(("", puerto), Silencioso) as httpd:
             httpd.serve_forever()
     except KeyboardInterrupt:
         pass

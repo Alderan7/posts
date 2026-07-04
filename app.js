@@ -3165,9 +3165,27 @@ function buildThumbs(){
     const chipEl=document.createElement('div');
     chipEl.className='thumb-chip';
     chipEl.textContent=TIPO_L[d.tipo]||d.tipo;
-    wrap.appendChild(inner);wrap.appendChild(numEl);wrap.appendChild(chipEl);
+    // Botón borrar slide
+    const delEl=document.createElement('button');
+    delEl.className='thumb-del';
+    delEl.textContent='✕';
+    delEl.title='Eliminar este slide';
+    delEl.onclick=(e)=>{ e.stopPropagation(); borrarSlide(i); };
+    wrap.appendChild(inner);wrap.appendChild(numEl);wrap.appendChild(chipEl);wrap.appendChild(delEl);
     panel.appendChild(wrap);
   });
+}
+
+// Eliminar un slide del carrusel
+function borrarSlide(i){
+  if(modo==='post' || modo==='reel'){ toast2('En Post/Reel usa "Generar" para rehacer'); return; }
+  if(SLIDES.length<=1){ toast2('No puedes quedarte sin slides'); return; }
+  SLIDES.splice(i,1);
+  cur=Math.max(0, Math.min(cur, SLIDES.length-1));
+  buildThumbs();
+  show(cur);
+  const nc=document.getElementById('navCnt'); if(nc) nc.textContent=`${cur+1} / ${SLIDES.length}`;
+  toast2(`✓ Slide eliminado · quedan ${SLIDES.length}`);
 }
 function refreshThumb(i){
   const ts=document.querySelectorAll('.thumb');

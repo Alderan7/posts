@@ -166,6 +166,15 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
   font-size:7px;letter-spacing:.07em;text-transform:uppercase;
   padding:2px 4px;border-radius:2px;
 }
+.thumb-del{
+  position:absolute;top:4px;right:5px;
+  width:18px;height:18px;border-radius:50%;border:none;
+  background:rgba(0,0,0,.7);color:#fff;font-size:9px;line-height:1;
+  cursor:pointer;opacity:0;transition:opacity .15s;
+  display:flex;align-items:center;justify-content:center;
+}
+.thumb:hover .thumb-del{opacity:1}
+.thumb-del:hover{background:#e5484d}
 
 /* ── STAGE CENTRAL ── */
 #stageArea{
@@ -1405,6 +1414,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=15"></script>
+<script src="app.js?v=16"></script>
 </body>
 </html>
