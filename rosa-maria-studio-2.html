@@ -600,12 +600,12 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 #mediaLib.hidden{display:none}
 
 /* Modal de resultados (fotos/vídeos/música) */
-#resModal{
+#resModal,#promptModal{
   display:none;position:fixed;inset:0;z-index:1000;
   background:rgba(0,0,0,.72);backdrop-filter:blur(3px);
   align-items:center;justify-content:center;padding:24px;
 }
-#resModal.on{display:flex}
+#resModal.on,#promptModal.on{display:flex}
 .resm-box{
   width:min(1100px,94vw);height:min(86vh,900px);
   background:var(--UI-P);border:1px solid var(--UI-B2);border-radius:12px;
@@ -906,12 +906,42 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       </div>
     </div>
     <button class="btn btn-gh" id="btnGuionReel" onclick="descargarGuionReel()" style="display:none" title="Descarga el guión del reel en .txt">📝 Guión</button>
+    <button class="btn btn-out" id="btnPrompt" onclick="abrirPromptModal()" title="Describe lo que quieres y la IA diseña el post/carrusel/reel entero">✨ Prompt</button>
     <button class="btn btn-out" id="btnMes" onclick="generarMes()" title="Fábrica: genera el contenido de varios días con ideas del banco y lo descarga en un ZIP">📅 Mes</button>
     <button class="btn btn-gen" id="btnGen" onclick="generar()">
       <span class="btn-gen-ico">⚡</span>
       <div class="spinner"></div>
       <span id="btnGenTxt">Generar</span>
     </button>
+  </div>
+</div>
+
+<!-- MODAL PROMPT MAESTRO (IA diseña post/carrusel/reel) -->
+<div id="promptModal" onclick="if(event.target===this)cerrarPromptModal()">
+  <div class="resm-box" style="width:min(720px,94vw);height:auto;max-height:88vh">
+    <div class="resm-head">
+      <span>✨ Diseñar con IA — describe lo que quieres</span>
+      <button onclick="cerrarPromptModal()" class="resm-close">✕</button>
+    </div>
+    <div style="padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto">
+      <textarea id="promptTxt" rows="5" placeholder="Ej: Un carrusel sobre los 3 errores de fiscalidad que cometen los autónomos y cómo evitarlos. Tono cercano y directo. Que termine invitando a escribirme."
+        style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:12px;border-radius:8px;font-size:13px;font-family:'Montserrat',sans-serif;line-height:1.5;resize:vertical"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;gap:4px" class="mode-row">
+          <button class="mode-btn on" id="pmPost" onclick="setPromptFmt('post',this)">📄 Post</button>
+          <button class="mode-btn" id="pmCarr" onclick="setPromptFmt('carrusel',this)">🗂 Carrusel</button>
+          <button class="mode-btn" id="pmReel" onclick="setPromptFmt('reel',this)">🎬 Reel</button>
+        </div>
+        <div id="pmSlidesWrap" style="display:none;align-items:center;gap:5px">
+          <span style="font-size:10px;color:var(--UI-M)">Slides</span>
+          <select id="pmSlides" style="background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:5px 7px;border-radius:4px;font-size:11px;font-family:'Montserrat',sans-serif">
+            <option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+          </select>
+        </div>
+        <button class="btn btn-gen" id="pmGen" onclick="generarDesdePrompt()" style="margin-left:auto"><span class="spinner"></span><span id="pmGenTxt">⚡ Diseñar</span></button>
+      </div>
+      <div id="promptStatus" style="font-size:11px;color:var(--UI-M);line-height:1.5">La IA (Groq) diseña el contenido entero según tu descripción. Necesitas tu key de Groq activa.</div>
+    </div>
   </div>
 </div>
 
@@ -1416,6 +1446,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=20"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>

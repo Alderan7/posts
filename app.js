@@ -1548,6 +1548,107 @@ async function generar(){
   document.getElementById('btnGenTxt').textContent='Generar';
 }
 
+/* ══════════════════════════════════════════════════════
+   DISEÑAR CON IA DESDE UN PROMPT MAESTRO (libertad total)
+   ══════════════════════════════════════════════════════ */
+let _promptFmt='post';
+function abrirPromptModal(){ document.getElementById('promptModal').classList.add('on'); setTimeout(()=>document.getElementById('promptTxt')?.focus(),100); }
+function cerrarPromptModal(){ document.getElementById('promptModal').classList.remove('on'); }
+function setPromptFmt(f,btn){
+  _promptFmt=f;
+  ['pmPost','pmCarr','pmReel'].forEach(id=>document.getElementById(id)?.classList.remove('on'));
+  btn.classList.add('on');
+  const w=document.getElementById('pmSlidesWrap'); if(w) w.style.display = (f==='carrusel')?'flex':'none';
+}
+
+// Tipos de slide que la IA puede usar (renderizan sin imagen)
+const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta'];
+
+async function generarDesdePrompt(){
+  const prompt=(document.getElementById('promptTxt')?.value||'').trim();
+  const status=document.getElementById('promptStatus');
+  const btn=document.getElementById('pmGen');
+  if(!prompt){ if(status){status.style.color='#ff9f43';status.textContent='Escribe qué quieres diseñar.';} return; }
+  if(!getGroqKey()){ if(status){status.style.color='#ff9f43';status.textContent='Necesitas tu key de Groq (pestaña Generar).';} return; }
+
+  const fmt=_promptFmt;
+  const n = fmt==='carrusel' ? (parseInt(document.getElementById('pmSlides')?.value)||6) : 1;
+  const cfg=N();
+  const contrato=`Eres Rosa María, ${cfg.persona}. Tono: ${cfg.tono}. Escribes en 2ª persona (tú).
+
+DISEÑA un ${fmt==='carrusel'?`carrusel de ${n} slides`:fmt==='reel'?'reel (portada + guion)':'post de 1 slide'} de Instagram para: "${prompt}".
+
+Devuelve SOLO JSON válido, sin markdown:
+{
+  "caption": "caption de Instagram que COMPLEMENTA (no repite el texto de las imágenes), 3-6 frases, termina invitando a interactuar",
+  "hashtags": "6-8 hashtags relevantes con #",
+  "guion": "solo si es reel: guion de 20-25s (gancho/desarrollo/cierre)",
+  "slides": [
+    {
+      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta",
+      "fondo": "dark | light | blue",
+      "eye": "eyebrow corto (kicker en mayúsculas conceptual)",
+      "head": "titular del slide (puedes usar \\n)",
+      "body": "subtítulo o explicación corta (opcional)",
+      "items": [],
+      "cta": "texto de pie / conector corto"
+    }
+  ]
+}
+
+items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚMERO::etiqueta" (ej "+40%::Más clientes"); proceso=3-4 "Título:descripción"; servicio=3-5 frases; debate=exactamente 2 opciones; claves=3 frases; pills=3-4 etiquetas cortas; hook/frase/cta=[] vacío.
+
+REGLAS: 1er slide = gancho potente. Último = CTA claro con una palabra de acción. Alterna fondos con criterio (no todo igual). Usa el tipo "stats" solo si el tema pide cifras. Nada de tecnicismos vacíos.`;
+
+  if(btn) btn.classList.add('loading');
+  if(status){ status.style.color='#38B6FF'; status.textContent='Diseñando con IA…'; }
+  try{
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
+      body:JSON.stringify({ model:'llama-3.3-70b-versatile', temperature:0.85, max_tokens:2500,
+        response_format:{type:'json_object'}, messages:[{role:'user',content:contrato}] })
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const out=JSON.parse((data.choices?.[0]?.message?.content||'').replace(/```json|```/g,'').trim());
+    let arr=Array.isArray(out.slides)?out.slides:[];
+    // Sanear cada slide
+    arr=arr.map(s=>{
+      let tipo=TIPOS_IA.includes(s.tipo)?s.tipo:'hook';
+      let fondo=['dark','light','blue'].includes(s.fondo)?s.fondo:'dark';
+      let items=Array.isArray(s.items)?s.items.filter(x=>x!=null&&String(x).trim()):[];
+      return { tipo, fondo, eye:String(s.eye||'').slice(0,60), head:String(s.head||'').slice(0,180),
+        body:String(s.body||'').slice(0,240), items, cta:String(s.cta||'').slice(0,60) };
+    }).filter(s=>s.head||s.items.length);
+    if(!arr.length) throw new Error('la IA no devolvió slides');
+
+    if(fmt==='reel'){
+      const s0=arr[0];
+      SLIDES.length=0;
+      SLIDES.push({tipo:'reel',fondo:'dark',eye:s0.eye||'Reel',head:s0.head,body:s0.body||'',items:[],cta:s0.cta||'Dale al play',ovOpacity:55});
+      ULTIMO_GUION = out.guion ? `🎬 GUION\n\n${out.guion}\n\n— CAPTION —\n${out.caption||''}\n\n${out.hashtags||''}` : ULTIMO_GUION;
+      setModo('reel');
+    }else if(fmt==='post'){
+      SLIDES.length=0; SLIDES.push(arr[0]); setModo('post');
+    }else{
+      SLIDES.length=0; arr.slice(0,n).forEach(s=>SLIDES.push(s)); setModo('carrusel');
+    }
+    cur=0; buildThumbs(); show(0); scaleStage();
+    // COPY con la caption/hashtags de la IA
+    COPY_CTX={ angulo:'sistema', ai:{caption:out.caption,hook:SLIDES[0]?.head}, idea:(out.caption?{caption:out.caption,hashtags:out.hashtags,cta:SLIDES[SLIDES.length-1]?.cta}:null) };
+    refrescarCopy();
+    if(status){ status.style.color='#38B6FF'; status.textContent='✓ Diseño creado.'; }
+    cerrarPromptModal();
+    abrirTabEditar();
+    toast2('✓ Diseñado con IA — ajústalo si quieres');
+  }catch(e){
+    if(status){ status.style.color='#ff6b6b'; status.textContent='No se pudo diseñar: '+e.message; }
+  }finally{
+    if(btn) btn.classList.remove('loading');
+  }
+}
+
 async function fetchAI(angulo){
   const cfg=N();
   const angs=cfg.angulos||BANCO.angulos;
@@ -2592,7 +2693,7 @@ function cerrarModalRes(){
   const m=document.getElementById('resModal'); if(m) m.classList.remove('on');
   if(_musAudio){ _musAudio.pause(); _musAudio=null; }
 }
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') cerrarModalRes(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ cerrarModalRes(); cerrarPromptModal(); } });
 
 // Botón "Ver más" reutilizable (id único por grid)
 function botonVerMas(fn, id){
