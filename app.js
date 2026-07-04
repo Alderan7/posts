@@ -2509,6 +2509,14 @@ async function buscarPexels(){
 let _pexQ='', _pexPage=1;
 function verMasFotos(){ buscarPexelsTermino(_pexQ, _pexPage+1); }
 
+// Mostrar SOLO un panel de resultados (para que tenga espacio y el botón se vea)
+function soloResultado(id){
+  ['pexelsResults','vidResults','musResults'].forEach(x=>{
+    const el=document.getElementById(x); if(el) el.style.display=(x===id)?'flex':'none';
+  });
+  const mg=document.getElementById('mlibGrid'); if(mg) mg.style.display = id?'none':'';
+}
+
 // Botón "Ver más" reutilizable (id único por grid)
 function botonVerMas(fn, id){
   return `<button id="${id}" onclick="${fn}()" style="grid-column:1/-1;padding:7px;margin-top:4px;font-size:9px;font-weight:600;background:var(--UI-B);border:1px solid var(--UI-A);color:var(--UI-A);border-radius:4px;cursor:pointer">Ver más ↓</button>`;
@@ -2529,7 +2537,7 @@ async function buscarPexelsTermino(q, page){
 
   const resultsBox = document.getElementById('pexelsResults');
   const grid = document.getElementById('pexelsGrid');
-  resultsBox.style.display = 'flex';
+  soloResultado('pexelsResults');
   if(page===1) grid.innerHTML = '<div class="mlib-empty">🔍 Buscando...</div>';
 
   try{
@@ -2587,7 +2595,7 @@ async function buscarVideosPexels(page){
 
   const box = document.getElementById('vidResults');
   const grid = document.getElementById('vidGrid');
-  box.style.display='flex';
+  soloResultado('vidResults');
   if(page===1) grid.innerHTML='<div class="mlib-empty">🔍 Buscando vídeos...</div>';
   if(status){ status.style.color='var(--UI-M)'; status.textContent='Clic en un vídeo para descargarlo.'; }
 
@@ -2661,7 +2669,7 @@ async function buscarMusica(page){
   _musQ=q; _musPage=page;
 
   const box=document.getElementById('musResults'), grid=document.getElementById('musGrid');
-  box.style.display='flex';
+  soloResultado('musResults');
   if(page===0) grid.innerHTML='<div class="mlib-empty">🔍 Buscando música...</div>';
 
   try{
