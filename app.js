@@ -1445,6 +1445,40 @@ function rIndice(d,n){
   </div>`;
 }
 
+// Cita sobre foto (pull-quote editorial): foto oscurecida + cita grande centrada
+function rCitaFoto(d,n){
+  const url=getImgUrl(d.imgFondo);
+  const bg = url
+    ? `<img src="${url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0" alt=""><div style="position:absolute;inset:0;z-index:1;background:rgba(26,26,26,.62)"></div>`
+    : `<div style="position:absolute;inset:0;background:#1A1A1A;z-index:0"></div>`;
+  return`<div class="slide ${slideH()} ${spClass()}" style="position:relative;overflow:hidden">
+    ${bg}
+    <div style="position:relative;z-index:5;display:flex;flex-direction:column;height:100%">
+      <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye" style="font-size:${T.eye}px;color:#38B6FF">${p(d.eye||'')}</span></div>${logoHTML('dark')}</div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:26px">
+        <div style="font-family:var(--F-SER);font-style:italic;color:#38B6FF;font-size:140px;line-height:.6;opacity:.5">“</div>
+        <h1 class="accent-ser" style="font-size:${Math.min(T.head+4,82)}px;color:#F5F1EA;line-height:1.15">${pK(d.head)}</h1>
+        ${d.body?`<p class="TCap" style="font-size:${T.cta}px;color:rgba(245,241,234,.7)">— ${p(d.body)}</p>`:''}
+      </div>
+      <div class="SF"><span class="TCap" style="font-size:${T.cta}px;color:rgba(245,241,234,.5)">${HANDLE}</span><span class="TCap" style="font-size:${T.cta}px;color:#38B6FF">${p(d.cta||'')}</span></div>
+    </div>
+  </div>`;
+}
+
+// Número gigante (hero editorial): un dato enorme + etiqueta + contexto
+function rNumero(d,n){
+  const num=(d.head||d.items?.[0]||'+100%');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'')}</span></div>${logoHTML(d.fondo)}</div>
+    <div class="zone" style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:10px">
+      <div class="snum" style="font-size:300px;line-height:.9">${p(num)}</div>
+      ${d.body?`<h2 class="TDsm Ct" style="font-size:${Math.min(T.head,64)}px">${pK(d.body)}</h2>`:''}
+      ${d.items&&d.items[1]?`<p class="TBdy Cb" style="font-size:${T.body}px;max-width:760px">${p(d.items[1])}</p>`:''}
+    </div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
 // EXPERIMENTAL — composición libre: la IA coloca elementos por coordenadas (%).
 function rLibre(d,n){
   const els=(d.elementos||[]).map(e=>{
@@ -1488,6 +1522,8 @@ function renderTipo(d,n){
     case'movil':            return rMovil(d,n);
     case'revista':          return rRevista(d,n);
     case'indice':           return rIndice(d,n);
+    case'citafoto':         return rCitaFoto(d,n);
+    case'numero':           return rNumero(d,n);
     case'libre':            return rLibre(d,n);
     default:                return rHead(d,n);
   }
@@ -1623,8 +1659,8 @@ function setPromptFmt(f,btn){
 }
 
 // Tipos de slide que la IA puede usar (foto/fototxt/autoridad/revista llevan imagen)
-const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice'];
-const TIPOS_IA_FOTO=['foto','fototxt','autoridad','revista'];
+const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice','citafoto','numero'];
+const TIPOS_IA_FOTO=['foto','fototxt','autoridad','revista','citafoto'];
 
 async function generarDesdePrompt(){
   const prompt=(document.getElementById('promptTxt')?.value||'').trim();
@@ -1649,7 +1685,7 @@ Devuelve SOLO JSON válido, sin markdown:
   "guion": "solo si es reel: guion de 20-25s (gancho/desarrollo/cierre)",
   "slides": [
     {
-      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt | revista | indice",
+      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt | revista | indice | citafoto | numero",
       "fondo": "dark | light | blue",
       "eye": "eyebrow corto (kicker en mayúsculas conceptual)",
       "head": "titular del slide (puedes usar \\n)",
@@ -1665,6 +1701,8 @@ items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚ
 
 TIPOS CON FOTO (hazlo VISUAL): usa "foto" (imagen a pantalla completa con el titular encima), "fototxt" (imagen arriba + texto abajo) o "revista" (PORTADA editorial: imagen grande arriba + titular abajo) en 1-3 slides — SIEMPRE con su campo "img" en inglés. La portada ideal es "revista".
 LAYOUT "indice": índice tipo revista ("Contenido"), items = 3-6 temas del carrusel (uno por línea). Úsalo como 2º slide si encaja.
+LAYOUT "citafoto": una CITA potente (head) sobre una foto oscurecida — SIEMPRE con "img" en inglés; body opcional = autor de la cita. Muy editorial.
+LAYOUT "numero": un DATO enorme (head = el número, ej "3 de cada 4"), body = qué significa, items[1] = frase de contexto. Úsalo para impactar con una cifra.
 
 REGLAS: 1er slide = gancho potente (mejor si es foto). Último = CTA claro con una palabra de acción. Alterna fondos con criterio. Usa "stats" solo si el tema pide cifras. Nada de tecnicismos vacíos.`;
 
