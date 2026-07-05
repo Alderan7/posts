@@ -1601,43 +1601,43 @@ async function generar(){
 
   txEl.textContent=`${pilar.toUpperCase()} · ${angulo}`;
 
-  sEls[1].classList.add('ok');
-  txEl.textContent='Generando copy con IA...';
-
-  let aiData=null;
-  try{ aiData=await fetchAI(angulo); }
-  catch(e){ console.warn('API no disponible, usando banco local',e.message); }
-
-  sEls[2].classList.add('ok');
-  await delay(250);
-
   const numSlides = parseInt(document.getElementById('cNumSlidesTop')?.value || document.getElementById('cNumSlides')?.value)||7;
-  // Si el usuario forzó una posición de feed, fijarla antes de construir
   const forz = getFeedForzada();
   if(modo==='carrusel' && forz) setFeedPos(parseInt(forz));
-  const nuevo = modo==='reel' ? buildReel(angulo,aiData)
-              : modo==='post' ? buildPost(angulo,aiData)
-              : buildCarrusel(angulo,aiData,numSlides);
-  SLIDES.length=0;
-  nuevo.forEach(s=>SLIDES.push(s));
 
+  // MOTOR NARRATIVO (Groq): historia coherente del nº exacto de slides / post de 1
+  let narrativa=null, aiData=null;
+  if(getGroqKey()){
+    txEl.textContent = modo==='post' ? 'Escribiendo un post autoconclusivo...' : `Escribiendo una historia de ${modo==='reel'?'reel':numSlides+' slides'}...`;
+    try{
+      const tema=(N().angulos||BANCO.angulos)[angulo]||angulo;
+      const nn=modo==='carrusel'?numSlides:1;
+      narrativa=await pedirDisenoIA(tema, modo, nn, N());
+    }catch(e){ console.warn('IA narrativa no disponible, uso banco',e.message); }
+  }
+
+  sEls[1].classList.add('ok'); sEls[2].classList.add('ok');
+  await delay(200);
   sEls[3].classList.add('ok');
   txEl.textContent='¡Listo!';
-  await delay(500);
+  await delay(350);
 
-  cur=0;
-  buildThumbs();
-  show(0);
-  scaleStage();
-  document.getElementById('navCnt').textContent=
-    modo==='post'?'1 / 1':`1 / ${SLIDES.length}`;
+  if(narrativa){
+    aplicarDisenoIA(narrativa.arr, narrativa.out, modo, numSlides);   // SLIDES + vista + COPY
+  }else{
+    // Fallback: relleno con IA de campos o banco local
+    try{ if(getGroqKey()) aiData=await fetchAI(angulo); }catch(e){}
+    const nuevo = modo==='reel' ? buildReel(angulo,aiData)
+                : modo==='post' ? buildPost(angulo,aiData)
+                : buildCarrusel(angulo,aiData,numSlides);
+    SLIDES.length=0; nuevo.forEach(s=>SLIDES.push(s));
+    cur=0; buildThumbs(); show(0); scaleStage();
+    actualizarCopy(angulo, aiData);
+  }
 
-  // Avanzar contador de feed SOLO en modo Auto (si está forzado, se queda fijo)
+  document.getElementById('navCnt').textContent = modo==='post'?'1 / 1':`1 / ${SLIDES.length}`;
   if(modo==='carrusel' && !getFeedForzada()) avanzarFeedPos();
   actualizarFeedLabel();
-
-  // Actualizar panel Copy y tags Pexels
-  actualizarCopy(angulo, aiData);
   actualizarTagsPexels(angulo);
 
   ov.classList.remove('on');
@@ -1662,21 +1662,18 @@ function setPromptFmt(f,btn){
 const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice','citafoto','numero'];
 const TIPOS_IA_FOTO=['foto','fototxt','autoridad','revista','citafoto'];
 
-async function generarDesdePrompt(){
-  const prompt=(document.getElementById('promptTxt')?.value||'').trim();
-  const status=document.getElementById('promptStatus');
-  const btn=document.getElementById('pmGen');
-  if(!prompt){ if(status){status.style.color='#ff9f43';status.textContent='Escribe qué quieres diseñar.';} return; }
-  if(!getGroqKey()){ if(status){status.style.color='#ff9f43';status.textContent='Necesitas tu key de Groq (pestaña Generar).';} return; }
+// Contrato para la IA: coherencia narrativa estricta según formato/nº de slides
+function contratoDiseno(prompt, fmt, n, cfg){
+  const estructura = fmt==='post'
+    ? `UN post de 1 SOLO slide AUTOCONCLUSIVO: una idea completa que se entiende sola, sin continuación. NADA de "desliza" ni "sigue"; el CTA es una acción real (comenta, guarda, escríbeme).`
+    : fmt==='reel' ? `un reel: 1 slide de portada potente + el guion.`
+    : `un carrusel de EXACTAMENTE ${n} slides que cuentan UNA historia pensada para ${n} slides (ni más ni menos): principio, desarrollo y cierre repartidos en ${n}.`;
+  return `Eres Rosa María, ${cfg.persona}. Tono: ${cfg.tono}. Escribes en 2ª persona (tú).
 
-  const fmt=_promptFmt;
-  const n = fmt==='carrusel' ? (parseInt(document.getElementById('pmSlides')?.value)||6) : 1;
-  const cfg=N();
-  const libre=document.getElementById('pmLibre')?.checked;
-  if(libre){ return generarLibre(prompt, fmt, n, cfg, status, btn); }   // modo experimental
-  const contrato=`Eres Rosa María, ${cfg.persona}. Tono: ${cfg.tono}. Escribes en 2ª persona (tú).
+DISEÑA ${estructura}
+TEMA: "${prompt}".
 
-DISEÑA un ${fmt==='carrusel'?`carrusel de ${n} slides`:fmt==='reel'?'reel (portada + guion)':'post de 1 slide'} de Instagram para: "${prompt}".
+COHERENCIA (CRÍTICO): los slides son UNA sola historia hilada. Cada slide AVANZA el relato y aporta algo NUEVO — PROHIBIDO repetir la misma idea, frase o dato en varios slides. Slide 1 = gancho; slides del medio = desarrollo paso a paso que se encadena; último = cierre + CTA. Que se lea como un todo, no frases sueltas. Ajusta la profundidad al nº de slides (si son pocos, ve al grano; si son más, desarrolla con más matices).
 
 Devuelve SOLO JSON válido, sin markdown:
 {
@@ -1691,74 +1688,79 @@ Devuelve SOLO JSON válido, sin markdown:
       "head": "titular del slide (puedes usar \\n)",
       "body": "subtítulo o explicación corta (opcional)",
       "items": [],
-      "img": "SOLO si el tipo es foto/fototxt: 2-3 palabras EN INGLÉS para buscar la foto de fondo (ej: 'modern office', 'accountant desk', 'happy entrepreneur')",
+      "img": "SOLO si el tipo lleva foto: 2-3 palabras EN INGLÉS para buscar la foto",
       "cta": "texto de pie / conector corto"
     }
   ]
 }
 
-items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚMERO::etiqueta" (ej "+40%::Más clientes"); proceso=3-4 "Título:descripción"; servicio=3-5 frases; debate=exactamente 2 opciones; claves=3 frases; pills=3-4 etiquetas cortas; hook/frase/cta/foto/fototxt=[] vacío.
+items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚMERO::etiqueta"; proceso=3-4 "Título:descripción"; servicio=3-5 frases; debate=exactamente 2 opciones; claves=3 frases; pills=3-4 etiquetas; hook/frase/cta/foto/fototxt/citafoto=[] vacío.
+TIPOS CON FOTO (hazlo VISUAL): "foto", "fototxt", "revista" (portada) o "citafoto" (cita sobre foto) — SIEMPRE con "img" en inglés.
+"indice"=índice "Contenido" (items=temas). "numero"=un dato enorme (head=número, body=qué significa).
+REGLAS: 1er slide engancha. Último = CTA con una palabra de acción. Alterna fondos. "stats"/"numero" solo si el tema pide cifras. Sin tecnicismos vacíos.`;
+}
 
-TIPOS CON FOTO (hazlo VISUAL): usa "foto" (imagen a pantalla completa con el titular encima), "fototxt" (imagen arriba + texto abajo) o "revista" (PORTADA editorial: imagen grande arriba + titular abajo) en 1-3 slides — SIEMPRE con su campo "img" en inglés. La portada ideal es "revista".
-LAYOUT "indice": índice tipo revista ("Contenido"), items = 3-6 temas del carrusel (uno por línea). Úsalo como 2º slide si encaja.
-LAYOUT "citafoto": una CITA potente (head) sobre una foto oscurecida — SIEMPRE con "img" en inglés; body opcional = autor de la cita. Muy editorial.
-LAYOUT "numero": un DATO enorme (head = el número, ej "3 de cada 4"), body = qué significa, items[1] = frase de contexto. Úsalo para impactar con una cifra.
+// Motor: pide el diseño a Groq, sanea y descarga fotos. Devuelve {arr,out}.
+async function pedirDisenoIA(prompt, fmt, n, cfg, onStatus){
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
+    body:JSON.stringify({ model:'llama-3.3-70b-versatile', temperature:0.85, max_tokens:2600,
+      response_format:{type:'json_object'}, messages:[{role:'user',content:contratoDiseno(prompt,fmt,n,cfg)}] })
+  });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const out=JSON.parse(((await res.json()).choices?.[0]?.message?.content||'').replace(/```json|```/g,'').trim());
+  let arr=(Array.isArray(out.slides)?out.slides:[]).map(s=>{
+    let tipo=TIPOS_IA.includes(s.tipo)?s.tipo:'hook';
+    let fondo=['dark','light','blue'].includes(s.fondo)?s.fondo:'dark';
+    let items=Array.isArray(s.items)?s.items.filter(x=>x!=null&&String(x).trim()):[];
+    const slide={ tipo, fondo, eye:String(s.eye||'').slice(0,60), head:String(s.head||'').slice(0,180),
+      body:String(s.body||'').slice(0,240), items, cta:String(s.cta||'').slice(0,60) };
+    if(TIPOS_IA_FOTO.includes(tipo)){ slide.img=String(s.img||s.head||'').slice(0,50); slide.overlay='dark'; slide.imgLayout='bg-full'; slide.txtPos='bottom'; slide.ovOpacity=68; }
+    return slide;
+  }).filter(s=>s.head||s.items.length);
+  if(!arr.length) throw new Error('la IA no devolvió slides');
+  const conFoto=arr.filter(s=>TIPOS_IA_FOTO.includes(s.tipo)&&s.img);
+  if(conFoto.length){
+    if(onStatus) onStatus(`Buscando ${conFoto.length} imagen(es)…`);
+    await Promise.all(conFoto.map(async s=>{ const id=await fetchPexelsFoto(s.img); if(id) s.imgFondo=id; else s.tipo='hook'; }));
+  }
+  return {arr,out};
+}
 
-REGLAS: 1er slide = gancho potente (mejor si es foto). Último = CTA claro con una palabra de acción. Alterna fondos con criterio. Usa "stats" solo si el tema pide cifras. Nada de tecnicismos vacíos.`;
+// Vuelca un diseño de IA a SLIDES según formato y refresca la vista + COPY
+function aplicarDisenoIA(arr,out,fmt,n){
+  if(fmt==='reel'){
+    const s0=arr[0]; SLIDES.length=0;
+    SLIDES.push({tipo:'reel',fondo:'dark',eye:s0.eye||'Reel',head:s0.head,body:s0.body||'',items:[],cta:s0.cta||'Dale al play',ovOpacity:55});
+    ULTIMO_GUION = out.guion ? `🎬 GUION\n\n${out.guion}\n\n— CAPTION —\n${out.caption||''}\n\n${out.hashtags||''}` : ULTIMO_GUION;
+    setModo('reel');
+  }else if(fmt==='post'){ SLIDES.length=0; SLIDES.push(arr[0]); setModo('post'); }
+  else{ SLIDES.length=0; arr.slice(0,n).forEach(s=>SLIDES.push(s)); setModo('carrusel'); }
+  cur=0; buildThumbs(); show(0); scaleStage();
+  COPY_CTX={ angulo:'sistema', ai:{caption:out.caption,hook:SLIDES[0]?.head}, idea:(out.caption?{caption:out.caption,hashtags:out.hashtags,cta:SLIDES[SLIDES.length-1]?.cta}:null) };
+  refrescarCopy();
+}
+
+async function generarDesdePrompt(){
+  const prompt=(document.getElementById('promptTxt')?.value||'').trim();
+  const status=document.getElementById('promptStatus');
+  const btn=document.getElementById('pmGen');
+  if(!prompt){ if(status){status.style.color='#ff9f43';status.textContent='Escribe qué quieres diseñar.';} return; }
+  if(!getGroqKey()){ if(status){status.style.color='#ff9f43';status.textContent='Necesitas tu key de Groq (pestaña Generar).';} return; }
+
+  const fmt=_promptFmt;
+  const n = fmt==='carrusel' ? (parseInt(document.getElementById('pmSlides')?.value)||6) : 1;
+  const cfg=N();
+  const libre=document.getElementById('pmLibre')?.checked;
+  if(libre){ return generarLibre(prompt, fmt, n, cfg, status, btn); }   // modo experimental
 
   if(btn) btn.classList.add('loading');
   if(status){ status.style.color='#38B6FF'; status.textContent='Diseñando con IA…'; }
   try{
-    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
-      body:JSON.stringify({ model:'llama-3.3-70b-versatile', temperature:0.85, max_tokens:2500,
-        response_format:{type:'json_object'}, messages:[{role:'user',content:contrato}] })
-    });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    const out=JSON.parse((data.choices?.[0]?.message?.content||'').replace(/```json|```/g,'').trim());
-    let arr=Array.isArray(out.slides)?out.slides:[];
-    // Sanear cada slide
-    arr=arr.map(s=>{
-      let tipo=TIPOS_IA.includes(s.tipo)?s.tipo:'hook';
-      let fondo=['dark','light','blue'].includes(s.fondo)?s.fondo:'dark';
-      let items=Array.isArray(s.items)?s.items.filter(x=>x!=null&&String(x).trim()):[];
-      const slide={ tipo, fondo, eye:String(s.eye||'').slice(0,60), head:String(s.head||'').slice(0,180),
-        body:String(s.body||'').slice(0,240), items, cta:String(s.cta||'').slice(0,60) };
-      if(TIPOS_IA_FOTO.includes(tipo)){ slide.img=String(s.img||s.head||'').slice(0,50); slide.overlay='dark'; slide.imgLayout='bg-full'; slide.txtPos='bottom'; slide.ovOpacity=68; }
-      return slide;
-    }).filter(s=>s.head||s.items.length);
-    if(!arr.length) throw new Error('la IA no devolvió slides');
-
-    // Descargar e incrustar las fotos de Pexels de los slides con imagen
-    const conFoto=arr.filter(s=>TIPOS_IA_FOTO.includes(s.tipo)&&s.img);
-    if(conFoto.length){
-      if(status){ status.style.color='#38B6FF'; status.textContent=`Buscando ${conFoto.length} imagen(es)…`; }
-      await Promise.all(conFoto.map(async s=>{
-        const id=await fetchPexelsFoto(s.img);
-        if(id) s.imgFondo=id; else { s.tipo='hook'; } // sin foto → cae a texto
-      }));
-    }
-
-    if(fmt==='reel'){
-      const s0=arr[0];
-      SLIDES.length=0;
-      SLIDES.push({tipo:'reel',fondo:'dark',eye:s0.eye||'Reel',head:s0.head,body:s0.body||'',items:[],cta:s0.cta||'Dale al play',ovOpacity:55});
-      ULTIMO_GUION = out.guion ? `🎬 GUION\n\n${out.guion}\n\n— CAPTION —\n${out.caption||''}\n\n${out.hashtags||''}` : ULTIMO_GUION;
-      setModo('reel');
-    }else if(fmt==='post'){
-      SLIDES.length=0; SLIDES.push(arr[0]); setModo('post');
-    }else{
-      SLIDES.length=0; arr.slice(0,n).forEach(s=>SLIDES.push(s)); setModo('carrusel');
-    }
-    cur=0; buildThumbs(); show(0); scaleStage();
-    // COPY con la caption/hashtags de la IA
-    COPY_CTX={ angulo:'sistema', ai:{caption:out.caption,hook:SLIDES[0]?.head}, idea:(out.caption?{caption:out.caption,hashtags:out.hashtags,cta:SLIDES[SLIDES.length-1]?.cta}:null) };
-    refrescarCopy();
+    const {arr,out}=await pedirDisenoIA(prompt,fmt,n,cfg,m=>{ if(status) status.textContent=m; });
+    aplicarDisenoIA(arr,out,fmt,n);
     if(status){ status.style.color='#38B6FF'; status.textContent='✓ Diseño creado.'; }
-    cerrarPromptModal();
-    abrirTabEditar();
+    cerrarPromptModal(); abrirTabEditar();
     toast2('✓ Diseñado con IA — ajústalo si quieres');
   }catch(e){
     if(status){ status.style.color='#ff6b6b'; status.textContent='No se pudo diseñar: '+e.message; }
@@ -2575,22 +2577,26 @@ ${cta} 👇
     items:[], cta:'Dale al play', ovOpacity:55}];
 }
 
+// POST = 1 slide AUTOCONCLUSIVO (idea completa + CTA real; sin "desliza")
 function buildPost(angulo,ai){
   const hooksArr=BANCO.hooks[angulo]||BANCO.hooks.sistema;
   const tipo=rnd(['hook','frase']);
   const fondo=rnd(['dark','light','blue']);
   const eye=rnd(BANCO.eyebrows);
   const cta=rnd(BANCO.ctas);
+  // CTA de acción (nunca "desliza"): comentar/guardar/escribir
+  const ctaPost = ai&&ai.cta_word ? `Escríbeme ${ai.cta_word}`
+                : rnd(['Comenta tu caso ↓','Guarda esto para no olvidarlo','Escríbeme una palabra','¿Te pasa? Cuéntamelo ↓']);
   if(tipo==='frase'){
     return[{tipo:'frase',fondo,eye,
       head:ai?ai.frase:rnd(BANCO.frases),
-      body:ai?ai.frase_sub:rnd(BANCO.subtitulos),
-      items:[],cta:`${cta} →`}];
+      body:ai?(ai.cta_body||ai.frase_sub):rnd(BANCO.subtitulos),
+      items:[],cta:ctaPost}];
   }
   return[{tipo:'post',fondo,eye,
     head:ai?ai.hook:rnd(hooksArr),
-    body:ai?ai.hook_sub:rnd(BANCO.subtitulos),
-    items:[],cta:`${cta} →`}];
+    body:ai?(ai.cta_body||ai.hook_sub):rnd(BANCO.subtitulos),
+    items:[],cta:ctaPost}];
 }
 
 /* ═══════════════════════════════════════════
