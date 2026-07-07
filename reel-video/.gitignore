@@ -5,3 +5,6 @@ salida/*
 
 # Claves privadas del avatar (HeyGen) — NUNCA subir
 config_avatar.py
+
+# Cache de Python
+__pycache__/
