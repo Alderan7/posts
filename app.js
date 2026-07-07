@@ -469,17 +469,41 @@ function cargarImagenes(files){
 
 function renderMediaGrid(){
   const grid = document.getElementById('mlibGrid');
-  if(!MEDIA.length){
-    grid.innerHTML = '<div class="mlib-empty">Sin fotos aún.<br>Sube imágenes<br>para usarlas en slides.</div>';
+  // Las PRECARGADAS no van aquí (se veían apelotonadas): están en su propio
+  // botón/ventana "🖼 Fotos precargadas". Aquí solo lo que subes o traes de Pexels.
+  const propias = MEDIA.filter(m=>!m.pre);
+  // Contador para el botón de precargadas
+  const nPre = MEDIA.filter(m=>m.pre && esFotoContenido(m.name)).length;
+  const cnt = document.getElementById('prePreloadCount');
+  if(cnt) cnt.textContent = nPre ? `(${nPre})` : '';
+  if(!propias.length){
+    grid.innerHTML = '<div class="mlib-empty">Sin fotos tuyas aún.<br>Sube imágenes o búscalas<br>en Pexels arriba.</div>';
     return;
   }
-  grid.innerHTML = MEDIA.map(m=>`
+  grid.innerHTML = propias.map(m=>`
     <div class="mlib-item" id="mitem-${m.id}" title="Clic para usar esta foto" onclick="usarMedia(${m.id})">
       <img src="${m.url}" alt="${m.name}">
       <button class="mlib-del" onclick="event.stopPropagation();borrarMedia(${m.id})">✕</button>
       <div class="mlib-use">✓ Usar</div>
     </div>`).join('');
 }
+
+/* Ventana grande (estilo Pexels) con las FOTOS PRECARGADAS del ordenador */
+function verFotosPrecargadas(){
+  const grid = document.getElementById('preGrid');
+  if(!grid) return;
+  const fotos = MEDIA.filter(m=>m.pre && esFotoContenido(m.name));
+  grid.innerHTML = fotos.length
+    ? fotos.map(m=>`
+      <div class="mlib-item" title="Clic para usar: ${(m.name||'').replace(/"/g,'')}"
+           onclick="usarMedia(${m.id});cerrarFotosPrecargadas()">
+        <img src="${m.url}" alt="">
+        <div class="mlib-use">✓ Usar</div>
+      </div>`).join('')
+    : '<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:34px">No hay fotos precargadas.<br>Coloca tus fotos en la carpeta <b>FOTOS PROFESIONALES</b> y abre con iniciar.py.</div>';
+  document.getElementById('preModal').classList.add('on');
+}
+function cerrarFotosPrecargadas(){ document.getElementById('preModal').classList.remove('on'); }
 
 function borrarMedia(id){
   MEDIA = MEDIA.filter(m=>m.id!==id);
@@ -4272,10 +4296,14 @@ async function fetchDataURL(src){
 }
 
 // Añade una imagen ya descargada a la biblioteca.
-function pushMedia(url, name){
+function pushMedia(url, name, pre){
   const id = ++mediaIdCounter;
-  MEDIA.push({id, url, name});
+  MEDIA.push({id, url, name, pre: !!pre});
   return id;
+}
+// ¿El nombre parece una foto de contenido (no un logo/flecha/mockup/cancelada)?
+function esFotoContenido(name){
+  return !/(flecha|logo|propuesta|cancelad|meta y google|captacion premium|removebg|iso|mockup|marca de agua)/i.test(name||'');
 }
 
 // Trae UNA foto de Pexels por palabra clave y la incrusta en la biblioteca.
@@ -4298,7 +4326,7 @@ async function fetchPexelsFoto(query){
 // Precarga simple (perfil, feed): descarga y añade a la biblioteca.
 async function precargarImagen(src, name){
   const url = await fetchDataURL(src);
-  if(url){ pushMedia(url, name); renderMediaGrid(); }
+  if(url){ pushMedia(url, name, true); renderMediaGrid(); }
 }
 
 // ¿El nombre parece un logo? (para exigirle fondo transparente)
@@ -4358,7 +4386,7 @@ async function precargarCarpeta(carpeta){
     if(url){
       // Fotos: siempre. Logos: solo si tienen fondo transparente.
       const ok = !pareceLogo(nombre) || await tieneTransparencia(url);
-      if(ok){ pushMedia(url, nombre); añadidas++; renderMediaGrid(); }
+      if(ok){ pushMedia(url, nombre, true); añadidas++; renderMediaGrid(); }
     }
     hechas++; setProg();
   }));
