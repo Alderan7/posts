@@ -2048,17 +2048,36 @@ function bloqueDebate(ai,deb,cta){
     items:[ai?ai.debate_a:deb[1],ai?ai.debate_b:deb[2]],
     cta:'Comenta tu respuesta ↓'};
 }
+// CTA de cierre VARIADO: no siempre "escríbeme". Rota entre DM (~40%),
+// guardar, comentar una palabra y enviar a un socio → más guardados/comentarios.
+function ctaAccion(cta){
+  const word = String(cta||'').replace(/^Escr[ií]beme\s+/i,'').trim() || 'REFORMAS';
+  const personal = getNicho()==='personal';
+  const quien = personal ? 'tu negocio' : 'tu empresa de reformas';
+  const acciones = [
+    { head:`Si quieres clientes que pagan lo que vales,\nescríbeme una palabra.`,
+      body:`Sin rodeos. Te cuento cómo lo haría para ${quien}.`, cta:`Escríbeme ${word} →` },
+    { head:`Guarda esto para cuando lo necesites.`,
+      body:`Vuelve a este post cuando prepares tu próxima campaña.`, cta:`Guarda este post ↓` },
+    { head:`Comenta ${word} y te lo envío.`,
+      body:`Te escribo por aquí, sin compromiso.`, cta:`Comenta ${word} ↓` },
+    { head:`¿Conoces a alguien a quien le sirva?`,
+      body:`Envíale esto. Te lo va a agradecer.`, cta:`Envíaselo →` },
+  ];
+  const pick = Math.random() < 0.4 ? 0 : (1 + Math.floor(Math.random()*3));
+  return acciones[pick];
+}
 function bloqueCTA(ai,cta){
-  return {tipo:'cta',fondo:'dark',eye:'Siguiente paso',
-    head:ai?ai.cta_head:`Si quieres clientes que pagan lo que vales,\nescríbeme una palabra.`,
-    body:ai?ai.cta_body:`Sin rodeos. Te cuento cómo lo haría para tu empresa de reformas.`,
-    items:[],cta:ai?`Escríbeme ${ai.cta_word} →`:`${cta} →`};
+  if(ai) return {tipo:'cta',fondo:'dark',eye:'Siguiente paso',
+    head:ai.cta_head,body:ai.cta_body,items:[],cta:`Escríbeme ${ai.cta_word} →`};
+  const a=ctaAccion(cta);
+  return {tipo:'cta',fondo:'dark',eye:'Siguiente paso',head:a.head,body:a.body,items:[],cta:a.cta};
 }
 function bloqueCTAFoto(ai,cta){
-  return {tipo:'autoridad',fondo:'dark',eye:'Siguiente paso',
-    head:ai?ai.cta_head:`Hagamos que tu próximo cliente\nte encuentre.`,
-    body:ai?ai.cta_body:`Estrategia. Enfoque. Resultados.`,
-    items:[],cta:ai?`Escríbeme ${ai.cta_word} →`:`${cta} →`};
+  if(ai) return {tipo:'autoridad',fondo:'dark',eye:'Siguiente paso',
+    head:ai.cta_head,body:ai.cta_body,items:[],cta:`Escríbeme ${ai.cta_word} →`};
+  const a=ctaAccion(cta);
+  return {tipo:'autoridad',fondo:'dark',eye:'Siguiente paso',head:a.head,body:a.body,items:[],cta:a.cta};
 }
 function bloqueProceso(cta){
   return {tipo:'proceso',fondo:'light',eye:'Paso a paso',
