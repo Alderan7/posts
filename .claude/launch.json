@@ -4,8 +4,9 @@
     {
       "name": "python-http-server",
       "runtimeExecutable": "py",
-      "runtimeArgs": ["-m", "http.server", "8000"],
-      "port": 8000
+      "runtimeArgs": ["-c", "import os,http.server,socketserver\nclass H(http.server.SimpleHTTPRequestHandler):\n extensions_map={**http.server.SimpleHTTPRequestHandler.extensions_map,'.js':'text/javascript','.css':'text/css','.json':'application/json'}\n def end_headers(self):\n  self.send_header('Cache-Control','no-store, must-revalidate')\n  super().end_headers()\nclass T(socketserver.ThreadingMixIn,socketserver.TCPServer):\n daemon_threads=True\n allow_reuse_address=True\nport=int(os.environ.get('PORT','8000'))\nprint('serving on',port,flush=True)\nT(('',port),H).serve_forever()"],
+      "port": 8000,
+      "autoPort": true
     }
   ]
 }
