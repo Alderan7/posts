@@ -2,3 +2,6 @@
 videos_entrada/*
 salida/*
 !.gitkeep
+
+# Claves privadas del avatar (HeyGen) — NUNCA subir
+config_avatar.py
