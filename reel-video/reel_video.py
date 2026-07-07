@@ -216,13 +216,38 @@ def _texto(txt, font, fontsize, color, size=None, align="center", max_chars=18):
                         method="label", align=align)
 
 
+# ── Voz IA GRATIS (Microsoft Edge TTS: voces neuronales, sin cuenta ni pagar) ──
+# Voces españolas útiles: es-ES-ElviraNeural (mujer, España), es-ES-AlvaroNeural
+# (hombre), es-MX-DaliaNeural, es-AR-ElenaNeural...
+def generar_voz(texto, salida_mp3, voz="es-ES-ElviraNeural"):
+    """Convierte `texto` en un mp3 con voz de IA. Devuelve la ruta o None.
+    Necesita el paquete gratuito 'edge-tts' (py -m pip install edge-tts)."""
+    texto = (texto or "").strip()
+    if not texto:
+        return None
+    try:
+        import edge_tts, asyncio
+    except ImportError:
+        print("  (aviso) Para la voz IA instala una vez:  py -m pip install edge-tts")
+        return None
+    async def _go():
+        await edge_tts.Communicate(texto, voz).save(salida_mp3)
+    try:
+        asyncio.run(_go())
+    except Exception as e:
+        print("  (aviso) no se pudo generar la voz IA:", e)
+        return None
+    return salida_mp3 if os.path.exists(salida_mp3) and os.path.getsize(salida_mp3) > 800 else None
+
+
 def crear_reel(video=None, color="dark", hook="", sub="", cta="",
                logo=None, musica=None, duracion=None, salida="reel.mp4",
-               font=None, font_reg=None):
+               font=None, font_reg=None, narrar=None, voz="es-ES-ElviraNeural"):
     """Genera un reel 1080x1920 y lo guarda en `salida`."""
     _check_moviepy()
     from moviepy import (VideoFileClip, ImageClip, ColorClip,
-                         CompositeVideoClip, AudioFileClip, concatenate_audioclips)
+                         CompositeVideoClip, AudioFileClip, concatenate_audioclips,
+                         concatenate_videoclips)
     import numpy as np
     from PIL import Image, ImageDraw
 
@@ -230,10 +255,29 @@ def crear_reel(video=None, color="dark", hook="", sub="", cta="",
     font_reg = font_reg or buscar_fuente(False) or font
     dur = duracion or 15
 
+    # ── 0) Voz IA (gratis): si se pide, la duración del reel = la de la voz ──
+    voz_path = None
+    if narrar:
+        os.makedirs(DIR_SALIDA, exist_ok=True)
+        stem = os.path.splitext(os.path.basename(salida))[0] or "reel"
+        voz_path = generar_voz(narrar, os.path.join(DIR_SALIDA, f"_voz_{stem}.mp3"), voz)
+        if voz_path:
+            try:
+                _va = AudioFileClip(voz_path)
+                dur = max(3.0, min(90.0, _va.duration + 0.6))   # cola de 0.6s
+                _va.close()
+            except Exception:
+                pass
+
     # ── 1) Fondo: vídeo recortado a 9:16 o color de marca ────────────────
     if video and os.path.exists(video):
         clip = VideoFileClip(video)
-        dur = duracion or min(clip.duration, 30)
+        if not voz_path:
+            dur = duracion or min(clip.duration, 30)
+        # Si el clip es más corto que la narración, se repite para cubrirla
+        if clip.duration < dur:
+            n = int(dur // clip.duration) + 1
+            clip = concatenate_videoclips([clip] * n)
         clip = clip.subclipped(0, dur) if hasattr(clip, "subclipped") else clip.subclip(0, dur)
         # Escalar para cubrir y recortar centrado (cover)
         escala = max(W / clip.w, H / clip.h)
@@ -294,12 +338,19 @@ def crear_reel(video=None, color="dark", hook="", sub="", cta="",
     final = CompositeVideoClip(capas, size=(W, H))
     final = _dur(final, dur)
 
-    # ── 7) Música opcional ───────────────────────────────────────────────
-    if musica and os.path.exists(musica):
+    # ── 7) Audio: voz IA (prioridad) o música ────────────────────────────
+    def _set_audio(cl, aud):
+        return cl.with_audio(aud) if hasattr(cl, "with_audio") else cl.set_audio(aud)
+    if voz_path:
+        try:
+            final = _set_audio(final, AudioFileClip(voz_path))   # tu guion locutado
+        except Exception as e:
+            print("  (aviso) no se pudo añadir la voz:", e)
+    elif musica and os.path.exists(musica):
         try:
             aud = AudioFileClip(musica)
             aud = aud.subclipped(0, dur) if hasattr(aud, "subclipped") else aud.subclip(0, dur)
-            final = final.with_audio(aud) if hasattr(final, "with_audio") else final.set_audio(aud)
+            final = _set_audio(final, aud)
         except Exception as e:
             print("  (aviso) no se pudo añadir música:", e)
 
@@ -507,7 +558,17 @@ def main():
                     help="API key de Pexels (por defecto usa la del Studio o env PEXELS_KEY)")
     ap.add_argument("--sin-pexels", dest="sin_pexels", action="store_true",
                     help="en --mes: no descargar de Pexels (solo clips locales/color)")
+    ap.add_argument("--narrar", nargs="?", const="__AUTO__", metavar="TEXTO",
+                    help="añade VOZ IA gratis. Sin texto: locuta el hook+subtítulo. "
+                         "Con texto: locuta ese guion. (necesita: py -m pip install edge-tts)")
+    ap.add_argument("--voz", default="es-ES-ElviraNeural",
+                    help="voz IA (por defecto es-ES-ElviraNeural; también es-ES-AlvaroNeural, es-MX-DaliaNeural…)")
     args = ap.parse_args()
+
+    # Si --narrar viene sin texto, se locuta el hook + subtítulo
+    narrar = args.narrar
+    if narrar == "__AUTO__":
+        narrar = ". ".join(t for t in [args.hook, args.sub] if t).strip() or None
 
     if args.mes:
         modo_mes(args, args.mes)
@@ -519,7 +580,8 @@ def main():
             video = buscar_video_pexels(args.buscar, pexels_key(args.pexels_key))
         crear_reel(video=video, color=args.color, hook=args.hook, sub=args.sub,
                    cta=args.cta, logo=args.logo or _logo_por_defecto(),
-                   musica=args.music, duracion=args.duration, salida=args.out, font=args.font)
+                   musica=args.music, duracion=args.duration, salida=args.out, font=args.font,
+                   narrar=narrar, voz=args.voz)
 
 
 if __name__ == "__main__":
