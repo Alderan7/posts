@@ -4038,6 +4038,15 @@ async function expPPTX(){
     const bgColor = d.fondo==='light' ? CLIGHT : d.fondo==='blue' ? CBLUE : CDARK;
     slide.background = { color: bgColor };
 
+    // Layouts visuales/complejos: exportar el slide como IMAGEN fiel (los de
+    // texto simple siguen siendo elementos editables en Canva).
+    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','ba','bafoto','foto','fototxt','autoridad'];
+    if(IMG_ONLY_PPTX.includes(d.tipo)){
+      let ok=false;
+      try{ const cv=await capture(i); slide.addImage({ data:cv.toDataURL('image/png'), x:0,y:0,w:10.8,h:13.5 }); ok=true; }catch(e){}
+      if(ok) continue;   // si falló la captura, cae al render genérico de abajo
+    }
+
     const txtC = d.fondo==='dark' ? 'F5F1EA' : '1A1A1A';
     const subC = d.fondo==='dark' ? 'A0A0A0' : '555555';
     const accC = CBLUE;
