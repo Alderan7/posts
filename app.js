@@ -4341,6 +4341,149 @@ async function precargarCarpeta(carpeta){
   if(load){ load.textContent = `${añadidas} fotos cargadas`; setTimeout(()=>{ load.style.display='none'; }, 2500); }
 }
 document.addEventListener('keydown',e=>{
+  if(document.getElementById('favModal')?.classList.contains('on')) return; // no navegar con el modal abierto
   if(e.key==='ArrowRight'||e.key==='ArrowDown') nav(1);
   if(e.key==='ArrowLeft' ||e.key==='ArrowUp')   nav(-1);
 });
+
+/* ═══════════════════════════════════════════
+   FAVORITOS DE DISEÑOS  —  guardar y reutilizar composiciones
+   Se guarda en IndexedDB (aguanta las fotos en base64 sin llenar el
+   localStorage). Cada favorito lleva: slides + fotos incrustadas +
+   copy (COPY_CTX) + guion + modo + nicho + miniatura.
+   ═══════════════════════════════════════════ */
+const FAV_DB='rm_favoritos', FAV_STORE='disenos';
+const FAV_IMG_FIELDS=['imgFondo','imgFondo2','imgAntes','imgDespues'];
+
+function favEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// --- IndexedDB mínimo (una tienda con keyPath id) ---
+function favOpen(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open(FAV_DB,1);
+    r.onupgradeneeded=()=>{ const db=r.result; if(!db.objectStoreNames.contains(FAV_STORE)) db.createObjectStore(FAV_STORE,{keyPath:'id'}); };
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error);
+  });
+}
+async function favGetAll(){
+  const db=await favOpen();
+  return new Promise((res,rej)=>{ const req=db.transaction(FAV_STORE).objectStore(FAV_STORE).getAll(); req.onsuccess=()=>res(req.result||[]); req.onerror=()=>rej(req.error); });
+}
+async function favPut(obj){
+  const db=await favOpen();
+  return new Promise((res,rej)=>{ const tx=db.transaction(FAV_STORE,'readwrite'); tx.objectStore(FAV_STORE).put(obj); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error); });
+}
+async function favDel(id){
+  const db=await favOpen();
+  return new Promise((res,rej)=>{ const tx=db.transaction(FAV_STORE,'readwrite'); tx.objectStore(FAV_STORE).delete(id); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); });
+}
+
+// Miniatura pequeña del slide actual (JPEG ~260px) para reconocer el diseño de un vistazo.
+async function favThumb(){
+  try{
+    const cv=await capture(cur);
+    const w=260, h=Math.max(1,Math.round(cv.height*(w/cv.width)));
+    const mini=document.createElement('canvas'); mini.width=w; mini.height=h;
+    mini.getContext('2d').drawImage(cv,0,0,w,h);
+    return mini.toDataURL('image/jpeg',0.72);
+  }catch(e){ return ''; }
+}
+
+async function guardarFavorito(){
+  if(!SLIDES.length){ toast2('Genera un diseño primero'); return; }
+  const sug=(SLIDES[0]?.head||SLIDES[0]?.eye||'Diseño').replace(/\s+/g,' ').trim().slice(0,60);
+  const nombre=window.prompt('Ponle un nombre a este diseño para reconocerlo luego:', sug);
+  if(nombre===null) return;                       // cancelado
+  const btn=document.getElementById('favSaveBtn');
+  if(btn){ btn.disabled=true; btn.textContent='Guardando…'; }
+  try{
+    // Incrustar las fotos que usan los slides (por id) en el favorito.
+    const imgs={};
+    SLIDES.forEach(s=>FAV_IMG_FIELDS.forEach(f=>{ const id=s[f]; if(id && !(id in imgs)){ const u=getImgUrl(id); if(u) imgs[id]=u; } }));
+    const fav={
+      id:'f'+Date.now()+Math.random().toString(36).slice(2,6),
+      nombre:(nombre.trim()||sug), fecha:Date.now(), nicho:_nicho, modo,
+      slides:JSON.parse(JSON.stringify(SLIDES)), imgs,
+      copyCtx:JSON.parse(JSON.stringify(COPY_CTX||{})),
+      guion:ULTIMO_GUION||'',
+      thumb:await favThumb()
+    };
+    await favPut(fav);
+    toast2('✓ Diseño guardado en favoritos');
+    await renderFavoritos();
+  }catch(e){ toast2('No se pudo guardar: '+(e.message||e)); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='＋ Guardar el diseño actual'; } }
+}
+
+async function cargarFavorito(id){
+  let all=[]; try{ all=await favGetAll(); }catch(e){ toast2('No se pudo leer'); return; }
+  const fav=all.find(f=>f.id===id);
+  if(!fav){ toast2('Ese diseño ya no existe'); return; }
+  // Reinsertar las fotos guardadas en MEDIA con ids NUEVOS y remapear los slides.
+  const map={};
+  Object.keys(fav.imgs||{}).forEach(oldId=>{ map[oldId]=pushMedia(fav.imgs[oldId], fav.nombre||'Favorito'); });
+  const slides=JSON.parse(JSON.stringify(fav.slides||[]));
+  slides.forEach(s=>FAV_IMG_FIELDS.forEach(f=>{ if(s[f]!=null){ s[f]=(map[s[f]]!=null)?map[s[f]]:null; } }));
+  if(!slides.length){ toast2('Ese diseño está vacío'); return; }
+  // Volcar el diseño
+  if(fav.nicho && fav.nicho!==_nicho){ setNicho(fav.nicho); const ns=document.getElementById('nichoSel'); if(ns) ns.value=fav.nicho; }
+  SLIDES.length=0; slides.forEach(s=>SLIDES.push(s));
+  cur=0;
+  ULTIMO_GUION=fav.guion||'';
+  setModo(fav.modo||'carrusel');   // reconstruye miniaturas + vista
+  COPY_CTX=fav.copyCtx||{angulo:'sistema',ai:null};
+  if(typeof refrescarCopy==='function') refrescarCopy();
+  cerrarFavoritos();
+  if(typeof abrirTabEditar==='function') abrirTabEditar();
+  toast2('✓ Diseño cargado — ajústalo si quieres');
+}
+
+async function renombrarFavorito(id){
+  let all=[]; try{ all=await favGetAll(); }catch(e){ return; }
+  const f=all.find(x=>x.id===id); if(!f) return;
+  const nombre=window.prompt('Nuevo nombre:', f.nombre); if(nombre===null) return;
+  f.nombre=(nombre.trim()||f.nombre); await favPut(f); renderFavoritos();
+}
+
+async function eliminarFavorito(id){
+  if(!window.confirm('¿Eliminar este diseño guardado? No se puede deshacer.')) return;
+  try{ await favDel(id); }catch(e){ toast2('No se pudo eliminar'); return; }
+  renderFavoritos();
+}
+
+function abrirFavoritos(){ document.getElementById('favModal').classList.add('on'); renderFavoritos(); }
+function cerrarFavoritos(){ document.getElementById('favModal').classList.remove('on'); }
+
+async function renderFavoritos(){
+  const cont=document.getElementById('favGrid');
+  if(!cont) return;
+  let all=[];
+  try{ all=await favGetAll(); }
+  catch(e){ cont.innerHTML='<div style="grid-column:1/-1;color:#ff6b6b;font-size:12px">No se pudieron leer los diseños guardados.</div>'; return; }
+  all.sort((a,b)=>(b.fecha||0)-(a.fecha||0));
+  if(!all.length){
+    cont.innerHTML='<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:34px 10px;line-height:1.6">Aún no has guardado ningún diseño.<br>Crea o genera un contenido que te guste y pulsa <b style="color:var(--UI-A)">«＋ Guardar el diseño actual»</b>.</div>';
+    return;
+  }
+  cont.innerHTML=all.map(f=>{
+    const badge=f.nicho==='personal'?'👤 Personal':'🏗 Reformas';
+    const nSl=(f.slides||[]).length;
+    const fecha=f.fecha?new Date(f.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short'}):'';
+    const thumb=f.thumb
+      ? `<img src="${f.thumb}" alt="" style="width:100%;aspect-ratio:4/5;object-fit:cover;display:block">`
+      : `<div style="width:100%;aspect-ratio:4/5;background:var(--UI-B);display:flex;align-items:center;justify-content:center;color:var(--UI-M);font-size:22px">🎨</div>`;
+    return `<div class="fav-card">
+      <div class="fav-thumb" onclick="cargarFavorito('${f.id}')" title="Abrir este diseño">${thumb}</div>
+      <div class="fav-meta">
+        <div class="fav-name" title="${favEsc(f.nombre)}">${favEsc(f.nombre)}</div>
+        <div class="fav-sub">${badge} · ${nSl} slide${nSl===1?'':'s'}${fecha?' · '+fecha:''}</div>
+      </div>
+      <div class="fav-acts">
+        <button onclick="cargarFavorito('${f.id}')">Abrir</button>
+        <button onclick="renombrarFavorito('${f.id}')" title="Renombrar">✏️</button>
+        <button onclick="eliminarFavorito('${f.id}')" title="Eliminar">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}

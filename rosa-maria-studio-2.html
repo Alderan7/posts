@@ -629,6 +629,20 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 }
 #resModal .resm-grid .mlib-item{aspect-ratio:9/16}
 #resModal .mlib-use{font-size:13px}
+/* Modal favoritos / diseños guardados */
+#favModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
+#favModal.on{display:flex}
+.fav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;align-content:start}
+.fav-card{border:1px solid var(--UI-B2);border-radius:9px;overflow:hidden;background:var(--UI-B);display:flex;flex-direction:column}
+.fav-thumb{cursor:pointer;position:relative;line-height:0}
+.fav-thumb:hover{outline:2px solid var(--UI-A);outline-offset:-2px}
+.fav-meta{padding:7px 8px 3px}
+.fav-name{font-size:11px;font-weight:600;color:var(--UI-T);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fav-sub{font-size:8.5px;color:var(--UI-M);margin-top:2px}
+.fav-acts{display:flex;gap:4px;padding:6px 8px 8px}
+.fav-acts button{flex:1;border:1px solid var(--UI-B2);background:transparent;color:var(--UI-T);border-radius:4px;padding:5px 4px;font-size:9px;cursor:pointer;font-family:'Montserrat',sans-serif}
+.fav-acts button:first-child{flex:2;color:var(--UI-A);border-color:var(--UI-A);font-weight:600}
+.fav-acts button:hover{background:var(--UI-B2)}
 #mediaLib.drag{box-shadow:inset 0 0 0 2px var(--UI-A);background:rgba(56,182,255,.06)}
 .mlib-top{
   padding:8px 8px 6px;border-bottom:1px solid var(--UI-B);
@@ -851,7 +865,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <div class="tb-mono">RM</div>
     <div>
       <div class="tb-name">Rosa María Studio</div>
-      <div class="tb-sub">Generador de contenido · v12</div>
+      <div class="tb-sub">Generador de contenido · v13</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:2px;margin-left:8px;flex-shrink:0">
       <span style="font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:var(--UI-M)">Marca</span>
@@ -906,6 +920,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       </div>
     </div>
     <button class="btn btn-gh" id="btnGuionReel" onclick="descargarGuionReel()" style="display:none" title="Descarga el guión del reel en .txt">📝 Guión</button>
+    <button class="btn btn-gh" id="btnFav" onclick="abrirFavoritos()" title="Guarda diseños que te gusten y reutilízalos cuando quieras">⭐ Diseños</button>
     <button class="btn btn-out" id="btnPrompt" onclick="abrirPromptModal()" title="Describe lo que quieres y la IA diseña el post/carrusel/reel entero">✨ Prompt</button>
     <button class="btn btn-out" id="btnMes" onclick="generarMes()" title="Fábrica: genera el contenido de varios días con ideas del banco y lo descarga en un ZIP">📅 Mes</button>
     <button class="btn btn-gen" id="btnGen" onclick="generar()">
@@ -944,6 +959,23 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         <button class="btn btn-gen" id="pmGen" onclick="generarDesdePrompt()" style="margin-left:auto"><span class="spinner"></span><span id="pmGenTxt">⚡ Diseñar</span></button>
       </div>
       <div id="promptStatus" style="font-size:11px;color:var(--UI-M);line-height:1.5">La IA (Groq) diseña el contenido entero según tu descripción. Necesitas tu key de Groq activa.</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FAVORITOS / DISEÑOS GUARDADOS -->
+<div id="favModal" onclick="if(event.target===this)cerrarFavoritos()">
+  <div class="resm-box" style="width:min(860px,94vw);height:auto;max-height:88vh">
+    <div class="resm-head">
+      <span>⭐ Diseños guardados</span>
+      <button onclick="cerrarFavoritos()" class="resm-close">✕</button>
+    </div>
+    <div style="padding:14px 18px;border-bottom:1px solid var(--UI-B);flex-shrink:0">
+      <button class="btn btn-out" id="favSaveBtn" onclick="guardarFavorito()" style="width:100%">＋ Guardar el diseño actual</button>
+      <div style="font-size:9px;color:var(--UI-M);margin-top:6px;line-height:1.5">Guarda el diseño completo (slides, fotos, copy y guion) en este navegador. Ábrelo cuando quieras para reutilizarlo o adaptarlo.</div>
+    </div>
+    <div class="resm-body">
+      <div id="favGrid" class="fav-grid"></div>
     </div>
   </div>
 </div>
@@ -1452,6 +1484,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=27"></script>
+<script src="app.js?v=28"></script>
 </body>
 </html>
