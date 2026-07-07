@@ -1083,7 +1083,10 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <!-- TAB: EDITAR -->
     <div class="rpanel on" id="tab-editar">
       <div class="csec">
-        <div class="csec-h">Slide activo</div>
+        <div class="csec-h">
+          <span>Slide activo</span>
+          <button class="btn btn-gh" id="btnRegen" onclick="regenerarSlide()" title="Rehacer SOLO este slide con IA (mantiene el resto)" style="padding:3px 8px;font-size:9px">🔄 Regenerar</button>
+        </div>
         <div class="crow">
           <label>Tipo</label>
           <select id="cTipo" onchange="ed('tipo',this.value)">
@@ -1449,6 +1452,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=26"></script>
+<script src="app.js?v=27"></script>
 </body>
 </html>

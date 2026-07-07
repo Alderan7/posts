@@ -1769,6 +1769,44 @@ async function generarDesdePrompt(){
   }
 }
 
+// Regenerar SOLO el slide actual con IA, manteniendo su tipo y encajando en la historia
+async function regenerarSlide(){
+  if(!SLIDES.length){ toast2('Genera algo primero'); return; }
+  if(!getGroqKey()){ toast2('Necesitas tu key de Groq (pestaña Generar)'); return; }
+  const btn=document.getElementById('btnRegen');
+  const d=SLIDES[cur], cfg=N();
+  const contexto=SLIDES.map((s,i)=>`${i===cur?'>> ESTE':'  '} [${i+1}] ${s.tipo}: ${(s.head||s.items?.[0]||'').slice(0,60)}`).join('\n');
+  const contrato=`Eres Rosa María, ${cfg.persona}. Tono: ${cfg.tono}. 2ª persona (tú).
+Este ${modo==='reel'?'reel':modo==='post'?'post':'carrusel'} tiene estos slides:
+${contexto}
+Reescribe SOLO el slide ">> ESTE" (posición ${cur+1}), MANTENIENDO su tipo "${d.tipo}". Debe encajar en la historia (coherente con el anterior y el siguiente) y aportar algo NUEVO (no repetir lo que ya dicen los otros).
+Devuelve SOLO JSON de UN slide: {"tipo":"${d.tipo}","fondo":"dark|light|blue","eye":"kicker corto","head":"titular","body":"subtítulo opcional","items":[], "img":"solo si lleva foto: 2-3 palabras EN INGLÉS", "cta":"pie corto"}
+items según tipo: lista/claves=frases; stats=3-4 "NÚMERO::etiqueta"; proceso="Título:desc"; debate=2 opciones; pills=etiquetas; indice=temas; hook/frase/cta/foto/citafoto=[].`;
+  if(btn){ btn.disabled=true; btn.textContent='🔄 …'; }
+  try{
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
+      body:JSON.stringify({model:'llama-3.3-70b-versatile',temperature:0.9,max_tokens:900,response_format:{type:'json_object'},messages:[{role:'user',content:contrato}]})});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const s=JSON.parse(((await res.json()).choices?.[0]?.message?.content||'{}').replace(/```json|```/g,'').trim());
+    const tipo=TIPOS_IA.includes(s.tipo)?s.tipo:d.tipo;
+    const fondo=['dark','light','blue'].includes(s.fondo)?s.fondo:d.fondo;
+    const items=Array.isArray(s.items)?s.items.filter(x=>x!=null&&String(x).trim()):[];
+    const nuevo={ tipo, fondo, eye:String(s.eye||d.eye||'').slice(0,60), head:String(s.head||'').slice(0,180),
+      body:String(s.body||'').slice(0,240), items, cta:String(s.cta||d.cta||'').slice(0,60) };
+    ['txtAlign','txtVPos','txtDX','txtDY','txtScale'].forEach(k=>{ if(d[k]!=null) nuevo[k]=d[k]; });   // conservar ajustes
+    if(TIPOS_IA_FOTO.includes(tipo)){
+      nuevo.overlay='dark'; nuevo.imgLayout='bg-full'; nuevo.txtPos='bottom'; nuevo.ovOpacity=68;
+      if(s.img){ const id=await fetchPexelsFoto(s.img); if(id) nuevo.imgFondo=id; else nuevo.tipo='hook'; }
+      else if(d.imgFondo) nuevo.imgFondo=d.imgFondo;
+    }
+    SLIDES[cur]=nuevo;
+    show(cur); refreshThumb(cur);
+    toast2('✓ Slide regenerado');
+  }catch(e){ toast2('No se pudo regenerar: '+e.message); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='🔄 Regenerar'; } }
+}
+
 // EXPERIMENTAL — la IA compone por coordenadas (elementos absolutos)
 async function generarLibre(prompt, fmt, n, cfg, status, btn){
   const cnt = fmt==='carrusel' ? n : 1;
