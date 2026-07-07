@@ -2027,9 +2027,9 @@ function bloqueStats(eye){
 // variada (frase / lista / proceso). Así los números salen "3-4 veces en 365".
 function quizasStats(eye,angulo,cta){
   if(Math.random()<0.12) return bloqueStats(eye);
-  const alt=rnd(['frase','lista','proceso']);
-  if(alt==='frase')   return bloqueFrase(null,'light',eye);
-  if(alt==='proceso') return bloqueProceso(cta||rnd(BANCO.ctas));
+  const alt=rnd(['frase','lista','servicio']);   // sin 'proceso': ya no lo apilamos
+  if(alt==='frase')    return bloqueFrase(null,'light',eye);
+  if(alt==='servicio') return bloqueServicio(cta||rnd(BANCO.ctas));
   return bloqueLista(null,angulo||'sistema','light',eye,cta||rnd(BANCO.ctas));
 }
 function bloqueStatsMetrica(){
@@ -2063,6 +2063,15 @@ function bloqueCTAFoto(ai,cta){
 function bloqueProceso(cta){
   return {tipo:'proceso',fondo:'light',eye:'Paso a paso',
     head:'El proceso, sin humo',body:'',items:rnd(BANCO.procesos),cta:`${cta} →`};
+}
+// Rota entre varios tipos para que "proceso" no salga SIEMPRE (antes iba fijo en
+// varias plantillas del feed). Proceso pasa a ser 1 opción de 4, no el defecto.
+function bloqueVariado(ai, angulo, cta, eye, deb){
+  const t = rnd(['frase','servicio','debate','proceso']);
+  if(t==='frase')    return bloqueFrase(ai,'light',eye);
+  if(t==='servicio') return bloqueServicio(cta);
+  if(t==='debate')   return bloqueDebate(ai, deb||rnd(BANCO.debates), cta);
+  return bloqueProceso(cta);
 }
 function bloqueServicio(cta){
   return {tipo:'servicio',fondo:'light',eye:'Lo que incluye',
@@ -2339,8 +2348,7 @@ function buildCarrusel(angulo,ai,numSlides=7){
             'Solo acepto clientes con los que puedo generar resultados reales.',
             'Reportes en lenguaje de negocio, sin tecnicismos.',
             'Tú te centras en las obras. Yo me centro en llenar tu agenda.'],cta:'Cómo lo hago →'},
-        {tipo:'proceso',fondo:'light',eye:'Cómo lo resuelvo',
-          head:'El proceso, sin humo.',body:'',items:rnd(BANCO.procesos),cta:'Los resultados →'},
+        bloqueVariado(ai, angulo, cta, 'Cómo lo resuelvo', deb),
         quizasStats(eye,angulo,cta),
         bloqueCTAFoto(ai,cta),
       ];
@@ -2375,9 +2383,7 @@ function buildCarrusel(angulo,ai,numSlides=7){
           body:'Este es el punto de partida de la mayoría de empresas de reformas en España.',
           items:[],cta:'Lo que marca la diferencia →'},
         bloqueLista(ai,angulo,'light',eye,cta),
-        {tipo:'proceso',fondo:'light',eye:'Cómo aplicarlo',
-          head:'Los pasos que cambian el resultado.',body:'',
-          items:rnd(BANCO.procesos),cta:'El resultado →'},
+        bloqueVariado(ai, angulo, cta, 'Cómo aplicarlo', deb),
         quizasStats(eye,angulo,cta),
       ];
       slides = comprimirSlides(portada, medios, bloqueCTA(ai,cta), numSlides);
@@ -2449,7 +2455,7 @@ function buildCarrusel(angulo,ai,numSlides=7){
             'Ya tienes obras pero quieres más estabilidad y previsibilidad.',
             'Estás harto de depender del boca a boca o de leads sin filtrar.',
             'Quieres escalar sin que todo dependa de ti.'],cta:'Cómo funciona →'},
-        bloqueProceso(cta),
+        bloqueVariado(ai, angulo, cta, 'Cómo funciona', deb),
         bloqueVsAgencia(cta),
         quizasStats(eye,angulo,cta),
       ];
