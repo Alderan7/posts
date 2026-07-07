@@ -4512,3 +4512,49 @@ async function renderFavoritos(){
     </div>`;
   }).join('');
 }
+
+/* ═══════════════════════════════════════════
+   GENERAR REEL EN VÍDEO (MP4) desde la app
+   El botón manda el guion a iniciar.py, que lo monta con reel_video.py
+   (fondo Pexels + texto + voz IA gratis) y devuelve el MP4 para descargar.
+   ═══════════════════════════════════════════ */
+async function generarReelBackend(){
+  if(!SLIDES.length){ toast2('Genera algo primero'); return; }
+  const d = SLIDES[0] || {};
+  const st = document.getElementById('reelGenStatus');
+  const btn = document.getElementById('reelGenBtn');
+  const hook = String(d.head||'').replace(/\n/g,' ').trim();
+  const sub  = String(d.body||'').trim();
+  const cta  = String(d.cta||'').replace(/\s*[→↓]\s*$/,'').trim();
+  const kw   = (document.getElementById('reelBgQ')?.value||'').trim();
+  let narrar = null;
+  if(document.getElementById('reelVoz')?.checked){
+    let g = (typeof ULTIMO_GUION==='string' && ULTIMO_GUION) ? ULTIMO_GUION.split('— CAPTION —')[0].replace(/🎬\s*GUION/i,'') : '';
+    narrar = g.replace(/\s+/g,' ').trim() || [hook, sub].filter(Boolean).join('. ');
+  }
+  const setSt=(c,t)=>{ if(st){ st.style.color=c; st.textContent=t; } };
+  setSt('#38B6FF','Generando el reel… puede tardar ~1 min. No cierres la ventana.');
+  if(btn){ btn.disabled=true; btn.style.opacity=.6; }
+  try{
+    const res = await fetch('/api/reel',{ method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ hook, sub, cta, buscar:kw, narrar, voz:'es-ES-ElviraNeural' }) });
+    const ctype = res.headers.get('Content-Type')||'';
+    if(!res.ok || ctype.includes('application/json')){
+      let msg='no se pudo generar';
+      try{ msg=(await res.json()).error||msg; }catch(e){ if(res.status===501||res.status===404) msg='abre la app con iniciar.py (no con el .html directo)'; }
+      throw new Error(msg);
+    }
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'reel_rm_'+Date.now()+'.mp4';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+    setSt('#38B6FF','✓ Reel descargado a tu PC.');
+    toast2('✓ Reel MP4 descargado');
+  }catch(e){
+    setSt('#ff6b6b','No se pudo: '+e.message);
+  }finally{
+    if(btn){ btn.disabled=false; btn.style.opacity=1; }
+  }
+}

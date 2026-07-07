@@ -909,7 +909,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
   </div>
 
   <div class="tb-right">
-    <button class="btn btn-gh" id="btnMedia" onclick="toggleMedia()">📷 Fotos</button>
+    <button class="btn btn-gh" id="btnMedia" onclick="toggleMedia()">📷 Fotos/Vídeos</button>
     <button class="btn btn-gh" id="btnG" onclick="toggleGuias()">Guías</button>
     <div class="exp-wrap" id="expWrap">
       <button class="btn btn-out exp-trigger" onclick="toggleExpMenu()">↓ EXPORTAR</button>
@@ -1007,7 +1007,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
   <!-- BIBLIOTECA DE MEDIA -->
   <div id="mediaLib" class="hidden">
     <div class="mlib-top">
-      <div class="mlib-title">📷 Fotos</div>
+      <div class="mlib-title">📷 Fotos/Vídeos</div>
 
       <!-- Subida manual -->
       <label class="mlib-drop" id="mlibDrop">
@@ -1056,6 +1056,19 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <button onclick="buscarVideosPexels()" title="Buscar vídeos de fondo (Pexels)">🎬</button>
         </div>
         <div id="vidStatus" style="font-size:8px;margin-top:3px;line-height:1.5;color:var(--UI-M)">Descarga clips para el módulo de reels.</div>
+      </div>
+
+      <!-- Generar REEL en vídeo (MP4) — lo monta iniciar.py con reel_video.py -->
+      <div style="border-top:1px solid var(--UI-B);margin-top:8px;padding-top:8px">
+        <div style="font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--UI-M);margin-bottom:4px">🎬 Generar reel en vídeo (MP4)</div>
+        <div class="pexels-bar">
+          <input type="text" id="reelBgQ" placeholder="fondo en inglés: kitchen renovation…">
+        </div>
+        <label style="font-size:8px;color:var(--UI-M);display:flex;align-items:center;gap:4px;cursor:pointer;margin-top:5px" title="Añade voz IA española gratis que narra el hook + subtítulo (necesita edge-tts en tu PC)">
+          <input type="checkbox" id="reelVoz" checked style="accent-color:var(--UI-A)">🔊 con voz IA (narrar hook + subtítulo)
+        </label>
+        <button id="reelGenBtn" onclick="generarReelBackend()" style="width:100%;margin-top:6px;border:1px solid var(--UI-A);background:linear-gradient(90deg,rgba(56,182,255,.18),rgba(56,182,255,.06));color:var(--UI-A);padding:8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.03em">🎬 Generar y descargar reel</button>
+        <div id="reelGenStatus" style="font-size:8px;margin-top:5px;line-height:1.5;color:var(--UI-M)">Usa el hook/subtítulo/CTA del slide actual. Requiere abrir la app con <b style="color:var(--UI-A)">iniciar.py</b>.</div>
       </div>
 
       <!-- Buscar música libre de derechos (Jamendo, Creative Commons) -->
@@ -1484,6 +1497,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=30"></script>
+<script src="app.js?v=31"></script>
 </body>
 </html>
