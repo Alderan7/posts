@@ -9,3 +9,7 @@ reel-video/videos_entrada/*
 reel-video/salida/*
 !reel-video/videos_entrada/.gitkeep
 !reel-video/salida/.gitkeep
+
+# Cache de Python y temporales de MoviePy
+__pycache__/
+*TEMP_MPY*
