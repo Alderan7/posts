@@ -225,10 +225,16 @@ def generar_voz(texto, salida_mp3, voz="es-ES-ElviraNeural"):
     texto = (texto or "").strip()
     if not texto:
         return None
+    # Si el antivirus/proxy intercepta HTTPS, Python no reconoce su certificado
+    # y edge-tts falla. truststore hace que Python use el almacén de Windows.
+    try:
+        import truststore; truststore.inject_into_ssl()
+    except Exception:
+        pass
     try:
         import edge_tts, asyncio
     except ImportError:
-        print("  (aviso) Para la voz IA instala una vez:  py -m pip install edge-tts")
+        print("  (aviso) Para la voz IA instala una vez:  py -m pip install edge-tts truststore")
         return None
     async def _go():
         await edge_tts.Communicate(texto, voz).save(salida_mp3)

@@ -4,3 +4,4 @@ moviepy>=2.0.0
 Pillow>=10.0
 numpy>=1.26
 edge-tts>=6.1        # voz IA gratis (voces neuronales, sin cuenta ni API key)
+truststore>=0.9      # usa el almacén de certificados de Windows (antivirus que intercepta HTTPS)
