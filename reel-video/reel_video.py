@@ -234,11 +234,16 @@ def _texto(txt, font, fontsize, color, size=None, align="center", max_chars=18):
 # Voces españolas útiles: es-ES-ElviraNeural (mujer, España), es-ES-AlvaroNeural
 # (hombre), es-MX-DaliaNeural, es-AR-ElenaNeural...
 def generar_voz(texto, salida_mp3, voz="es-ES-ElviraNeural"):
-    """Convierte `texto` en un mp3 con voz de IA. Devuelve la ruta o None.
-    Necesita el paquete gratuito 'edge-tts' (py -m pip install edge-tts)."""
+    """Convierte `texto` en un mp3 con voz de IA.
+
+    Devuelve (ruta, marcas) donde `marcas` es [(inicio_s, fin_s, palabra), ...]
+    — edge-tts nos da el tiempo exacto de cada palabra, así los subtítulos van
+    perfectamente sincronizados. Si falla, devuelve (None, []).
+    Necesita: py -m pip install edge-tts truststore
+    """
     texto = (texto or "").strip()
     if not texto:
-        return None
+        return None, []
     # Si el antivirus/proxy intercepta HTTPS, Python no reconoce su certificado
     # y edge-tts falla. truststore hace que Python use el almacén de Windows.
     try:
@@ -249,18 +254,103 @@ def generar_voz(texto, salida_mp3, voz="es-ES-ElviraNeural"):
         import edge_tts, asyncio
     except ImportError:
         print("  (aviso) Para la voz IA instala una vez:  py -m pip install edge-tts truststore")
-        return None
+        return None, []
+
+    marcas = []
+
     async def _go():
-        await edge_tts.Communicate(texto, voz).save(salida_mp3)
+        com = edge_tts.Communicate(texto, voz)
+        with open(salida_mp3, "wb") as f:
+            async for chunk in com.stream():
+                if chunk["type"] == "audio":
+                    f.write(chunk["data"])
+                elif chunk["type"] == "WordBoundary":
+                    ini = chunk["offset"] / 1e7            # unidades de 100 ns
+                    marcas.append((ini, ini + chunk["duration"] / 1e7, chunk["text"]))
+
     try:
         asyncio.run(_go())
     except Exception as e:
         print("  (aviso) no se pudo generar la voz IA:", e)
+        return None, []
+    ok = os.path.exists(salida_mp3) and os.path.getsize(salida_mp3) > 800
+    return (salida_mp3, marcas) if ok else (None, [])
+
+
+# ── Subtítulos ───────────────────────────────────────────────────────────
+def _agrupar_subtitulos(marcas, max_chars=34):
+    """Agrupa las palabras (con sus tiempos reales de edge-tts) en líneas de
+    subtítulo. Devuelve [(inicio_s, fin_s, texto), ...]."""
+    subs, actual, ini, fin = [], [], None, 0.0
+    for (a, b, palabra) in marcas:
+        if ini is None:
+            ini = a
+        if actual and len(" ".join(actual + [palabra])) > max_chars:
+            subs.append((ini, fin, " ".join(actual)))
+            actual, ini = [palabra], a
+        else:
+            actual.append(palabra)
+        fin = b
+    if actual:
+        subs.append((ini or 0.0, fin, " ".join(actual)))
+    return subs
+
+
+def _subtitulos_repartidos(texto, dur, max_chars=34):
+    """Sin marcas de tiempo (p.ej. tu voz grabada): reparte las líneas a lo
+    largo del audio de forma proporcional a su longitud."""
+    lineas, actual = [], []
+    for palabra in (texto or "").split():
+        if actual and len(" ".join(actual + [palabra])) > max_chars:
+            lineas.append(" ".join(actual)); actual = [palabra]
+        else:
+            actual.append(palabra)
+    if actual:
+        lineas.append(" ".join(actual))
+    total = sum(len(l) for l in lineas) or 1
+    subs, t = [], 0.0
+    for l in lineas:
+        d = dur * len(l) / total
+        subs.append((t, t + d, l))
+        t += d
+    return subs
+
+
+# ── Fondo: montaje de varios clips ───────────────────────────────────────
+def _cover(clip):
+    """Escala y recorta el clip para cubrir 1080x1920 (centrado)."""
+    escala = max(W / clip.w, H / clip.h)
+    nw, nh = int(clip.w * escala), int(clip.h * escala)
+    clip = clip.resized((nw, nh)) if hasattr(clip, "resized") else clip.resize((nw, nh))
+    x, y = (nw - W) // 2, (nh - H) // 2
+    return (clip.cropped(x1=x, y1=y, x2=x + W, y2=y + H)
+            if hasattr(clip, "cropped") else clip.crop(x1=x, y1=y, x2=x + W, y2=y + H))
+
+
+def _recortar(clip, d):
+    return clip.subclipped(0, d) if hasattr(clip, "subclipped") else clip.subclip(0, d)
+
+
+def _fondo_desde_videos(rutas, dur):
+    """Monta varios clips seguidos (repartiendo la duración) para que el reel
+    no sea un único plano estático. Devuelve un clip de dur exactos o None."""
+    from moviepy import VideoFileClip, concatenate_videoclips
+    rutas = [r for r in (rutas or []) if r and os.path.exists(r)]
+    if not rutas:
         return None
-    return salida_mp3 if os.path.exists(salida_mp3) and os.path.getsize(salida_mp3) > 800 else None
+    trozo = dur / len(rutas)
+    partes = []
+    for r in rutas:
+        c = _cover(VideoFileClip(r))
+        if c.duration < trozo:                      # si el clip es corto, se repite
+            c = concatenate_videoclips([c] * (int(trozo // c.duration) + 1))
+        partes.append(_recortar(c, trozo))
+    fondo = concatenate_videoclips(partes) if len(partes) > 1 else partes[0]
+    return _recortar(fondo, dur)
 
 
-def crear_reel(video=None, color="dark", hook="", sub="", cta="",
+def crear_reel(video=None, videos=None, audio_voz=None, subtitulos=False,
+               color="dark", hook="", sub="", cta="",
                logo=None, musica=None, duracion=None, salida="reel.mp4",
                font=None, font_reg=None, narrar=None, voz="es-ES-ElviraNeural"):
     """Genera un reel 1080x1920 y lo guarda en `salida`."""
@@ -275,22 +365,28 @@ def crear_reel(video=None, color="dark", hook="", sub="", cta="",
     font_reg = font_reg or buscar_fuente(False) or font
     dur = duracion or 15
 
-    # ── 0) Voz IA (gratis): si se pide, la duración del reel = la de la voz ──
-    voz_path = None
-    if narrar:
+    # ── 0) Voz: TU grabación (audio_voz) tiene prioridad; si no, voz IA.
+    #        La duración del reel = la de la voz.
+    voz_path, marcas = None, []
+    if audio_voz and os.path.exists(audio_voz):
+        voz_path = audio_voz                                     # tu voz real grabada
+    elif narrar:
         os.makedirs(DIR_SALIDA, exist_ok=True)
         stem = os.path.splitext(os.path.basename(salida))[0] or "reel"
-        voz_path = generar_voz(narrar, os.path.join(DIR_SALIDA, f"_voz_{stem}.mp3"), voz)
-        if voz_path:
-            try:
-                _va = AudioFileClip(voz_path)
-                dur = max(3.0, min(90.0, _va.duration + 0.6))   # cola de 0.6s
-                _va.close()
-            except Exception:
-                pass
+        voz_path, marcas = generar_voz(narrar, os.path.join(DIR_SALIDA, f"_voz_{stem}.mp3"), voz)
+    if voz_path:
+        try:
+            _va = AudioFileClip(voz_path)
+            dur = max(3.0, min(90.0, _va.duration + 0.6))        # cola de 0.6s
+            _va.close()
+        except Exception:
+            pass
 
-    # ── 1) Fondo: vídeo recortado a 9:16 o color de marca ────────────────
-    if video and os.path.exists(video):
+    # ── 1) Fondo: montaje de varios clips, un vídeo, o color de marca ────
+    fondo_mont = _fondo_desde_videos(videos, dur) if videos else None
+    if fondo_mont is not None:
+        fondo = fondo_mont
+    elif video and os.path.exists(video):
         clip = VideoFileClip(video)
         if not voz_path:
             dur = duracion or min(clip.duration, 30)
@@ -354,6 +450,20 @@ def crear_reel(video=None, color="dark", hook="", sub="", cta="",
         capas.append(_pos(_dur(lg, dur), ("center", 90)))
     thandle = _dur(_texto(HANDLE, font_reg, 34, _rgba(CREMA)[:3], size=(W, None), align="center"), dur)
     capas.append(_pos(thandle, ("center", H - 150)))
+
+    # ── 6b) Subtítulos sincronizados con la voz ──────────────────────────
+    # Con voz IA usamos las marcas reales de edge-tts (exactas). Con tu voz
+    # grabada no hay marcas: se reparten proporcionalmente por el audio.
+    if subtitulos and voz_path:
+        subs = _agrupar_subtitulos(marcas) if marcas else _subtitulos_repartidos(narrar, dur)
+        for (ini, fin, txt) in subs:
+            fin = min(fin, dur)
+            if not txt.strip() or fin <= ini:
+                continue
+            s = _texto(txt, font, 46, _rgba(CREMA)[:3], align="center", max_chars=34)
+            s = (s.with_start(ini).with_duration(fin - ini)
+                 if hasattr(s, "with_start") else s.set_start(ini).set_duration(fin - ini))
+            capas.append(_pos(s, ("center", H - SAFE_BOT - 150)))
 
     final = CompositeVideoClip(capas, size=(W, H))
     final = _dur(final, dur)
@@ -583,6 +693,12 @@ def main():
                          "Con texto: locuta ese guion. (necesita: py -m pip install edge-tts)")
     ap.add_argument("--voz", default="es-ES-ElviraNeural",
                     help="voz IA (por defecto es-ES-ElviraNeural; también es-ES-AlvaroNeural, es-MX-DaliaNeural…)")
+    ap.add_argument("--clips", nargs="+", metavar="MP4",
+                    help="varios vídeos de fondo: se montan seguidos repartiendo la duración")
+    ap.add_argument("--audio-voz", dest="audio_voz", metavar="AUDIO",
+                    help="usa TU voz grabada (mp3/wav/webm) en vez de la voz IA")
+    ap.add_argument("--subs", action="store_true",
+                    help="quema subtítulos sincronizados con la voz")
     args = ap.parse_args()
 
     # Si --narrar viene sin texto, se locuta el hook + subtítulo
@@ -598,7 +714,8 @@ def main():
         video = args.video
         if not video and args.buscar:
             video = buscar_video_pexels(args.buscar, pexels_key(args.pexels_key))
-        crear_reel(video=video, color=args.color, hook=args.hook, sub=args.sub,
+        crear_reel(video=video, videos=args.clips, audio_voz=args.audio_voz,
+                   subtitulos=args.subs, color=args.color, hook=args.hook, sub=args.sub,
                    cta=args.cta, logo=args.logo or _logo_por_defecto(),
                    musica=args.music, duracion=args.duration, salida=args.out, font=args.font,
                    narrar=narrar, voz=args.voz)

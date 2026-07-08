@@ -4614,46 +4614,180 @@ function limpiarGuionParaVoz(raw){
   return g.replace(/\s+/g, ' ').trim();
 }
 
-async function generarReelBackend(){
-  if(!SLIDES.length){ toast2('Genera algo primero'); return; }
-  const d = SLIDES[0] || {};
+// Lo que la IA nos devuelve del prompt: textos de pantalla + búsquedas de vídeo
+let _reelIA = { hook:'', sub:'', cta:'', keywords:[] };
+let _reelAudio = null;            // data URL de tu voz grabada
+let _reelRec = null, _reelChunks = [];
+
+function reelSt(color, txt){
   const st = document.getElementById('reelGenStatus');
-  const btn = document.getElementById('reelGenBtn');
-  const hook = String(d.head||'').replace(/\n/g,' ').trim();
-  const sub  = String(d.body||'').trim();
-  const cta  = String(d.cta||'').replace(/\s*[→↓]\s*$/,'').trim();
-  const kw   = (document.getElementById('reelBgQ')?.value||'').trim();
-  let narrar = null;
-  if(document.getElementById('reelVoz')?.checked){
-    // En modo 🎬 Reel se narra el GUION COMPLETO (vídeo más largo y contado).
-    // En post/carrusel, solo el hook + subtítulo.
-    if(modo==='reel' && typeof ULTIMO_GUION==='string' && ULTIMO_GUION.trim()){
-      narrar = limpiarGuionParaVoz(ULTIMO_GUION);
+  if(st){ st.style.color = color; st.textContent = txt; }
+}
+
+/* ── 1) La IA escribe el guion y elige los vídeos de fondo ───────────── */
+async function generarGuionReel(){
+  const prompt = (document.getElementById('reelPrompt')?.value||'').trim();
+  if(!prompt){ reelSt('#ff9f43','Escribe primero el tema del reel.'); return null; }
+  if(!getGroqKey()){ reelSt('#ff9f43','Necesitas tu key de Groq (pestaña Generar).'); return null; }
+  const btn = document.getElementById('reelGuionBtn');
+  if(btn){ btn.disabled=true; btn.textContent='✨ Escribiendo…'; }
+  reelSt('#38B6FF','La IA está escribiendo el guion…');
+  const cfg = N();
+  const contrato = `Eres Rosa María, ${cfg.persona}. Tono: ${cfg.tono}. Escribes en 2ª persona (tú).
+Prepara un REEL de Instagram de unos 30 segundos sobre: "${prompt}".
+
+MUY IMPORTANTE sobre "guion": es el texto que se va a LOCUTAR en voz alta.
+Debe tener OBLIGATORIAMENTE entre 60 y 90 PALABRAS (cuéntalas). No lo resumas:
+desarrolla cada idea con una frase concreta y útil. Estructura: una frase que
+enganche, luego 3 ideas concretas explicadas, y cierre con la llamada a la acción.
+Nada de acotaciones, ni "(0-2s)", ni las palabras "gancho" o "cierre".
+
+Devuelve SOLO JSON válido, sin markdown:
+{
+ "hook": "titular potente para la pantalla, máx 45 caracteres",
+ "sub": "subtítulo corto, máx 70 caracteres",
+ "cta": "llamada a la acción de 2-3 palabras (ej: Guarda esto)",
+ "guion": "texto locutado de 60-90 palabras",
+ "keywords": ["3-4 búsquedas EN INGLÉS de vídeo de stock, 2-3 palabras cada una, coherentes con el tema y visualmente distintas entre sí"]
+}`;
+  const pedir = async (extra)=>{
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
+      body: JSON.stringify({ model:'llama-3.3-70b-versatile', temperature:0.8, max_tokens:1200,
+        response_format:{type:'json_object'}, messages:[{role:'user',content:contrato+(extra||'')}] })
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    return JSON.parse(((await res.json()).choices?.[0]?.message?.content||'').replace(/```json|```/g,'').trim());
+  };
+  const nPalabras = t => (String(t||'').trim().match(/\S+/g)||[]).length;
+  try{
+    let out = await pedir('');
+    // Si se queda corto (pasa a menudo), se le pide que lo desarrolle.
+    if(nPalabras(out.guion) < 45){
+      out = await pedir(`\n\nTu guion anterior tenía solo ${nPalabras(out.guion)} palabras: DEMASIADO CORTO. Reescríbelo desarrollando cada idea hasta llegar a 60-90 palabras.`);
     }
-    if(!narrar) narrar = [hook, sub].filter(Boolean).join('. ');
+    _reelIA = {
+      hook: String(out.hook||'').slice(0,60),
+      sub:  String(out.sub||'').slice(0,90),
+      cta:  String(out.cta||'Guarda esto').slice(0,22),
+      keywords: (Array.isArray(out.keywords)?out.keywords:[]).map(k=>String(k).trim()).filter(Boolean).slice(0,4)
+    };
+    const guion = limpiarGuionParaVoz(String(out.guion||''));
+    const ta = document.getElementById('reelGuion');
+    if(ta) ta.value = guion;
+    reelSt('#38B6FF', `✓ Guion listo (${nPalabras(guion)} palabras). Vídeos: ${_reelIA.keywords.join(', ')||'(genéricos)'}`);
+    return guion;
+  }catch(e){
+    reelSt('#ff6b6b','No se pudo escribir el guion: '+e.message);
+    return null;
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='✨ Escribir guion con IA'; }
   }
-  const setSt=(c,t)=>{ if(st){ st.style.color=c; st.textContent=t; } };
-  setSt('#38B6FF','Generando el reel… puede tardar ~1 min. No cierres la ventana.');
+}
+
+/* ── 2) Voz: IA / mi voz (grabar) / sin voz ──────────────────────────── */
+function cambiarModoVoz(){
+  const m = document.getElementById('reelVozModo')?.value || 'ia';
+  const sel = document.getElementById('reelVozSel');
+  const grab = document.getElementById('reelGrabWrap');
+  if(sel)  sel.style.display  = (m==='ia')  ? '' : 'none';
+  if(grab) grab.style.display = (m==='mia') ? '' : 'none';
+}
+
+function blobADataURL(blob){
+  return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); });
+}
+
+async function toggleGrabacion(){
+  const btn = document.getElementById('reelGrabBtn');
+  const est = document.getElementById('reelGrabEstado');
+  const prev = document.getElementById('reelGrabPrev');
+  // Parar si ya está grabando
+  if(_reelRec && _reelRec.state === 'recording'){ _reelRec.stop(); return; }
+  if(!navigator.mediaDevices?.getUserMedia){ if(est) est.textContent='Tu navegador no permite grabar.'; return; }
+  let stream;
+  try{ stream = await navigator.mediaDevices.getUserMedia({audio:true}); }
+  catch(e){ if(est){ est.style.color='#ff6b6b'; est.textContent='No diste permiso al micrófono.'; } return; }
+
+  _reelChunks = [];
+  _reelRec = new MediaRecorder(stream);
+  _reelRec.ondataavailable = e => { if(e.data.size) _reelChunks.push(e.data); };
+  _reelRec.onstop = async ()=>{
+    stream.getTracks().forEach(t=>t.stop());
+    const blob = new Blob(_reelChunks, {type: _reelRec.mimeType || 'audio/webm'});
+    _reelAudio = await blobADataURL(blob);
+    if(prev){ prev.src = URL.createObjectURL(blob); prev.style.display=''; }
+    if(btn) btn.textContent = '🔴 Volver a grabar';
+    if(est){ est.style.color='var(--UI-A)'; est.textContent = `✓ Grabado (${Math.round(blob.size/1024)} KB). Escúchalo abajo.`; }
+  };
+  _reelRec.start();
+  if(btn) btn.textContent = '⏹ Parar grabación';
+  if(est){ est.style.color='#ff6b6b'; est.textContent='● Grabando… lee el guion.'; }
+}
+
+/* ── 3) Generar el reel y descargarlo ────────────────────────────────── */
+async function generarReelBackend(){
+  const btn = document.getElementById('reelGenBtn');
+  const modoVoz = document.getElementById('reelVozModo')?.value || 'ia';
+  const prompt = (document.getElementById('reelPrompt')?.value||'').trim();
+  let guion = (document.getElementById('reelGuion')?.value||'').trim();
+
+  // Si no escribes guion pero sí un tema, lo escribe la IA
+  if(!guion && prompt && modoVoz!=='sin'){
+    guion = await generarGuionReel();
+    if(!guion) return;
+  }
+  if(modoVoz==='mia' && !_reelAudio){ reelSt('#ff9f43','Graba tu voz antes de generar.'); return; }
+
+  // Textos de pantalla: los de la IA; si no hay, los del slide actual
+  const d = SLIDES[0] || {};
+  const hook = _reelIA.hook || String(d.head||'').replace(/\n/g,' ').trim();
+  const sub  = _reelIA.sub  || String(d.body||'').trim();
+  const cta  = _reelIA.cta  || String(d.cta||'').replace(/\s*[→↓]\s*$/,'').trim();
+  const clips = _reelIA.keywords.length ? _reelIA.keywords : (prompt ? [prompt] : []);
+
+  if(!hook && !guion){ reelSt('#ff9f43','Escribe un tema o genera un diseño primero.'); return; }
+
+  reelSt('#38B6FF','Enviando… la IA busca vídeos, narra y monta el reel.');
   if(btn){ btn.disabled=true; btn.style.opacity=.6; }
   try{
+    // 1) Lanzar el trabajo (responde al instante con un id)
     const res = await fetch('/api/reel',{ method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ hook, sub, cta, buscar:kw, narrar, voz:getVozReel() }) });
-    const ctype = res.headers.get('Content-Type')||'';
-    if(!res.ok || ctype.includes('application/json')){
-      let msg='no se pudo generar';
+      body: JSON.stringify({
+        hook, sub, cta, clips,
+        narrar: (modoVoz==='sin') ? null : guion,
+        audio:  (modoVoz==='mia') ? _reelAudio : null,
+        voz: getVozReel(),
+        subtitulos: !!document.getElementById('reelSubs')?.checked && modoVoz!=='sin'
+      }) });
+    if(!res.ok){
+      let msg='no se pudo lanzar';
       try{ msg=(await res.json()).error||msg; }catch(e){ if(res.status===501||res.status===404) msg='abre la app con iniciar.py (no con el .html directo)'; }
       throw new Error(msg);
     }
-    const blob = await res.blob();
+    const { job } = await res.json();
+
+    // 2) Preguntar el estado hasta que esté (montar tarda 1-4 min)
+    let info = null;
+    for(let i=0; i<240; i++){                       // ~10 min de margen
+      await new Promise(r=>setTimeout(r, 2500));
+      const s = await fetch('/api/reel/estado?job='+encodeURIComponent(job));
+      if(!s.ok) throw new Error('se perdió el trabajo');
+      info = await s.json();
+      if(info.estado === 'listo' || info.estado === 'error') break;
+      reelSt('#38B6FF', `Montando el reel… ${Math.round((i+1)*2.5)}s (no cierres la ventana)`);
+    }
+    if(!info || info.estado !== 'listo') throw new Error(info?.error || 'se agotó el tiempo');
+
+    // 3) Descargar el MP4 ya generado
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'reel_rm_'+Date.now()+'.mp4';
+    a.href = '/reel-video/salida/' + encodeURIComponent(info.archivo);
+    a.download = info.archivo;
     document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
-    setSt('#38B6FF','✓ Reel descargado a tu PC.');
+    reelSt('#38B6FF','✓ Reel descargado a tu PC.');
     toast2('✓ Reel MP4 descargado');
   }catch(e){
-    setSt('#ff6b6b','No se pudo: '+e.message);
+    reelSt('#ff6b6b','No se pudo: '+e.message);
   }finally{
     if(btn){ btn.disabled=false; btn.style.opacity=1; }
   }

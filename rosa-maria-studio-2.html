@@ -1083,12 +1083,28 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       <!-- Generar REEL en vídeo (MP4) — lo monta iniciar.py con reel_video.py -->
       <div style="border-top:1px solid var(--UI-B);margin-top:8px;padding-top:8px">
         <div style="font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--UI-M);margin-bottom:4px">🎬 Generar reel en vídeo (MP4)</div>
-        <div class="pexels-bar">
-          <input type="text" id="reelBgQ" placeholder="fondo en inglés: kitchen renovation…">
-        </div>
-        <label style="font-size:8px;color:var(--UI-M);display:flex;align-items:center;gap:4px;cursor:pointer;margin-top:5px" title="Añade voz IA española gratis que narra el guion (necesita edge-tts en tu PC)">
-          <input type="checkbox" id="reelVoz" checked style="accent-color:var(--UI-A)">🔊 con voz IA
-        </label>
+
+        <!-- 1) Tema / prompt -->
+        <label style="font-size:8px;color:var(--UI-M)">Tema del reel</label>
+        <textarea id="reelPrompt" rows="2" placeholder="Ej: los 3 errores al reformar una cocina y cómo evitarlos"
+          style="width:100%;margin-top:3px;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:6px;border-radius:4px;font-size:9px;font-family:'Montserrat',sans-serif;line-height:1.5;resize:vertical"></textarea>
+        <button id="reelGuionBtn" onclick="generarGuionReel()" title="La IA escribe el guion y elige los vídeos de fondo"
+          style="width:100%;margin-top:4px;border:1px solid var(--UI-B2);background:var(--UI-B);color:var(--UI-A);padding:6px;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif">✨ Escribir guion con IA</button>
+
+        <!-- 2) Guion editable -->
+        <label style="font-size:8px;color:var(--UI-M);display:block;margin-top:6px">Guion (lo que se dirá). Si lo dejas vacío, lo escribe la IA</label>
+        <textarea id="reelGuion" rows="5" placeholder="Escribe aquí lo que quieres que se diga en el reel…"
+          style="width:100%;margin-top:3px;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:6px;border-radius:4px;font-size:9px;font-family:'Montserrat',sans-serif;line-height:1.55;resize:vertical"></textarea>
+
+        <!-- 3) Voz -->
+        <label style="font-size:8px;color:var(--UI-M);display:block;margin-top:6px">Voz en off</label>
+        <select id="reelVozModo" onchange="cambiarModoVoz()"
+          style="width:100%;margin-top:3px;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:5px;border-radius:4px;font-size:9px;font-family:'Montserrat',sans-serif;cursor:pointer">
+          <option value="ia">🔊 Voz de IA (gratis)</option>
+          <option value="mia">🎤 Mi voz (grabar ahora)</option>
+          <option value="sin">🔇 Sin voz</option>
+        </select>
+
         <select id="reelVozSel" onchange="guardarVozReel(this.value)" title="Voz que narra el reel"
           style="width:100%;margin-top:4px;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:5px;border-radius:4px;font-size:9px;font-family:'Montserrat',sans-serif;cursor:pointer">
           <optgroup label="── España ──">
@@ -1103,8 +1119,23 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
             <option value="es-CO-SalomeNeural">Salomé — Colombia, mujer</option>
           </optgroup>
         </select>
+
+        <!-- Grabadora (solo si eliges "Mi voz") -->
+        <div id="reelGrabWrap" style="display:none;margin-top:5px;border:1px solid var(--UI-B2);border-radius:4px;padding:6px">
+          <div style="font-size:8px;color:var(--UI-M);line-height:1.5;margin-bottom:5px">Lee el guion de arriba en voz alta mientras grabas.</div>
+          <button id="reelGrabBtn" onclick="toggleGrabacion()"
+            style="width:100%;border:1px solid var(--UI-B2);background:var(--UI-B);color:var(--UI-T);padding:7px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif">🔴 Grabar mi voz</button>
+          <div id="reelGrabEstado" style="font-size:8px;margin-top:4px;color:var(--UI-M)">Sin grabación.</div>
+          <audio id="reelGrabPrev" controls style="width:100%;margin-top:5px;display:none;height:30px"></audio>
+        </div>
+
+        <!-- 4) Subtítulos -->
+        <label style="font-size:8px;color:var(--UI-M);display:flex;align-items:center;gap:4px;cursor:pointer;margin-top:6px" title="Quema el guion como subtítulos sincronizados con la voz">
+          <input type="checkbox" id="reelSubs" checked style="accent-color:var(--UI-A)">💬 subtítulos sincronizados
+        </label>
+
         <button id="reelGenBtn" onclick="generarReelBackend()" style="width:100%;margin-top:6px;border:1px solid var(--UI-A);background:linear-gradient(90deg,rgba(56,182,255,.18),rgba(56,182,255,.06));color:var(--UI-A);padding:8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.03em">🎬 Generar y descargar reel</button>
-        <div id="reelGenStatus" style="font-size:8px;margin-top:5px;line-height:1.5;color:var(--UI-M)">En modo <b style="color:var(--UI-A)">🎬 Reel</b> narra el <b>guion completo</b>; en post/carrusel, el hook + subtítulo. Requiere abrir con <b style="color:var(--UI-A)">iniciar.py</b>.</div>
+        <div id="reelGenStatus" style="font-size:8px;margin-top:5px;line-height:1.5;color:var(--UI-M)">La IA busca vídeos de Pexels según el tema. Requiere abrir con <b style="color:var(--UI-A)">iniciar.py</b>.</div>
       </div>
 
       <!-- Buscar música libre de derechos (Jamendo, Creative Commons) -->
@@ -1533,6 +1564,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=36"></script>
+<script src="app.js?v=39"></script>
 </body>
 </html>

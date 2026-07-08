@@ -43,10 +43,29 @@ def puerto_libre(inicio=8000, intentos=20):
     return inicio
 
 
+# Trabajos de reel en curso (el montaje tarda minutos y va en segundo plano)
+REEL_JOBS = {}
+REEL_LOCK = threading.Lock()
+
+
+def _trabajo_reel(job, data):
+    """Genera el reel en un hilo y deja el resultado en REEL_JOBS[job]."""
+    try:
+        ruta = generar_reel_desde_data(data)
+        with REEL_LOCK:
+            REEL_JOBS[job] = {"estado": "listo", "archivo": os.path.basename(ruta)}
+        print("  [reel] %s listo: %s" % (job, os.path.basename(ruta)), flush=True)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        with REEL_LOCK:
+            REEL_JOBS[job] = {"estado": "error", "error": str(e)}
+        print("  [reel] %s ERROR: %s" % (job, e), flush=True)
+
+
 def generar_reel_desde_data(data):
     """Monta un reel MP4 con reel_video.py y devuelve su ruta.
-    data: {hook, sub, cta, buscar, narrar, voz, color}."""
-    import time
+    data: {hook, sub, cta, buscar, clips[], narrar, voz, audio, subtitulos, color}."""
+    import time, base64, re
     base = os.path.dirname(os.path.abspath(__file__))
     rv_dir = os.path.join(base, "reel-video")
     if rv_dir not in sys.path:
@@ -60,9 +79,37 @@ def generar_reel_desde_data(data):
     voz = data.get("voz") or "es-ES-ElviraNeural"
     buscar = (data.get("buscar") or "").strip()
     color = data.get("color") or "dark"
+    subtitulos = bool(data.get("subtitulos"))
+
+    # TU voz grabada en el navegador (data URL base64 -> archivo)
+    audio_voz = None
+    audio_b64 = data.get("audio") or ""
+    if audio_b64:
+        try:
+            m = re.match(r"data:audio/(\w+);base64,(.*)$", audio_b64, re.S)
+            ext, crudo = (m.group(1), m.group(2)) if m else ("webm", audio_b64)
+            destino = os.path.join(rv_dir, "salida", "_voz_grabada_%d.%s" % (int(time.time()), ext))
+            os.makedirs(os.path.dirname(destino), exist_ok=True)
+            with open(destino, "wb") as f:
+                f.write(base64.b64decode(crudo))
+            audio_voz = destino
+            print("  [reel] usando tu voz grabada:", os.path.basename(destino), flush=True)
+        except Exception as e:
+            print("  [reel] no pude usar el audio grabado:", e, flush=True)
+
+    # Fondo: varias palabras -> montaje de varios clips de Pexels
+    palabras = [p for p in (data.get("clips") or []) if str(p).strip()]
+    videos = []
+    for p in palabras[:4]:
+        try:
+            v = RV.buscar_video_pexels(str(p).strip(), RV.pexels_key(data.get("pexels_key")))
+            if v:
+                videos.append(v)
+        except Exception as e:
+            print("  [reel] Pexels falló con '%s': %s" % (p, e), flush=True)
 
     video = None
-    if buscar:
+    if not videos and buscar:
         try:
             video = RV.buscar_video_pexels(buscar, RV.pexels_key(data.get("pexels_key")))
         except Exception as e:
@@ -82,7 +129,8 @@ def generar_reel_desde_data(data):
         dur = None
 
     nombre = "reel_%d.mp4" % int(time.time())
-    return RV.crear_reel(video=video, color=color, hook=hook, sub=sub, cta=cta,
+    return RV.crear_reel(video=video, videos=(videos or None), audio_voz=audio_voz,
+                         subtitulos=subtitulos, color=color, hook=hook, sub=sub, cta=cta,
                          logo=logo, narrar=narrar, voz=voz, duracion=dur, salida=nombre)
 
 
@@ -133,33 +181,38 @@ def main():
             self.send_header("Cache-Control", "no-store, must-revalidate")
             super().end_headers()
 
-        # ── API: generar un reel en vídeo y devolverlo para descargar ──────
+        # ── API: generar un reel en vídeo (en segundo plano) ───────────────
+        # Montar el reel tarda 1-4 min. Si dejásemos la petición abierta todo
+        # ese rato sin enviar nada, la conexión se resetea. Por eso: se responde
+        # al instante con un id de trabajo, se genera en un hilo, y el navegador
+        # pregunta el estado hasta que puede descargar el MP4.
         def do_POST(self):
             if self.path.split("?")[0] != "/api/reel":
                 self.send_error(404, "No existe")
                 return
-            import json
+            import json, uuid, threading
             try:
                 n = int(self.headers.get("Content-Length", 0) or 0)
                 data = json.loads(self.rfile.read(n).decode("utf-8") or "{}") if n else {}
             except Exception:
                 return self._enviar_json(400, {"error": "peticion invalida"})
-            print("  [reel] generando…", flush=True)
-            try:
-                ruta = generar_reel_desde_data(data)
-                with open(ruta, "rb") as f:
-                    video = f.read()
-            except Exception as e:
-                import traceback; traceback.print_exc()
-                return self._enviar_json(500, {"error": str(e)})
-            self.send_response(200)
-            self.send_header("Content-Type", "video/mp4")
-            self.send_header("Content-Disposition",
-                             'attachment; filename="%s"' % os.path.basename(ruta))
-            self.send_header("Content-Length", str(len(video)))
-            self.end_headers()
-            self.wfile.write(video)
-            print("  [reel] enviado:", os.path.basename(ruta), flush=True)
+            job = uuid.uuid4().hex[:12]
+            with REEL_LOCK:
+                REEL_JOBS[job] = {"estado": "procesando"}
+            threading.Thread(target=_trabajo_reel, args=(job, data), daemon=True).start()
+            print("  [reel] trabajo %s en marcha…" % job, flush=True)
+            self._enviar_json(202, {"job": job})
+
+        def do_GET(self):
+            if self.path.split("?")[0] == "/api/reel/estado":
+                from urllib.parse import urlparse, parse_qs
+                job = (parse_qs(urlparse(self.path).query).get("job") or [""])[0]
+                with REEL_LOCK:
+                    info = REEL_JOBS.get(job)
+                if not info:
+                    return self._enviar_json(404, {"error": "trabajo desconocido"})
+                return self._enviar_json(200, info)
+            return super().do_GET()
 
         def _enviar_json(self, code, obj):
             import json
