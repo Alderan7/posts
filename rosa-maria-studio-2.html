@@ -1547,14 +1547,42 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <!-- TAB: GENERAR -->
     <div class="rpanel" id="tab-generar">
       <div class="csec">
-        <div class="csec-h">✨ Copy con IA (Groq · gratis)</div>
+        <div class="csec-h">✨ Copy con IA (gratis)</div>
+
         <div class="crow">
+          <label>Qué IA usar</label>
+          <select id="iaSel" onchange="guardarIA(this.value)" title="Automática: si una se queda sin cuota, salta a la siguiente"
+            style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:5px 7px;border-radius:4px;font-size:10px;font-family:'Montserrat',sans-serif;cursor:pointer">
+            <option value="auto">🔄 Automática (Groq → Gemini → OpenRouter)</option>
+            <option value="groq">Solo Groq</option>
+            <option value="gemini">Solo Gemini</option>
+            <option value="openrouter">Solo OpenRouter</option>
+          </select>
+        </div>
+        <div id="groqStatus" style="font-size:8px;margin-top:3px;line-height:1.5;color:var(--UI-M)">Sin ninguna key: se usa el banco de copys.</div>
+
+        <div class="crow" style="margin-top:6px">
           <label>API Key de Groq</label>
           <input type="password" id="groqKey" placeholder="gsk_..." oninput="guardarKeyGroq(this.value)"
             style="background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:5px 7px;border-radius:4px;font-size:10px;font-family:'Montserrat',sans-serif;width:100%">
+          <div style="font-size:8px;color:var(--UI-M);margin-top:2px">Gratis en <b style="color:var(--UI-A)">groq.com</b> → API Keys. 100.000 tokens/día.</div>
         </div>
-        <div id="groqStatus" style="font-size:8px;margin-top:3px;line-height:1.5;color:var(--UI-M)">Sin key: se usa el banco de copys.</div>
-        <div style="font-size:8px;color:var(--UI-M);margin-top:3px">Consigue una gratis en <b style="color:var(--UI-A)">groq.com</b> → API Keys. Se guarda solo en tu navegador.</div>
+
+        <div class="crow" style="margin-top:6px">
+          <label>API Key de Gemini <span style="color:var(--UI-A)">(recomendada de reserva)</span></label>
+          <input type="password" id="geminiKey" placeholder="AIza..." oninput="guardarKeyGemini(this.value)"
+            style="background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:5px 7px;border-radius:4px;font-size:10px;font-family:'Montserrat',sans-serif;width:100%">
+          <div style="font-size:8px;color:var(--UI-M);margin-top:2px">Gratis en <b style="color:var(--UI-A)">aistudio.google.com</b> → Get API key. Sin tarjeta.</div>
+        </div>
+
+        <div class="crow" style="margin-top:6px">
+          <label>API Key de OpenRouter <span style="color:var(--UI-M)">(opcional)</span></label>
+          <input type="password" id="openrouterKey" placeholder="sk-or-..." oninput="guardarKeyOpenRouter(this.value)"
+            style="background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:5px 7px;border-radius:4px;font-size:10px;font-family:'Montserrat',sans-serif;width:100%">
+          <div style="font-size:8px;color:var(--UI-M);margin-top:2px">Gratis en <b style="color:var(--UI-A)">openrouter.ai</b> → Keys. Modelos <i>:free</i>.</div>
+        </div>
+
+        <div style="font-size:8px;color:var(--UI-M);margin-top:5px;line-height:1.5">Las keys se guardan solo en tu navegador.</div>
       </div>
       <div class="csec">
         <div class="csec-h">Pilar de contenido</div>
@@ -1691,6 +1719,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=50"></script>
+<script src="app.js?v=52"></script>
 </body>
 </html>

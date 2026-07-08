@@ -1666,7 +1666,7 @@ async function generar(){
 
   // MOTOR NARRATIVO (Groq): historia coherente del nº exacto de slides / post de 1
   let narrativa=null, aiData=null;
-  if(getGroqKey()){
+  if(hayIA()){
     txEl.textContent = modo==='post' ? 'Escribiendo un post autoconclusivo...' : `Escribiendo una historia de ${modo==='reel'?'reel':numSlides+' slides'}...`;
     try{
       const tema=(N().angulos||BANCO.angulos)[angulo]||angulo;
@@ -1685,7 +1685,7 @@ async function generar(){
     aplicarDisenoIA(narrativa.arr, narrativa.out, modo, numSlides);   // SLIDES + vista + COPY
   }else{
     // Fallback: relleno con IA de campos o banco local
-    try{ if(getGroqKey()) aiData=await fetchAI(angulo); }catch(e){}
+    try{ if(hayIA()) aiData=await fetchAI(angulo); }catch(e){}
     const nuevo = modo==='reel' ? buildReel(angulo,aiData)
                 : modo==='post' ? buildPost(angulo,aiData)
                 : buildCarrusel(angulo,aiData,numSlides);
@@ -1759,15 +1759,119 @@ TIPOS CON FOTO (hazlo VISUAL): "foto", "fototxt", "revista" (portada) o "citafot
 REGLAS: 1er slide engancha. Último = CTA con una palabra de acción. Alterna fondos. "stats"/"numero" solo si el tema pide cifras. Sin tecnicismos vacíos.`;
 }
 
-// Motor: pide el diseño a Groq, sanea y descarga fotos. Devuelve {arr,out}.
+/* ═══════════════════════════════════════════════════════════
+   MOTOR DE IA CON CASCADA
+   Si la primera se queda sin cuota (429), pasa sola a la siguiente.
+   Orden por defecto: Groq → Gemini → OpenRouter. También puedes forzar una.
+   Las tres necesitan key (Pollinations quedó descartada: pide captcha).
+   ═══════════════════════════════════════════════════════════ */
+function getIA(){ return localStorage.getItem('rm_ia') || 'auto'; }
+function guardarIA(v){
+  localStorage.setItem('rm_ia', v || 'auto');
+  if(typeof estadoIA==='function') estadoIA();
+}
+function getGeminiKey(){ return (localStorage.getItem('gemini_key') || (window.RM_CONFIG&&RM_CONFIG.gemini_key) || '').trim(); }
+function guardarKeyGemini(v){ localStorage.setItem('gemini_key',(v||'').trim()); if(typeof estadoIA==='function') estadoIA(); }
+function getOpenRouterKey(){ return (localStorage.getItem('openrouter_key') || (window.RM_CONFIG&&RM_CONFIG.openrouter_key) || '').trim(); }
+function guardarKeyOpenRouter(v){ localStorage.setItem('openrouter_key',(v||'').trim()); if(typeof estadoIA==='function') estadoIA(); }
+
+// ¿Tenemos alguna IA usable? (cualquiera de las tres)
+function hayIA(){ return !!(getGroqKey() || getGeminiKey() || getOpenRouterKey()); }
+
+let IA_ULTIMA = '';               // qué IA respondió la última vez
+
+function _sinCuota(nombre, detalle){
+  const e = new Error(`${nombre} sin cuota${detalle ? ' ('+detalle+')' : ''}`);
+  e.sinCuota = true;
+  return e;
+}
+async function _respOpenAI(res, nombre){
+  if(res.status === 429){
+    const t = await res.text().catch(()=> '');
+    const espera = (t.match(/try again in ([^".]+)/i)||[])[1];
+    throw _sinCuota(nombre, espera ? 'vuelve en '+espera.trim() : (/per day|TPD/i.test(t) ? 'cuota diaria' : ''));
+  }
+  if(!res.ok) throw new Error(`${nombre}: HTTP ${res.status}`);
+  const c = (await res.json()).choices?.[0]?.message?.content;
+  if(!c) throw new Error(`${nombre} no devolvió texto`);
+  return c;
+}
+
+const IA_PROVEEDORES = {
+  groq: {
+    nombre:'Groq', key:getGroqKey,
+    llamar: async (prompt, o)=> _respOpenAI(await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
+      body: JSON.stringify({ model:'llama-3.3-70b-versatile', temperature:o.temperature, max_tokens:o.maxTokens,
+        response_format:{type:'json_object'}, messages:[{role:'user',content:prompt}] })
+    }), 'Groq')
+  },
+  gemini: {
+    nombre:'Gemini', key:getGeminiKey,
+    llamar: async (prompt, o)=>{
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(getGeminiKey())}`,{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ contents:[{parts:[{text:prompt}]}],
+          generationConfig:{ temperature:o.temperature, maxOutputTokens:o.maxTokens, responseMimeType:'application/json' } })
+      });
+      if(res.status === 429) throw _sinCuota('Gemini');
+      if(!res.ok) throw new Error('Gemini: HTTP '+res.status);
+      const t = (await res.json()).candidates?.[0]?.content?.parts?.[0]?.text;
+      if(!t) throw new Error('Gemini no devolvió texto');
+      return t;
+    }
+  },
+  openrouter: {
+    nombre:'OpenRouter', key:getOpenRouterKey,
+    llamar: async (prompt, o)=> _respOpenAI(await fetch('https://openrouter.ai/api/v1/chat/completions',{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getOpenRouterKey()},
+      body: JSON.stringify({ model:'meta-llama/llama-3.3-70b-instruct:free', temperature:o.temperature,
+        max_tokens:o.maxTokens, response_format:{type:'json_object'}, messages:[{role:'user',content:prompt}] })
+    }), 'OpenRouter')
+  }
+};
+const IA_ORDEN = ['groq','gemini','openrouter'];
+
+// Devuelve el TEXTO de la IA. Va probando por orden hasta que una responda.
+async function iaTexto(prompt, opts={}){
+  const o = { maxTokens: opts.maxTokens || 1200, temperature: (opts.temperature ?? 0.85) };
+  const forzada = getIA();
+  const orden = (forzada === 'auto') ? IA_ORDEN : [forzada];
+  const listas = orden.filter(id => IA_PROVEEDORES[id] && IA_PROVEEDORES[id].key());
+  if(!listas.length) throw new Error('sin-key');   // → generar() cae al banco local
+
+  let ultimoError = null;
+  for(let i=0; i<listas.length; i++){
+    const p = IA_PROVEEDORES[listas[i]];
+    try{
+      if(opts.onStatus && i>0) opts.onStatus(`${ultimoError?.message||'Sin cuota'} → probando con ${p.nombre}…`);
+      const t = await p.llamar(prompt, o);
+      IA_ULTIMA = p.nombre;
+      return t;
+    }catch(e){
+      ultimoError = e;
+      if(!e.sinCuota) throw e;          // error real (key mala, red…): no seguir
+      console.warn(`[IA] ${p.nombre} sin cuota → siguiente`);
+    }
+  }
+  const otras = IA_ORDEN.filter(id => !listas.includes(id)).map(id => IA_PROVEEDORES[id].nombre);
+  const consejo = otras.length
+    ? `Añade una key de ${otras[0]} (gratis) en la pestaña Generar`
+    : 'Prueba más tarde';
+  const e = new Error(`${ultimoError?.message || 'Sin cuota'}. ${consejo}, o escribe tú el texto.`);
+  e.sinCuota = true;
+  throw e;
+}
+// Igual pero devolviendo el JSON ya parseado
+async function iaJSON(prompt, opts){
+  const t = await iaTexto(prompt, opts);
+  return JSON.parse(String(t).replace(/```json|```/g,'').trim());
+}
+
+// Motor: pide el diseño a la IA, sanea y descarga fotos. Devuelve {arr,out}.
 async function pedirDisenoIA(prompt, fmt, n, cfg, onStatus){
-  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
-    body:JSON.stringify({ model:'llama-3.3-70b-versatile', temperature:0.85, max_tokens:2600,
-      response_format:{type:'json_object'}, messages:[{role:'user',content:contratoDiseno(prompt,fmt,n,cfg)}] })
-  });
-  if(!res.ok) throw new Error('HTTP '+res.status);
-  const out=JSON.parse(((await res.json()).choices?.[0]?.message?.content||'').replace(/```json|```/g,'').trim());
+  const out = await iaJSON(contratoDiseno(prompt,fmt,n,cfg),
+    { maxTokens:2600, temperature:0.85, onStatus });
   let arr=(Array.isArray(out.slides)?out.slides:[]).map(s=>{
     let tipo=TIPOS_IA.includes(s.tipo)?s.tipo:'hook';
     let fondo=['dark','light','blue'].includes(s.fondo)?s.fondo:'dark';
@@ -1805,7 +1909,7 @@ async function generarDesdePrompt(){
   const status=document.getElementById('promptStatus');
   const btn=document.getElementById('pmGen');
   if(!prompt){ if(status){status.style.color='#ff9f43';status.textContent='Escribe qué quieres diseñar.';} return; }
-  if(!getGroqKey()){ if(status){status.style.color='#ff9f43';status.textContent='Necesitas tu key de Groq (pestaña Generar).';} return; }
+  if(!hayIA()){ if(status){status.style.color='#ff9f43';status.textContent='Necesitas una key de IA (pestaña Generar).';} return; }
 
   const fmt=_promptFmt;
   const n = fmt==='carrusel' ? (parseInt(document.getElementById('pmSlides')?.value)||6) : 1;
@@ -1831,7 +1935,7 @@ async function generarDesdePrompt(){
 // Regenerar SOLO el slide actual con IA, manteniendo su tipo y encajando en la historia
 async function regenerarSlide(){
   if(!SLIDES.length){ toast2('Genera algo primero'); return; }
-  if(!getGroqKey()){ toast2('Necesitas tu key de Groq (pestaña Generar)'); return; }
+  if(!hayIA()){ toast2('Necesitas una key de IA (pestaña Generar)'); return; }
   const btn=document.getElementById('btnRegen');
   const d=SLIDES[cur], cfg=N();
   const contexto=SLIDES.map((s,i)=>`${i===cur?'>> ESTE':'  '} [${i+1}] ${s.tipo}: ${(s.head||s.items?.[0]||'').slice(0,60)}`).join('\n');
@@ -1843,11 +1947,7 @@ Devuelve SOLO JSON de UN slide: {"tipo":"${d.tipo}","fondo":"dark|light|blue","e
 items según tipo: lista/claves=frases; stats=3-4 "NÚMERO::etiqueta"; proceso="Título:desc"; debate=2 opciones; pills=etiquetas; indice=temas; hook/frase/cta/foto/citafoto=[].`;
   if(btn){ btn.disabled=true; btn.textContent='🔄 …'; }
   try{
-    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
-      body:JSON.stringify({model:'llama-3.3-70b-versatile',temperature:0.9,max_tokens:900,response_format:{type:'json_object'},messages:[{role:'user',content:contrato}]})});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const s=JSON.parse(((await res.json()).choices?.[0]?.message?.content||'{}').replace(/```json|```/g,'').trim());
+    const s = await iaJSON(contrato, { maxTokens:900, temperature:0.9 });
     const tipo=TIPOS_IA.includes(s.tipo)?s.tipo:d.tipo;
     const fondo=['dark','light','blue'].includes(s.fondo)?s.fondo:d.fondo;
     const items=Array.isArray(s.items)?s.items.filter(x=>x!=null&&String(x).trim()):[];
@@ -1887,11 +1987,8 @@ REGLAS: no solapes texto ilegible; deja márgenes (~6%); 1 titular grande por sl
   if(btn) btn.classList.add('loading');
   if(status){ status.style.color='#38B6FF'; status.textContent='Componiendo (modo libre)…'; }
   try{
-    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
-      body:JSON.stringify({model:'llama-3.3-70b-versatile',temperature:0.9,max_tokens:3000,response_format:{type:'json_object'},messages:[{role:'user',content:contrato}]})});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const out=JSON.parse((await res.json()).choices?.[0]?.message?.content.replace(/```json|```/g,'').trim()||'{}');
+    const out = await iaJSON(contrato, { maxTokens:3000, temperature:0.9,
+      onStatus:(m)=>{ if(status) status.textContent=m; } });
     let arr=Array.isArray(out.slides)?out.slides:[];
     if(!arr.length) throw new Error('sin slides');
     // descargar imágenes de los elementos img
@@ -1942,24 +2039,8 @@ Responde SOLO en JSON válido sin markdown:
   "caption": "caption de Instagram que COMPLEMENTA la imagen sin repetir el hook (3-6 frases, 1ª persona, termina invitando a interactuar)"
 }`;
 
-  const key = getGroqKey();
-  if(!key) throw new Error('sin-key');   // sin key → generar() usa el banco local
-
-  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-    body:JSON.stringify({
-      model:'llama-3.3-70b-versatile',
-      temperature:0.9,
-      max_tokens:1200,
-      response_format:{type:'json_object'},
-      messages:[{role:'user',content:prompt}]
-    })
-  });
-  if(!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data=await res.json();
-  const txt=data.choices?.[0]?.message?.content||'';
-  return JSON.parse(txt.replace(/```json|```/g,'').trim());
+  // Sin ninguna key, iaJSON lanza 'sin-key' → generar() usa el banco local
+  return await iaJSON(prompt, { maxTokens:1200, temperature:0.9 });
 }
 
 /* ─── Clave Groq (IA de copy) — guardada solo en el navegador ─── */
@@ -1967,11 +2048,24 @@ function getGroqKey(){ return (localStorage.getItem('groq_key')||'').trim(); }
 function getPixabayKey(){ return (localStorage.getItem('pixabay_key')|| (window.RM_CONFIG&&RM_CONFIG.pixabay_key) || '').trim(); }
 function guardarKeyGroq(v){
   localStorage.setItem('groq_key', (v||'').trim());
-  const st=document.getElementById('groqStatus');
-  if(st){
-    if(getGroqKey()){ st.style.color='#38B6FF'; st.textContent='✓ IA activada — cada generación usa copy nuevo'; }
-    else { st.style.color='var(--UI-M)'; st.textContent='Sin key: se usa el banco de copys.'; }
+  estadoIA();
+}
+
+// Muestra qué IAs tienes puestas y en qué orden se van a usar
+function estadoIA(){
+  const st = document.getElementById('groqStatus');
+  if(!st) return;
+  const puestas = IA_ORDEN.filter(id => IA_PROVEEDORES[id].key()).map(id => IA_PROVEEDORES[id].nombre);
+  if(!puestas.length){
+    st.style.color='var(--UI-M)';
+    st.textContent='Sin ninguna key: se usa el banco de copys.';
+    return;
   }
+  const forzada = getIA();
+  st.style.color='#38B6FF';
+  st.textContent = (forzada === 'auto')
+    ? `✓ IA activada — orden: ${puestas.join(' → ')}${puestas.length>1 ? ' (si una se queda sin cuota, salta a la siguiente)' : ''}`
+    : `✓ Forzada: ${IA_PROVEEDORES[forzada]?.nombre || forzada}${IA_PROVEEDORES[forzada]?.key() ? '' : ' — ¡esa no tiene key!'}`;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -3807,7 +3901,7 @@ async function generarMes(dias){
   const numSlides=parseInt(document.getElementById('cNumSlidesTop')?.value||document.getElementById('cNumSlides')?.value)||7;
   const cal=[['Dia idea','Formato','Pilar','Posicion feed','Hook','CTA','Busqueda visual','Carpeta']];
   let totalImgs=0;
-  const usarIA = !!getGroqKey();   // si hay key de Groq, cada día lleva copy único
+  const usarIA = hayIA();   // si hay alguna IA, cada día lleva copy único
 
   try{
     for(let d=0; d<dias; d++){
@@ -4282,14 +4376,19 @@ document.addEventListener('DOMContentLoaded',async()=>{
   // Sembrar keys desde config.local.js (fijas, no en el repo) si no hay guardadas
   if(window.RM_CONFIG){
     if(RM_CONFIG.groq_key && !localStorage.getItem('groq_key')) localStorage.setItem('groq_key', RM_CONFIG.groq_key);
+    if(RM_CONFIG.gemini_key && !localStorage.getItem('gemini_key')) localStorage.setItem('gemini_key', RM_CONFIG.gemini_key);
+    if(RM_CONFIG.openrouter_key && !localStorage.getItem('openrouter_key')) localStorage.setItem('openrouter_key', RM_CONFIG.openrouter_key);
     if(RM_CONFIG.pixabay_key && !localStorage.getItem('pixabay_key')) localStorage.setItem('pixabay_key', RM_CONFIG.pixabay_key);
     if(RM_CONFIG.jamendo_key && !localStorage.getItem('jamendo_key')) localStorage.setItem('jamendo_key', RM_CONFIG.jamendo_key);
   }
   const jk=document.getElementById('jamendoKey');
   if(jk){ jk.value=getJamendoKey(); guardarKeyJamendo(jk.value); }
-  // Restaurar key de Groq y reflejar estado
-  const gk=document.getElementById('groqKey');
-  if(gk){ gk.value = getGroqKey(); guardarKeyGroq(gk.value); }
+  // Restaurar keys de IA + qué IA usar, y reflejar el estado
+  const gk=document.getElementById('groqKey');       if(gk) gk.value = getGroqKey();
+  const gmk=document.getElementById('geminiKey');    if(gmk) gmk.value = getGeminiKey();
+  const ork=document.getElementById('openrouterKey');if(ork) ork.value = getOpenRouterKey();
+  const isel=document.getElementById('iaSel');       if(isel) isel.value = getIA();
+  estadoIA();
   const angulo=rnd(Object.keys(BANCO.angulos));
   const slides=buildCarrusel(angulo,null,7);
   slides.forEach(s=>SLIDES.push(s));
@@ -4803,7 +4902,7 @@ function cerrarReelModal(){
 async function generarGuionReel(){
   const prompt = (document.getElementById('reelPrompt')?.value||'').trim();
   if(!prompt){ reelSt('#ff9f43','Escribe primero el tema del reel.'); return null; }
-  if(!getGroqKey()){ reelSt('#ff9f43','Necesitas tu key de Groq (pestaña Generar).'); return null; }
+  if(!hayIA()){ reelSt('#ff9f43','Necesitas una key de IA (pestaña Generar).'); return null; }
   const btn = document.getElementById('reelGuionBtn');
   if(btn){ btn.disabled=true; btn.textContent='✨ Escribiendo…'; }
   reelSt('#38B6FF','La IA está escribiendo el guion…');
@@ -4832,34 +4931,12 @@ Devuelve SOLO JSON válido, sin markdown:
  "guion": "texto locutado de ${lo}-${hi} palabras",
  "keywords": ["3-4 búsquedas EN INGLÉS de vídeo de stock, 2-3 palabras cada una, coherentes con el tema y visualmente distintas entre sí"]
 }`;
-  // Groq (plan gratuito) devuelve 429 si le pides muchas seguidas: esperamos y reintentamos.
-  const pedir = async (extra, reintentos=2)=>{
-    for(let i=0; ; i++){
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
-        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
-        // Groq cuenta max_tokens contra su límite por minuto: pedir de más da 429.
-        // Una palabra en español ≈ 2 tokens; +400 para el resto del JSON.
-        body: JSON.stringify({ model:'llama-3.3-70b-versatile', temperature:0.8,
-          max_tokens: Math.min(2000, 400 + objetivo * 2),
-          response_format:{type:'json_object'}, messages:[{role:'user',content:contrato+(extra||'')}] })
-      });
-      if(res.status === 429){
-        // Groq dice en el cuerpo si es por minuto o por día, y cuánto esperar.
-        const msg = await res.text().catch(()=>'');
-        const porDia = /per day|TPD/i.test(msg);
-        const espera = (msg.match(/try again in ([^".]+)/i)||[])[1];
-        if(porDia) throw new Error(`Has agotado la cuota diaria gratuita de Groq${espera?`. Vuelve a intentarlo en ${espera.trim()}`:''}. Mientras, escribe tú el guion a mano.`);
-        if(i < reintentos){
-          reelSt('#ff9f43', `Groq va saturada. Reintento en ${6*(i+1)}s…`);
-          await new Promise(r=>setTimeout(r, 6000*(i+1)));
-          continue;
-        }
-        throw new Error(`Groq está saturada${espera?`, vuelve en ${espera.trim()}`:''}. Espera un poco y dale otra vez.`);
-      }
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      return JSON.parse(((await res.json()).choices?.[0]?.message?.content||'').replace(/```json|```/g,'').trim());
-    }
-  };
+  // La cascada (Groq → Gemini → OpenRouter) se encarga de saltar si falta cuota.
+  // max_tokens ajustado: una palabra en español ≈ 2 tokens, +400 para el JSON.
+  const pedir = (extra)=> iaJSON(contrato + (extra||''), {
+    maxTokens: Math.min(2000, 400 + objetivo * 2), temperature: 0.8,
+    onStatus: (m)=> reelSt('#ff9f43', m)
+  });
   try{
     let out = await pedir('');
     // La IA SIEMPRE se queda corta. Regenerar no sirve: hay que pasarle su propio
