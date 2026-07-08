@@ -1785,12 +1785,24 @@ function _sinCuota(nombre, detalle){
   e.sinCuota = true;
   return e;
 }
+// 500/502/503/504 = el servidor de esa IA está saturado o caído. No es culpa
+// nuestra: se reintenta y, si sigue, se pasa a la siguiente IA.
+function _saturada(nombre, codigo){
+  const e = new Error(codigo === 503
+    ? `${nombre} está saturada ahora mismo`
+    : `${nombre} tuvo un error temporal (HTTP ${codigo})`);
+  e.transitorio = true;
+  return e;
+}
+function _esTransitorio(codigo){ return codigo >= 500 && codigo <= 599; }
+
 async function _respOpenAI(res, nombre){
   if(res.status === 429){
     const t = await res.text().catch(()=> '');
     const espera = (t.match(/try again in ([^".]+)/i)||[])[1];
     throw _sinCuota(nombre, espera ? 'vuelve en '+espera.trim() : (/per day|TPD/i.test(t) ? 'cuota diaria' : ''));
   }
+  if(_esTransitorio(res.status)) throw _saturada(nombre, res.status);
   if(!res.ok) throw new Error(`${nombre}: HTTP ${res.status}`);
   const c = (await res.json()).choices?.[0]?.message?.content;
   if(!c) throw new Error(`${nombre} no devolvió texto`);
@@ -1832,6 +1844,10 @@ const IA_PROVEEDORES = {
           ultimo = _sinCuota('Gemini', /limit: 0/.test(t) ? `${modelo} sin tier gratuito` : '');
           continue;                                  // prueba el siguiente modelo
         }
+        if(_esTransitorio(res.status)){              // 503: modelo saturado
+          ultimo = _saturada('Gemini', res.status);
+          continue;                                  // prueba el otro modelo
+        }
         if(!res.ok) throw new Error('Gemini: HTTP '+res.status);
         const c = (await res.json()).candidates?.[0];
         if(c?.finishReason === 'MAX_TOKENS') throw new Error('Gemini: respuesta cortada (pide un guion más corto)');
@@ -1864,22 +1880,32 @@ async function iaTexto(prompt, opts={}){
   let ultimoError = null;
   for(let i=0; i<listas.length; i++){
     const p = IA_PROVEEDORES[listas[i]];
-    try{
-      if(opts.onStatus && i>0) opts.onStatus(`${ultimoError?.message||'Sin cuota'} → probando con ${p.nombre}…`);
-      const t = await p.llamar(prompt, o);
-      IA_ULTIMA = p.nombre;
-      return t;
-    }catch(e){
-      ultimoError = e;
-      if(!e.sinCuota) throw e;          // error real (key mala, red…): no seguir
-      console.warn(`[IA] ${p.nombre} sin cuota → siguiente`);
+    // Si está saturada (5xx) se reintenta una vez antes de cambiar de IA.
+    for(let intento = 0; intento < 2; intento++){
+      try{
+        if(opts.onStatus && (i > 0 || intento > 0)) opts.onStatus(`${ultimoError?.message || ''} → probando con ${p.nombre}…`);
+        const t = await p.llamar(prompt, o);
+        IA_ULTIMA = p.nombre;
+        return t;
+      }catch(e){
+        ultimoError = e;
+        // Error real (key mala, red, JSON roto…): no tiene sentido seguir probando
+        if(!e.sinCuota && !e.transitorio) throw e;
+        if(e.transitorio && intento === 0){
+          console.warn(`[IA] ${p.nombre} saturada → reintento`);
+          await new Promise(r=>setTimeout(r, 1500));
+          continue;                      // mismo proveedor, segunda oportunidad
+        }
+        console.warn(`[IA] ${p.nombre} ${e.sinCuota ? 'sin cuota' : 'saturada'} → siguiente IA`);
+        break;                           // pasar al siguiente proveedor
+      }
     }
   }
   const otras = IA_ORDEN.filter(id => !listas.includes(id)).map(id => IA_PROVEEDORES[id].nombre);
-  const consejo = otras.length
-    ? `Añade una key de ${otras[0]} (gratis) en la pestaña Generar`
-    : 'Prueba más tarde';
-  const e = new Error(`${ultimoError?.message || 'Sin cuota'}. ${consejo}, o escribe tú el texto.`);
+  const consejo = ultimoError?.transitorio
+    ? 'Vuelve a darle en unos segundos'
+    : (otras.length ? `Añade una key de ${otras[0]} (gratis) en la pestaña Generar` : 'Prueba más tarde');
+  const e = new Error(`${ultimoError?.message || 'Ninguna IA respondió'}. ${consejo}, o escribe tú el texto.`);
   e.sinCuota = true;
   throw e;
 }
