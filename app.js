@@ -4441,7 +4441,10 @@ async function precargarCarpeta(carpeta){
   return añadidas;
 }
 document.addEventListener('keydown',e=>{
-  if(document.getElementById('favModal')?.classList.contains('on')) return; // no navegar con el modal abierto
+  // No navegar entre slides si estás escribiendo o hay una ventana abierta
+  const t = e.target;
+  if(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on')) return;
   if(e.key==='ArrowRight'||e.key==='ArrowDown') nav(1);
   if(e.key==='ArrowLeft' ||e.key==='ArrowUp')   nav(-1);
 });
@@ -4622,6 +4625,20 @@ let _reelRec = null, _reelChunks = [];
 function reelSt(color, txt){
   const st = document.getElementById('reelGenStatus');
   if(st){ st.style.color = color; st.textContent = txt; }
+}
+
+// El formulario del reel vive en su propia ventana (saturaba el panel lateral)
+function abrirReelModal(){
+  document.getElementById('reelModal').classList.add('on');
+  const vs = document.getElementById('reelVozSel'); if(vs) vs.value = getVozReel();
+  cambiarModoVoz();
+  setTimeout(()=>document.getElementById('reelPrompt')?.focus(), 100);
+}
+function cerrarReelModal(){
+  // No cerrar sin querer mientras se graba o se monta el reel
+  if(_reelRec && _reelRec.state === 'recording'){ toast2('Para la grabación antes de cerrar'); return; }
+  if(document.getElementById('reelGenBtn')?.disabled){ toast2('El reel se está montando…'); return; }
+  document.getElementById('reelModal').classList.remove('on');
 }
 
 /* ── 1) La IA escribe el guion y elige los vídeos de fondo ───────────── */
