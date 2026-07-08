@@ -1860,11 +1860,45 @@ const IA_PROVEEDORES = {
   },
   openrouter: {
     nombre:'OpenRouter', key:getOpenRouterKey,
-    llamar: async (prompt, o)=> _respOpenAI(await fetch('https://openrouter.ai/api/v1/chat/completions',{
-      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getOpenRouterKey()},
-      body: JSON.stringify({ model:'meta-llama/llama-3.3-70b-instruct:free', temperature:o.temperature,
-        max_tokens:o.maxTokens, response_format:{type:'json_object'}, messages:[{role:'user',content:prompt}] })
-    }), 'OpenRouter')
+    // Los modelos :free se saturan a menudo ("temporarily rate-limited upstream"),
+    // así que probamos varios en orden hasta que uno responda.
+    // OJO: nada de modelos de razonamiento (nemotron) — escriben su "pensamiento"
+    // en la respuesta y nunca llegan a emitir el JSON.
+    modelos: [
+      'meta-llama/llama-3.3-70b-instruct:free',
+      'openai/gpt-oss-120b:free',
+      'qwen/qwen3-next-80b-a3b-instruct:free',
+      'google/gemma-4-31b-it:free',
+      'meta-llama/llama-3.2-3b-instruct:free'
+    ],
+    llamar: async (prompt, o)=>{
+      let ultimo = null;
+      for(const modelo of IA_PROVEEDORES.openrouter.modelos){
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions',{
+          method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getOpenRouterKey()},
+          body: JSON.stringify({ model:modelo, temperature:o.temperature, max_tokens:o.maxTokens,
+            response_format:{type:'json_object'}, messages:[{role:'user',content:prompt}] })
+        });
+        if(res.status === 429){                    // ese modelo está saturado: prueba el siguiente
+          ultimo = _sinCuota('OpenRouter', modelo.split('/')[1]);
+          continue;
+        }
+        if(_esTransitorio(res.status)){
+          ultimo = _saturada('OpenRouter', res.status);
+          continue;
+        }
+        if(!res.ok) throw new Error(`OpenRouter: HTTP ${res.status}`);
+        const c = (await res.json()).choices?.[0]?.message?.content;
+        // Si el modelo se pone a "pensar" en vez de dar JSON, se prueba otro
+        if(!c || !c.includes('{')){
+          ultimo = _saturada('OpenRouter', 0);
+          ultimo.message = `OpenRouter: ${modelo.split('/')[1]} no devolvió JSON`;
+          continue;
+        }
+        return c;
+      }
+      throw ultimo || _sinCuota('OpenRouter');
+    }
   }
 };
 const IA_ORDEN = ['groq','gemini','openrouter'];
@@ -1901,18 +1935,31 @@ async function iaTexto(prompt, opts={}){
       }
     }
   }
-  const otras = IA_ORDEN.filter(id => !listas.includes(id)).map(id => IA_PROVEEDORES[id].nombre);
+  // Consejo útil según el caso: saturada / has forzado una / te falta otra key
+  const sinKey = IA_ORDEN.filter(id => !IA_PROVEEDORES[id].key()).map(id => IA_PROVEEDORES[id].nombre);
   const consejo = ultimoError?.transitorio
     ? 'Vuelve a darle en unos segundos'
-    : (otras.length ? `Añade una key de ${otras[0]} (gratis) en la pestaña Generar` : 'Prueba más tarde');
+    : (forzada !== 'auto'
+        ? 'Pon la IA en «Automática» (pestaña Generar) para que use otra'
+        : (sinKey.length ? `Añade una key de ${sinKey[0]} (gratis) en la pestaña Generar` : 'Prueba más tarde'));
   const e = new Error(`${ultimoError?.message || 'Ninguna IA respondió'}. ${consejo}, o escribe tú el texto.`);
   e.sinCuota = true;
   throw e;
 }
-// Igual pero devolviendo el JSON ya parseado
+// Igual pero devolviendo el JSON ya parseado.
+// Algunos modelos (los :free de OpenRouter) no respetan el "solo JSON" y
+// escriben algo antes o después. Rescatamos el objeto {...} del texto.
+function _extraerJSON(texto){
+  const t = String(texto||'').replace(/```json|```/g,'').trim();
+  try{ return JSON.parse(t); }catch(e){}
+  const ini = t.indexOf('{'), fin = t.lastIndexOf('}');
+  if(ini !== -1 && fin > ini){
+    try{ return JSON.parse(t.slice(ini, fin+1)); }catch(e){}
+  }
+  throw new Error('La IA no devolvió un JSON válido');
+}
 async function iaJSON(prompt, opts){
-  const t = await iaTexto(prompt, opts);
-  return JSON.parse(String(t).replace(/```json|```/g,'').trim());
+  return _extraerJSON(await iaTexto(prompt, opts));
 }
 
 // Motor: pide el diseño a la IA, sanea y descarga fotos. Devuelve {arr,out}.
