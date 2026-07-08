@@ -1086,9 +1086,23 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         <div class="pexels-bar">
           <input type="text" id="reelBgQ" placeholder="fondo en inglés: kitchen renovation…">
         </div>
-        <label style="font-size:8px;color:var(--UI-M);display:flex;align-items:center;gap:4px;cursor:pointer;margin-top:5px" title="Añade voz IA española gratis que narra el hook + subtítulo (necesita edge-tts en tu PC)">
-          <input type="checkbox" id="reelVoz" checked style="accent-color:var(--UI-A)">🔊 con voz IA (narrar hook + subtítulo)
+        <label style="font-size:8px;color:var(--UI-M);display:flex;align-items:center;gap:4px;cursor:pointer;margin-top:5px" title="Añade voz IA española gratis que narra el guion (necesita edge-tts en tu PC)">
+          <input type="checkbox" id="reelVoz" checked style="accent-color:var(--UI-A)">🔊 con voz IA
         </label>
+        <select id="reelVozSel" onchange="guardarVozReel(this.value)" title="Voz que narra el reel"
+          style="width:100%;margin-top:4px;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:5px;border-radius:4px;font-size:9px;font-family:'Montserrat',sans-serif;cursor:pointer">
+          <optgroup label="── España ──">
+            <option value="es-ES-ElviraNeural">Elvira — mujer (cálida)</option>
+            <option value="es-ES-XimenaNeural">Ximena — mujer (neutra)</option>
+            <option value="es-ES-AlvaroNeural">Álvaro — hombre</option>
+          </optgroup>
+          <optgroup label="── Latinoamérica ──">
+            <option value="es-MX-DaliaNeural">Dalia — México, mujer</option>
+            <option value="es-MX-JorgeNeural">Jorge — México, hombre</option>
+            <option value="es-AR-ElenaNeural">Elena — Argentina, mujer</option>
+            <option value="es-CO-SalomeNeural">Salomé — Colombia, mujer</option>
+          </optgroup>
+        </select>
         <button id="reelGenBtn" onclick="generarReelBackend()" style="width:100%;margin-top:6px;border:1px solid var(--UI-A);background:linear-gradient(90deg,rgba(56,182,255,.18),rgba(56,182,255,.06));color:var(--UI-A);padding:8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.03em">🎬 Generar y descargar reel</button>
         <div id="reelGenStatus" style="font-size:8px;margin-top:5px;line-height:1.5;color:var(--UI-M)">En modo <b style="color:var(--UI-A)">🎬 Reel</b> narra el <b>guion completo</b>; en post/carrusel, el hook + subtítulo. Requiere abrir con <b style="color:var(--UI-A)">iniciar.py</b>.</div>
       </div>
@@ -1519,6 +1533,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=35"></script>
+<script src="app.js?v=36"></script>
 </body>
 </html>

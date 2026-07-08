@@ -4264,6 +4264,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   actualizarAngulos();
   actualizarFeedLabel(); // Mostrar posición actual del feed
   setLogoTam(getLogoTam()); // Restaurar tamaño de logo guardado
+  const vs=document.getElementById('reelVozSel'); if(vs) vs.value=getVozReel();  // voz del reel guardada
   // Restaurar API key (guardada o por defecto)
   const ki=document.getElementById('pexelsKey');
   if(ki) ki.value = localStorage.getItem('pexels_key') || PEXELS_KEY_DEFAULT;
@@ -4592,6 +4593,14 @@ async function renderFavoritos(){
    El botón manda el guion a iniciar.py, que lo monta con reel_video.py
    (fondo Pexels + texto + voz IA gratis) y devuelve el MP4 para descargar.
    ═══════════════════════════════════════════ */
+// Voz del reel: se recuerda entre sesiones (como el resto de ajustes).
+const VOZ_REEL_DEF = 'es-ES-ElviraNeural';
+function getVozReel(){ return localStorage.getItem('rm_voz_reel') || VOZ_REEL_DEF; }
+function guardarVozReel(v){
+  localStorage.setItem('rm_voz_reel', v || VOZ_REEL_DEF);
+  toast2('✓ Voz del reel: ' + (document.getElementById('reelVozSel')?.selectedOptions[0]?.textContent || v));
+}
+
 // Deja el guion del reel listo para LOCUTAR: quita la cabecera, el caption y
 // las acotaciones ("Gancho (0-2s):", "Desarrollo:", comillas...) para que la
 // voz lea el texto natural y no los nombres de las secciones.
@@ -4628,7 +4637,7 @@ async function generarReelBackend(){
   if(btn){ btn.disabled=true; btn.style.opacity=.6; }
   try{
     const res = await fetch('/api/reel',{ method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ hook, sub, cta, buscar:kw, narrar, voz:'es-ES-ElviraNeural' }) });
+      body: JSON.stringify({ hook, sub, cta, buscar:kw, narrar, voz:getVozReel() }) });
     const ctype = res.headers.get('Content-Type')||'';
     if(!res.ok || ctype.includes('application/json')){
       let msg='no se pudo generar';
