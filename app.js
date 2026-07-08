@@ -3066,12 +3066,17 @@ async function buscarVideosPexels(page){
   if(page===1) grid.innerHTML='<div class="mlib-empty">🔍 Buscando vídeos...</div>';
   if(status){ status.style.color='var(--UI-M)'; status.textContent='Clic en un vídeo para descargarlo.'; }
 
-  const tarjeta = (poster, link, dur, fuente) =>
-    `<div class="mlib-item pexels-item" title="📹 ${dur||''}s · ${fuente} — clic para descargar"
-      onclick="descargarVideoPexels('${(link||'').replace(/'/g,'%27')}','${q.replace(/[^a-z0-9]/gi,'_')}',${dur||0})">
+  const tarjeta = (poster, link, dur, fuente) => {
+    const l = (link||'').replace(/'/g,'%27');
+    const p = (poster||'').replace(/'/g,'%27');
+    return `<div class="mlib-item pexels-item" title="📹 ${dur||''}s · ${fuente} — clic para añadirlo al reel"
+      onclick="anadirClipReel('${l}','${p}',${dur||0},'${fuente}')">
       <img src="${poster}" loading="lazy" alt="">
-      <div class="mlib-use">⬇ ${fuente} ${dur||''}s</div>
+      <button class="clip-dl" title="Descargar el mp4 a tu PC"
+        onclick="event.stopPropagation();descargarVideoPexels('${l}','${q.replace(/[^a-z0-9]/gi,'_')}',${dur||0})">⬇</button>
+      <div class="mlib-use">＋ Al reel</div>
     </div>`;
+  };
 
   try{
     const PER=16;
@@ -4621,6 +4626,65 @@ function limpiarGuionParaVoz(raw){
 let _reelIA = { hook:'', sub:'', cta:'', keywords:[] };
 let _reelAudio = null;            // data URL de tu voz grabada
 let _reelRec = null, _reelChunks = [];
+// Vídeos que TÚ eliges en "Vídeos para reels" (si hay, mandan sobre los de la IA)
+let _reelClips = [];              // [{url, poster, dur, fuente}]
+
+function anadirClipReel(url, poster, durOriginal, fuente){
+  if(!url){ toast2('Ese vídeo no tiene descarga directa'); return; }
+  if(_reelClips.some(c=>c.url===url)){ toast2('Ese clip ya está en el reel'); return; }
+  if(_reelClips.length>=6){ toast2('Máximo 6 clips'); return; }
+  const d = Math.min(Math.max(Math.round(durOriginal||5),1), 10) || 5;
+  _reelClips.push({ url, poster, dur:d, fuente:fuente||'Pexels' });
+  pintarClipsReel();
+  toast2(`✓ Clip añadido al reel (${_reelClips.length})`);
+}
+function quitarClipReel(i){ _reelClips.splice(i,1); pintarClipsReel(); }
+function vaciarClipsReel(){ _reelClips = []; pintarClipsReel(); }
+function setDurClip(i, v){
+  const n = Math.min(Math.max(parseFloat(v)||1, 0.5), 30);
+  if(_reelClips[i]) _reelClips[i].dur = n;
+  pintarClipsReel();
+}
+function moverClipReel(i, delta){
+  const j = i + delta;
+  if(j<0 || j>=_reelClips.length) return;
+  [_reelClips[i], _reelClips[j]] = [_reelClips[j], _reelClips[i]];
+  pintarClipsReel();
+}
+
+function pintarClipsReel(){
+  const n = _reelClips.length;
+  const cnt = document.getElementById('reelClipsN');
+  if(cnt) cnt.textContent = n ? `(${n})` : '';
+  const btnCnt = document.getElementById('reelClipsPanelN');
+  if(btnCnt) btnCnt.textContent = n ? `· ${n} clip${n===1?'':'s'}` : '';
+  const cont = document.getElementById('reelClipsList');
+  if(!cont) return;
+  if(!n){
+    cont.innerHTML = '<div style="font-size:10px;color:var(--UI-M);line-height:1.55;padding:8px 0">Ninguno elegido — <b style="color:var(--UI-A)">la IA buscará vídeos</b> según el tema.<br>Para elegirlos tú: panel <b>📷 Fotos/Vídeos</b> → <b>🎬 Vídeos para reels</b> → clic en los que quieras.</div>';
+    const t = document.getElementById('reelClipsTotal'); if(t) t.textContent='';
+    return;
+  }
+  cont.innerHTML = _reelClips.map((c,i)=>`
+    <div class="reel-clip">
+      <img src="${c.poster}" alt="">
+      <div class="reel-clip-mid">
+        <div class="reel-clip-tit">Clip ${i+1} · ${c.fuente}</div>
+        <label class="reel-clip-dur">
+          <input type="number" min="0.5" max="30" step="0.5" value="${c.dur}"
+                 onchange="setDurClip(${i}, this.value)"> s
+        </label>
+      </div>
+      <div class="reel-clip-acts">
+        <button onclick="moverClipReel(${i},-1)" title="Subir" ${i===0?'disabled':''}>▲</button>
+        <button onclick="moverClipReel(${i},1)" title="Bajar" ${i===n-1?'disabled':''}>▼</button>
+        <button onclick="quitarClipReel(${i})" title="Quitar">✕</button>
+      </div>
+    </div>`).join('');
+  const total = _reelClips.reduce((s,c)=>s+(+c.dur||0),0);
+  const t = document.getElementById('reelClipsTotal');
+  if(t) t.textContent = `Suma: ${total.toFixed(1)}s · con voz, el reel dura lo que la voz y estas duraciones se reparten en proporción.`;
+}
 
 function reelSt(color, txt){
   const st = document.getElementById('reelGenStatus');
@@ -4632,6 +4696,7 @@ function abrirReelModal(){
   document.getElementById('reelModal').classList.add('on');
   const vs = document.getElementById('reelVozSel'); if(vs) vs.value = getVozReel();
   cambiarModoVoz();
+  pintarClipsReel();
   setTimeout(()=>document.getElementById('reelPrompt')?.focus(), 100);
 }
 function cerrarReelModal(){
@@ -4761,7 +4826,10 @@ async function generarReelBackend(){
   const hook = _reelIA.hook || String(d.head||'').replace(/\n/g,' ').trim();
   const sub  = _reelIA.sub  || String(d.body||'').trim();
   const cta  = _reelIA.cta  || String(d.cta||'').replace(/\s*[→↓]\s*$/,'').trim();
-  const clips = _reelIA.keywords.length ? _reelIA.keywords : (prompt ? [prompt] : []);
+  // Si has elegido vídeos a mano, mandan ellos (con su duración). Si no, la IA.
+  const clips = _reelClips.length
+    ? _reelClips.map(c=>({ url:c.url, dur:Number(c.dur)||5 }))
+    : (_reelIA.keywords.length ? _reelIA.keywords : (prompt ? [prompt] : []));
 
   if(!hook && !guion){ reelSt('#ff9f43','Escribe un tema o genera un diseño primero.'); return; }
 

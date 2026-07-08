@@ -331,25 +331,61 @@ def _recortar(clip, d):
     return clip.subclipped(0, d) if hasattr(clip, "subclipped") else clip.subclip(0, d)
 
 
-def _fondo_desde_videos(rutas, dur):
-    """Monta varios clips seguidos (repartiendo la duración) para que el reel
-    no sea un único plano estático. Devuelve un clip de dur exactos o None."""
-    from moviepy import VideoFileClip, concatenate_videoclips
-    rutas = [r for r in (rutas or []) if r and os.path.exists(r)]
-    if not rutas:
+def descargar_video_url(url, dest_dir=None):
+    """Descarga un mp4 por su URL directa (los clips que eliges a mano).
+    Cachea por URL para no bajarlo dos veces. Devuelve la ruta o None."""
+    import hashlib, shutil
+    if not url:
         return None
-    trozo = dur / len(rutas)
+    dest_dir = dest_dir or DIR_ENTRADA
+    os.makedirs(dest_dir, exist_ok=True)
+    destino = os.path.join(dest_dir, "clip_" + hashlib.md5(url.encode()).hexdigest()[:12] + ".mp4")
+    if os.path.exists(destino) and os.path.getsize(destino) > 10000:
+        return destino
+    try:
+        print("    ↓ clip elegido:", url[:70], flush=True)
+        with _url_abrir(url, timeout=90) as r, open(destino, "wb") as f:
+            shutil.copyfileobj(r, f)
+    except Exception as e:
+        print("  (aviso) no pude descargar el clip:", e)
+        return None
+    return destino if os.path.getsize(destino) > 10000 else None
+
+
+def _fondo_desde_videos(rutas, dur, duraciones=None):
+    """Monta varios clips seguidos. `duraciones` son los segundos que TÚ has
+    puesto a cada clip: se usan como proporción para repartir la duración real
+    del reel (que la manda la voz). Sin duraciones, se reparte a partes iguales.
+    Devuelve un clip de `dur` exactos o None."""
+    from moviepy import VideoFileClip, concatenate_videoclips
+    pares = [(r, (duraciones[i] if duraciones and i < len(duraciones) else None))
+             for i, r in enumerate(rutas or []) if r and os.path.exists(r)]
+    if not pares:
+        return None
+
+    # Pesos: los que no traen duración toman la media de los que sí
+    pesos = [(p if (p and float(p) > 0) else None) for (_, p) in pares]
+    conocidos = [float(p) for p in pesos if p]
+    medio = (sum(conocidos) / len(conocidos)) if conocidos else 1.0
+    pesos = [float(p) if p else medio for p in pesos]
+    suma = sum(pesos) or 1.0
+    trozos = [p * dur / suma for p in pesos]
+
     partes = []
-    for r in rutas:
+    for (r, _), t in zip(pares, trozos):
+        if t <= 0.05:
+            continue
         c = _cover(VideoFileClip(r))
-        if c.duration < trozo:                      # si el clip es corto, se repite
-            c = concatenate_videoclips([c] * (int(trozo // c.duration) + 1))
-        partes.append(_recortar(c, trozo))
+        if c.duration < t:                          # si el clip es corto, se repite
+            c = concatenate_videoclips([c] * (int(t // c.duration) + 1))
+        partes.append(_recortar(c, t))
+    if not partes:
+        return None
     fondo = concatenate_videoclips(partes) if len(partes) > 1 else partes[0]
     return _recortar(fondo, dur)
 
 
-def crear_reel(video=None, videos=None, audio_voz=None, subtitulos=False,
+def crear_reel(video=None, videos=None, duraciones=None, audio_voz=None, subtitulos=False,
                color="dark", hook="", sub="", cta="",
                logo=None, musica=None, duracion=None, salida="reel.mp4",
                font=None, font_reg=None, narrar=None, voz="es-ES-ElviraNeural"):
@@ -382,8 +418,17 @@ def crear_reel(video=None, videos=None, audio_voz=None, subtitulos=False,
         except Exception:
             pass
 
+    # Sin voz y sin --duration: el reel dura lo que sumen tus clips
+    if not voz_path and not duracion and duraciones:
+        try:
+            suma = sum(float(d) for d in duraciones if d)
+            if suma > 0:
+                dur = max(3.0, min(90.0, suma))
+        except Exception:
+            pass
+
     # ── 1) Fondo: montaje de varios clips, un vídeo, o color de marca ────
-    fondo_mont = _fondo_desde_videos(videos, dur) if videos else None
+    fondo_mont = _fondo_desde_videos(videos, dur, duraciones) if videos else None
     if fondo_mont is not None:
         fondo = fondo_mont
     elif video and os.path.exists(video):

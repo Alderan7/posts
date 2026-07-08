@@ -97,16 +97,25 @@ def generar_reel_desde_data(data):
         except Exception as e:
             print("  [reel] no pude usar el audio grabado:", e, flush=True)
 
-    # Fondo: varias palabras -> montaje de varios clips de Pexels
-    palabras = [p for p in (data.get("clips") or []) if str(p).strip()]
-    videos = []
-    for p in palabras[:4]:
+    # Fondo. Cada "clip" puede ser:
+    #   - texto  -> palabra que busca la IA/tú en Pexels
+    #   - objeto -> {"url": mp4 elegido a mano, "dur": segundos}
+    videos, duraciones = [], []
+    for item in (data.get("clips") or [])[:6]:
         try:
-            v = RV.buscar_video_pexels(str(p).strip(), RV.pexels_key(data.get("pexels_key")))
+            if isinstance(item, dict):
+                v = RV.descargar_video_url(str(item.get("url") or "").strip())
+                d = item.get("dur")
+            else:
+                if not str(item).strip():
+                    continue
+                v = RV.buscar_video_pexels(str(item).strip(), RV.pexels_key(data.get("pexels_key")))
+                d = None
             if v:
                 videos.append(v)
+                duraciones.append(float(d) if d else None)
         except Exception as e:
-            print("  [reel] Pexels falló con '%s': %s" % (p, e), flush=True)
+            print("  [reel] clip falló (%s): %s" % (item, e), flush=True)
 
     video = None
     if not videos and buscar:
@@ -129,7 +138,9 @@ def generar_reel_desde_data(data):
         dur = None
 
     nombre = "reel_%d.mp4" % int(time.time())
-    return RV.crear_reel(video=video, videos=(videos or None), audio_voz=audio_voz,
+    return RV.crear_reel(video=video, videos=(videos or None),
+                         duraciones=(duraciones if any(duraciones) else None),
+                         audio_voz=audio_voz,
                          subtitulos=subtitulos, color=color, hook=hook, sub=sub, cta=cta,
                          logo=logo, narrar=narrar, voz=voz, duracion=dur, salida=nombre)
 
