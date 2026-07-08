@@ -111,6 +111,12 @@ def main():
     Handler = http.server.SimpleHTTPRequestHandler
 
     class Silencioso(Handler):
+        # HTTP/1.1 con keep-alive: sin esto (HTTP/1.0) Chrome abre y cierra
+        # decenas de conexiones al cargar, y los ficheros grandes (app.js,
+        # datos-ideas.js, fotos de varios MB) se cortaban con
+        # ERR_CONNECTION_RESET -> la app arrancaba sin funcionar o sin fotos.
+        protocol_version = "HTTP/1.1"
+
         # Forzar tipos correctos aunque el registro de Windows diga otra cosa
         extensions_map = {
             **Handler.extensions_map,

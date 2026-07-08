@@ -985,7 +985,12 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
   <div class="resm-box">
     <div class="resm-head">
       <span>🖼 Fotos precargadas — clic en una para usarla</span>
-      <button onclick="cerrarFotosPrecargadas()" class="resm-close">✕</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="preStatus" style="font-size:9px;font-weight:400;color:var(--UI-M)"></span>
+        <button id="preRefreshBtn" onclick="refrescarPrecargadas()" title="Volver a leer la carpeta FOTOS PROFESIONALES"
+          style="border:1px solid var(--UI-B2);background:var(--UI-B);color:var(--UI-T);border-radius:6px;height:30px;padding:0 10px;font-size:11px;cursor:pointer;font-family:'Montserrat',sans-serif">🔄 Actualizar</button>
+        <button onclick="cerrarFotosPrecargadas()" class="resm-close">✕</button>
+      </div>
     </div>
     <div class="resm-body">
       <div class="mlib-grid resm-grid" id="preGrid"></div>
@@ -1085,7 +1090,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <input type="checkbox" id="reelVoz" checked style="accent-color:var(--UI-A)">🔊 con voz IA (narrar hook + subtítulo)
         </label>
         <button id="reelGenBtn" onclick="generarReelBackend()" style="width:100%;margin-top:6px;border:1px solid var(--UI-A);background:linear-gradient(90deg,rgba(56,182,255,.18),rgba(56,182,255,.06));color:var(--UI-A);padding:8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.03em">🎬 Generar y descargar reel</button>
-        <div id="reelGenStatus" style="font-size:8px;margin-top:5px;line-height:1.5;color:var(--UI-M)">Usa el hook/subtítulo/CTA del slide actual. Requiere abrir la app con <b style="color:var(--UI-A)">iniciar.py</b>.</div>
+        <div id="reelGenStatus" style="font-size:8px;margin-top:5px;line-height:1.5;color:var(--UI-M)">En modo <b style="color:var(--UI-A)">🎬 Reel</b> narra el <b>guion completo</b>; en post/carrusel, el hook + subtítulo. Requiere abrir con <b style="color:var(--UI-A)">iniciar.py</b>.</div>
       </div>
 
       <!-- Buscar música libre de derechos (Jamendo, Creative Commons) -->
@@ -1514,6 +1519,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=32"></script>
+<script src="app.js?v=35"></script>
 </body>
 </html>

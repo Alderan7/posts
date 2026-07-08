@@ -489,9 +489,11 @@ function renderMediaGrid(){
 }
 
 /* Ventana grande (estilo Pexels) con las FOTOS PRECARGADAS del ordenador */
-function verFotosPrecargadas(){
+const CARPETA_PRE = 'FOTOS PROFESIONALES';
+
+function pintarPrecargadas(){
   const grid = document.getElementById('preGrid');
-  if(!grid) return;
+  if(!grid) return 0;
   const fotos = MEDIA.filter(m=>m.pre && esFotoContenido(m.name));
   grid.innerHTML = fotos.length
     ? fotos.map(m=>`
@@ -500,8 +502,41 @@ function verFotosPrecargadas(){
         <img src="${m.url}" alt="">
         <div class="mlib-use">✓ Usar</div>
       </div>`).join('')
-    : '<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:34px">No hay fotos precargadas.<br>Coloca tus fotos en la carpeta <b>FOTOS PROFESIONALES</b> y abre con iniciar.py.</div>';
+    : `<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:34px">No hay fotos precargadas.<br>Coloca tus fotos en la carpeta <b>${CARPETA_PRE}</b> y abre con iniciar.py.</div>`;
+  return fotos.length;
+}
+
+// Re-escanea la carpeta: así, si acabas de meter una foto nueva, aparece.
+// precargarCarpeta ya se salta las que ya están cargadas (solo baja las nuevas).
+async function refrescarPrecargadas(){
+  const st = document.getElementById('preStatus');
+  const btn = document.getElementById('preRefreshBtn');
+  const antes = MEDIA.filter(m=>m.pre).length;
+  if(st){ st.style.color='var(--UI-A)'; st.textContent='Buscando fotos nuevas en la carpeta…'; }
+  if(btn){ btn.disabled=true; btn.style.opacity=.6; }
+  try{
+    await precargarCarpeta(CARPETA_PRE);
+  }catch(e){
+    if(st){ st.style.color='#ff6b6b'; st.textContent='No pude leer la carpeta (¿abriste con iniciar.py?)'; }
+    if(btn){ btn.disabled=false; btn.style.opacity=1; }
+    return;
+  }
+  const nuevas = MEDIA.filter(m=>m.pre).length - antes;
+  const total = pintarPrecargadas();
+  const cnt = document.getElementById('prePreloadCount');
+  if(cnt) cnt.textContent = total ? `(${total})` : '';
+  if(st){
+    st.style.color = nuevas>0 ? 'var(--UI-A)' : 'var(--UI-M)';
+    st.textContent = nuevas>0 ? `✓ ${nuevas} foto${nuevas===1?'':'s'} nueva${nuevas===1?'':'s'} añadida${nuevas===1?'':'s'}.`
+                              : 'Al día — no hay fotos nuevas en la carpeta.';
+  }
+  if(btn){ btn.disabled=false; btn.style.opacity=1; }
+}
+
+async function verFotosPrecargadas(){
   document.getElementById('preModal').classList.add('on');
+  pintarPrecargadas();          // pinta al instante lo que ya hay
+  await refrescarPrecargadas(); // y busca las nuevas de la carpeta
 }
 function cerrarFotosPrecargadas(){ document.getElementById('preModal').classList.remove('on'); }
 
@@ -4380,18 +4415,29 @@ async function precargarCarpeta(carpeta){
   const setProg = ()=>{ if(load){ load.style.display='block'; load.textContent = `Cargando fotos… ${hechas}/${total}`; } };
   setProg();
 
-  // Descarga + filtrado en paralelo; render incremental.
-  await Promise.all(items.map(async ({href, nombre})=>{
-    const url = await fetchDataURL(carpeta + '/' + href);
+  // Descarga con CONCURRENCIA LIMITADA (antes iban TODAS a la vez y, con
+  // fotos de varios MB, algunas descargas se caían y faltaban fotos).
+  // Pool de 4 + un reintento por foto. Render incremental.
+  const bajarUna = async ({href, nombre})=>{
+    // Las fotos grandes (varios MB) a veces se resetean: reintentar con pausa.
+    let url = null;
+    for(let intento=0; intento<3 && !url; intento++){
+      if(intento) await delay(350*intento);
+      url = await fetchDataURL(carpeta + '/' + href);
+    }
     if(url){
       // Fotos: siempre. Logos: solo si tienen fondo transparente.
       const ok = !pareceLogo(nombre) || await tieneTransparencia(url);
       if(ok){ pushMedia(url, nombre, true); añadidas++; renderMediaGrid(); }
     }
     hechas++; setProg();
-  }));
+  };
+  const cola = items.slice();
+  const trabajador = async ()=>{ let it; while((it = cola.shift())) await bajarUna(it); };
+  await Promise.all(Array.from({length: Math.min(4, items.length)}, trabajador));
 
   if(load){ load.textContent = `${añadidas} fotos cargadas`; setTimeout(()=>{ load.style.display='none'; }, 2500); }
+  return añadidas;
 }
 document.addEventListener('keydown',e=>{
   if(document.getElementById('favModal')?.classList.contains('on')) return; // no navegar con el modal abierto
@@ -4546,6 +4592,19 @@ async function renderFavoritos(){
    El botón manda el guion a iniciar.py, que lo monta con reel_video.py
    (fondo Pexels + texto + voz IA gratis) y devuelve el MP4 para descargar.
    ═══════════════════════════════════════════ */
+// Deja el guion del reel listo para LOCUTAR: quita la cabecera, el caption y
+// las acotaciones ("Gancho (0-2s):", "Desarrollo:", comillas...) para que la
+// voz lea el texto natural y no los nombres de las secciones.
+function limpiarGuionParaVoz(raw){
+  let g = String(raw||'');
+  g = g.split('— CAPTION —')[0];                                   // fuera caption + hashtags
+  g = g.replace(/🎬\s*GUION[^\n]*/i, '');                          // fuera cabecera
+  g = g.replace(/\(\s*\d+\s*[-–a]\s*\d+\s*s\.?\s*\)/gi, '');       // fuera "(0-2s)" / "(3-15 s)"
+  g = g.replace(/\b(gancho|hook|desarrollo|cierre|intro|introducci[oó]n|cta|llamada a la acci[oó]n)\b\s*:/gi, '');
+  g = g.replace(/[""«»"]/g, '');                                    // fuera comillas
+  return g.replace(/\s+/g, ' ').trim();
+}
+
 async function generarReelBackend(){
   if(!SLIDES.length){ toast2('Genera algo primero'); return; }
   const d = SLIDES[0] || {};
@@ -4557,8 +4616,12 @@ async function generarReelBackend(){
   const kw   = (document.getElementById('reelBgQ')?.value||'').trim();
   let narrar = null;
   if(document.getElementById('reelVoz')?.checked){
-    let g = (typeof ULTIMO_GUION==='string' && ULTIMO_GUION) ? ULTIMO_GUION.split('— CAPTION —')[0].replace(/🎬\s*GUION/i,'') : '';
-    narrar = g.replace(/\s+/g,' ').trim() || [hook, sub].filter(Boolean).join('. ');
+    // En modo 🎬 Reel se narra el GUION COMPLETO (vídeo más largo y contado).
+    // En post/carrusel, solo el hook + subtítulo.
+    if(modo==='reel' && typeof ULTIMO_GUION==='string' && ULTIMO_GUION.trim()){
+      narrar = limpiarGuionParaVoz(ULTIMO_GUION);
+    }
+    if(!narrar) narrar = [hook, sub].filter(Boolean).join('. ');
   }
   const setSt=(c,t)=>{ if(st){ st.style.color=c; st.textContent=t; } };
   setSt('#38B6FF','Generando el reel… puede tardar ~1 min. No cierres la ventana.');
