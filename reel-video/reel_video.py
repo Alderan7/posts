@@ -413,7 +413,8 @@ def crear_reel(video=None, videos=None, duraciones=None, audio_voz=None, subtitu
     if voz_path:
         try:
             _va = AudioFileClip(voz_path)
-            dur = max(3.0, min(90.0, _va.duration + 0.6))        # cola de 0.6s
+            # tope 180s = máximo de un reel de Instagram (guiones largos caben)
+            dur = max(3.0, min(180.0, _va.duration + 0.6))       # cola de 0.6s
             _va.close()
         except Exception:
             pass
@@ -423,7 +424,7 @@ def crear_reel(video=None, videos=None, duraciones=None, audio_voz=None, subtitu
         try:
             suma = sum(float(d) for d in duraciones if d)
             if suma > 0:
-                dur = max(3.0, min(90.0, suma))
+                dur = max(3.0, min(180.0, suma))
         except Exception:
             pass
 

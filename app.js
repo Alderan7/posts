@@ -4691,6 +4691,27 @@ function reelSt(color, txt){
   if(st){ st.style.color = color; st.textContent = txt; }
 }
 
+/* Longitud del guion (palabras) — se recuerda entre sesiones.
+   ~2.5 palabras/segundo es el ritmo de las voces en español. */
+const PALABRAS_REEL_DEF = 100;
+const PALABRAS_POR_SEG = 2.5;
+function getPalabrasReel(){ return parseInt(localStorage.getItem('rm_reel_palabras')) || PALABRAS_REEL_DEF; }
+function guardarPalabrasReel(v){ localStorage.setItem('rm_reel_palabras', String(parseInt(v)||PALABRAS_REEL_DEF)); }
+function nPalabras(t){ return (String(t||'').trim().match(/\S+/g)||[]).length; }
+function segundosATexto(s){
+  s = Math.round(s);
+  return s<60 ? `${s}s` : `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')} min`;
+}
+function contarPalabrasGuion(){
+  const el = document.getElementById('reelGuionN');
+  if(!el) return;
+  const n = nPalabras(document.getElementById('reelGuion')?.value);
+  if(!n){ el.textContent=''; return; }
+  const seg = n / PALABRAS_POR_SEG;
+  el.innerHTML = `${n} palabras · el reel durará ~<b style="color:var(--UI-T)">${segundosATexto(seg)}</b>`
+    + (seg > 178 ? ' <span style="color:#ff9f43">— se cortará a los 3 min (máximo de Instagram)</span>' : '');
+}
+
 /* Vista previa del reel dentro de la app: verlo antes de descargarlo */
 function mostrarPrevReel(archivo){
   const url = '/reel-video/salida/' + encodeURIComponent(archivo);
@@ -4720,8 +4741,10 @@ function ocultarPrevReel(){
 function abrirReelModal(){
   document.getElementById('reelModal').classList.add('on');
   const vs = document.getElementById('reelVozSel'); if(vs) vs.value = getVozReel();
+  const ps = document.getElementById('reelPalabras'); if(ps) ps.value = String(getPalabrasReel());
   cambiarModoVoz();
   pintarClipsReel();
+  contarPalabrasGuion();
   setTimeout(()=>document.getElementById('reelPrompt')?.focus(), 100);
 }
 function cerrarReelModal(){
@@ -4741,13 +4764,20 @@ async function generarGuionReel(){
   if(btn){ btn.disabled=true; btn.textContent='✨ Escribiendo…'; }
   reelSt('#38B6FF','La IA está escribiendo el guion…');
   const cfg = N();
+  const objetivo = getPalabrasReel();
+  const lo = Math.round(objetivo * 0.9), hi = Math.round(objetivo * 1.1);
+  const segs = segundosATexto(objetivo / PALABRAS_POR_SEG);
+  const estructura = objetivo <= 50
+    ? 'Una frase que enganche y el cierre con la llamada a la acción. Ve directa al grano.'
+    : objetivo <= 150
+      ? 'Una frase que enganche, 3 ideas concretas explicadas, y cierre con la llamada a la acción.'
+      : 'Una frase que enganche, luego varias ideas concretas (una por párrafo mental) bien desarrolladas con ejemplos, y cierre con la llamada a la acción. Al ser largo, aporta detalle real: nada de rellenar repitiendo.';
   const contrato = `Eres Rosa María, ${cfg.persona}. Tono: ${cfg.tono}. Escribes en 2ª persona (tú).
-Prepara un REEL de Instagram de unos 30 segundos sobre: "${prompt}".
+Prepara un REEL de Instagram de unos ${segs} sobre: "${prompt}".
 
 MUY IMPORTANTE sobre "guion": es el texto que se va a LOCUTAR en voz alta.
-Debe tener OBLIGATORIAMENTE entre 60 y 90 PALABRAS (cuéntalas). No lo resumas:
-desarrolla cada idea con una frase concreta y útil. Estructura: una frase que
-enganche, luego 3 ideas concretas explicadas, y cierre con la llamada a la acción.
+Debe tener OBLIGATORIAMENTE entre ${lo} y ${hi} PALABRAS (cuéntalas antes de responder).
+${estructura}
 Nada de acotaciones, ni "(0-2s)", ni las palabras "gancho" o "cierre".
 
 Devuelve SOLO JSON válido, sin markdown:
@@ -4755,24 +4785,54 @@ Devuelve SOLO JSON válido, sin markdown:
  "hook": "titular potente para la pantalla, máx 45 caracteres",
  "sub": "subtítulo corto, máx 70 caracteres",
  "cta": "llamada a la acción de 2-3 palabras (ej: Guarda esto)",
- "guion": "texto locutado de 60-90 palabras",
+ "guion": "texto locutado de ${lo}-${hi} palabras",
  "keywords": ["3-4 búsquedas EN INGLÉS de vídeo de stock, 2-3 palabras cada una, coherentes con el tema y visualmente distintas entre sí"]
 }`;
-  const pedir = async (extra)=>{
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
-      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
-      body: JSON.stringify({ model:'llama-3.3-70b-versatile', temperature:0.8, max_tokens:1200,
-        response_format:{type:'json_object'}, messages:[{role:'user',content:contrato+(extra||'')}] })
-    });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    return JSON.parse(((await res.json()).choices?.[0]?.message?.content||'').replace(/```json|```/g,'').trim());
+  // Groq (plan gratuito) devuelve 429 si le pides muchas seguidas: esperamos y reintentamos.
+  const pedir = async (extra, reintentos=2)=>{
+    for(let i=0; ; i++){
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
+        // Groq cuenta max_tokens contra su límite por minuto: pedir de más da 429.
+        // Una palabra en español ≈ 2 tokens; +400 para el resto del JSON.
+        body: JSON.stringify({ model:'llama-3.3-70b-versatile', temperature:0.8,
+          max_tokens: Math.min(2000, 400 + objetivo * 2),
+          response_format:{type:'json_object'}, messages:[{role:'user',content:contrato+(extra||'')}] })
+      });
+      if(res.status === 429){
+        // Groq dice en el cuerpo si es por minuto o por día, y cuánto esperar.
+        const msg = await res.text().catch(()=>'');
+        const porDia = /per day|TPD/i.test(msg);
+        const espera = (msg.match(/try again in ([^".]+)/i)||[])[1];
+        if(porDia) throw new Error(`Has agotado la cuota diaria gratuita de Groq${espera?`. Vuelve a intentarlo en ${espera.trim()}`:''}. Mientras, escribe tú el guion a mano.`);
+        if(i < reintentos){
+          reelSt('#ff9f43', `Groq va saturada. Reintento en ${6*(i+1)}s…`);
+          await new Promise(r=>setTimeout(r, 6000*(i+1)));
+          continue;
+        }
+        throw new Error(`Groq está saturada${espera?`, vuelve en ${espera.trim()}`:''}. Espera un poco y dale otra vez.`);
+      }
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      return JSON.parse(((await res.json()).choices?.[0]?.message?.content||'').replace(/```json|```/g,'').trim());
+    }
   };
-  const nPalabras = t => (String(t||'').trim().match(/\S+/g)||[]).length;
   try{
     let out = await pedir('');
-    // Si se queda corto (pasa a menudo), se le pide que lo desarrolle.
-    if(nPalabras(out.guion) < 45){
-      out = await pedir(`\n\nTu guion anterior tenía solo ${nPalabras(out.guion)} palabras: DEMASIADO CORTO. Reescríbelo desarrollando cada idea hasta llegar a 60-90 palabras.`);
+    // La IA SIEMPRE se queda corta. Regenerar no sirve: hay que pasarle su propio
+    // texto y pedirle que lo AMPLÍE, en bucle, hasta acercarse al objetivo.
+    const minimo = Math.max(Math.round(objetivo * 0.85), objetivo - 8);
+    for(let intento = 0; intento < 3 && nPalabras(out.guion) < minimo; intento++){
+      const actual = nPalabras(out.guion);
+      reelSt('#38B6FF', `Ampliando el guion (${actual}/${objetivo} palabras)…`);
+      const ampliado = await pedir(`
+
+Has escrito este guion de ${actual} palabras:
+"""${String(out.guion||'')}"""
+Es DEMASIADO CORTO: necesito entre ${lo} y ${hi} palabras. AMPLÍALO manteniendo el mismo mensaje y tono, añadiendo ejemplos y detalles concretos y útiles. No repitas ideas ni rellenes con paja.
+Devuelve el JSON completo (hook, sub, cta, keywords y el guion ampliado).`);
+      // Nos quedamos con la versión más larga (nunca empeoramos)
+      if(nPalabras(ampliado.guion) > nPalabras(out.guion)) out = ampliado;
+      else break;
     }
     _reelIA = {
       hook: String(out.hook||'').slice(0,60),
@@ -4783,7 +4843,12 @@ Devuelve SOLO JSON válido, sin markdown:
     const guion = limpiarGuionParaVoz(String(out.guion||''));
     const ta = document.getElementById('reelGuion');
     if(ta) ta.value = guion;
-    reelSt('#38B6FF', `✓ Guion listo (${nPalabras(guion)} palabras). Vídeos: ${_reelIA.keywords.join(', ')||'(genéricos)'}`);
+    contarPalabrasGuion();
+    const n = nPalabras(guion);
+    const corto = n < Math.round(objetivo * 0.85);
+    reelSt(corto ? '#ff9f43' : '#38B6FF',
+      corto ? `Guion de ${n} palabras (pedías ${objetivo}). La IA no dio más: alárgalo tú o baja la longitud.`
+            : `✓ Guion listo (${n} palabras). Vídeos: ${_reelIA.keywords.join(', ')||'(genéricos)'}`);
     return guion;
   }catch(e){
     reelSt('#ff6b6b','No se pudo escribir el guion: '+e.message);
