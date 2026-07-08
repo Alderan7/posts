@@ -202,18 +202,32 @@ def _wrap(txt, max_chars):
 
 
 def _texto(txt, font, fontsize, color, size=None, align="center", max_chars=18):
-    """Crea un TextClip con salto de línea MANUAL (fiable en 2.x).
-    Envuelve el texto a max_chars por línea y usa method='label'."""
-    from moviepy import TextClip
+    """Dibuja texto con PIL y lo devuelve como ImageClip.
+
+    Antes usaba TextClip(method='label'), que calculaba un lienzo demasiado
+    ajustado y RECORTABA los glifos (el handle @rosamariamedia salía cortado
+    por abajo). PIL + textbbox + margen garantiza que no se corte nada.
+    """
+    from moviepy import ImageClip
+    from PIL import Image, ImageDraw, ImageFont
+    import numpy as np
+
     wrapped = _wrap(txt, max_chars) if max_chars else txt
-    col = "rgb%s" % (tuple(color),)
     try:
-        return TextClip(text=wrapped, font=font, font_size=fontsize, color=col,
-                        method="label", text_align=align)
-    except TypeError:
-        # API MoviePy 1.x
-        return TextClip(wrapped, font=font, fontsize=fontsize, color=col,
-                        method="label", align=align)
+        f = ImageFont.truetype(font, fontsize)
+    except Exception:
+        f = ImageFont.load_default()
+
+    import math
+    pad = max(6, fontsize // 4)                       # margen anti-recorte
+    medidor = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+    x0, y0, x1, y1 = medidor.multiline_textbbox((0, 0), wrapped, font=f, align=align)
+    x0, y0 = math.floor(x0), math.floor(y0)
+    x1, y1 = math.ceil(x1), math.ceil(y1)
+    img = Image.new("RGBA", (x1 - x0 + pad * 2, y1 - y0 + pad * 2), (0, 0, 0, 0))
+    ImageDraw.Draw(img).multiline_text((pad - x0, pad - y0), wrapped, font=f,
+                                       fill=_rgba(color), align=align)
+    return ImageClip(np.array(img))
 
 
 # ── Voz IA GRATIS (Microsoft Edge TTS: voces neuronales, sin cuenta ni pagar) ──
