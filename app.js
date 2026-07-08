@@ -1808,17 +1808,38 @@ const IA_PROVEEDORES = {
   },
   gemini: {
     nombre:'Gemini', key:getGeminiKey,
+    // Ojo: no todos los modelos tienen tier gratuito (gemini-2.0-flash da
+    // "limit: 0"). Estos dos sí. Si el primero no está disponible, prueba el otro.
+    modelos: ['gemini-2.5-flash', 'gemini-2.5-flash-lite'],
     llamar: async (prompt, o)=>{
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(getGeminiKey())}`,{
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ contents:[{parts:[{text:prompt}]}],
-          generationConfig:{ temperature:o.temperature, maxOutputTokens:o.maxTokens, responseMimeType:'application/json' } })
-      });
-      if(res.status === 429) throw _sinCuota('Gemini');
-      if(!res.ok) throw new Error('Gemini: HTTP '+res.status);
-      const t = (await res.json()).candidates?.[0]?.content?.parts?.[0]?.text;
-      if(!t) throw new Error('Gemini no devolvió texto');
-      return t;
+      let ultimo = null;
+      for(const modelo of IA_PROVEEDORES.gemini.modelos){
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(getGeminiKey())}`,{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ contents:[{parts:[{text:prompt}]}],
+            generationConfig:{
+              temperature: o.temperature,
+              // Gemini 2.5 "piensa" y esos tokens se comen el máximo: sin esto,
+              // el JSON salía cortado (finishReason MAX_TOKENS). Y damos margen,
+              // porque Gemini no reserva el máximo contra su cuota (Groq sí).
+              thinkingConfig: { thinkingBudget: 0 },
+              maxOutputTokens: o.maxTokens + 512,
+              responseMimeType: 'application/json'
+            } })
+        });
+        if(res.status === 429){
+          const t = await res.text().catch(()=> '');
+          ultimo = _sinCuota('Gemini', /limit: 0/.test(t) ? `${modelo} sin tier gratuito` : '');
+          continue;                                  // prueba el siguiente modelo
+        }
+        if(!res.ok) throw new Error('Gemini: HTTP '+res.status);
+        const c = (await res.json()).candidates?.[0];
+        if(c?.finishReason === 'MAX_TOKENS') throw new Error('Gemini: respuesta cortada (pide un guion más corto)');
+        const t = c?.content?.parts?.[0]?.text;
+        if(!t) throw new Error('Gemini no devolvió texto');
+        return t;
+      }
+      throw ultimo || _sinCuota('Gemini');
     }
   },
   openrouter: {
