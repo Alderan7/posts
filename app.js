@@ -3066,11 +3066,14 @@ async function buscarVideosPexels(page){
   if(page===1) grid.innerHTML='<div class="mlib-empty">🔍 Buscando vídeos...</div>';
   if(status){ status.style.color='var(--UI-M)'; status.textContent='Clic en un vídeo para descargarlo.'; }
 
-  const tarjeta = (poster, link, dur, fuente) => {
+  // `prev` = archivo ligero para previsualizar al pasar el ratón (no el de 20MB)
+  const tarjeta = (poster, link, dur, fuente, prev) => {
     const l = (link||'').replace(/'/g,'%27');
     const p = (poster||'').replace(/'/g,'%27');
-    return `<div class="mlib-item pexels-item" title="📹 ${dur||''}s · ${fuente} — clic para añadirlo al reel"
-      onclick="anadirClipReel('${l}','${p}',${dur||0},'${fuente}')">
+    const pv = (prev||link||'').replace(/'/g,'%27');
+    return `<div class="mlib-item pexels-item" title="📹 ${dur||''}s · ${fuente} — pasa el ratón para verlo · clic para añadirlo al reel"
+      onclick="anadirClipReel('${l}','${p}',${dur||0},'${fuente}','${pv}')"
+      onmouseenter="previewClipOn(this,'${pv}')" onmouseleave="previewClipOff(this)">
       <img src="${poster}" loading="lazy" alt="">
       <button class="clip-dl" title="Descargar el mp4 a tu PC"
         onclick="event.stopPropagation();descargarVideoPexels('${l}','${q.replace(/[^a-z0-9]/gi,'_')}',${dur||0})">⬇</button>
@@ -3086,9 +3089,11 @@ async function buscarVideosPexels(page){
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
     let html = (data.videos||[]).map(v=>{
-      const f = (v.video_files||[]).filter(x=>x.height>=x.width).sort((a,b)=>b.height-a.height)
-                  .find(x=>x.height<=1920) || (v.video_files||[])[0] || {};
-      return tarjeta(v.image, f.link, v.duration, 'Pexels');
+      const verticales = (v.video_files||[]).filter(x=>x.height>=x.width).sort((a,b)=>b.height-a.height);
+      const f = verticales.find(x=>x.height<=1920) || (v.video_files||[])[0] || {};
+      // el más pequeño para la previsualización (evita bajar 20MB al pasar el ratón)
+      const p = verticales[verticales.length-1] || f;
+      return tarjeta(v.image, f.link, v.duration, 'Pexels', p.link);
     }).join('');
 
     // Segunda fuente: Pixabay (si hay key) — más variedad
@@ -3103,7 +3108,8 @@ async function buscarVideosPexels(page){
             const cand = [vs.large,vs.medium,vs.small,vs.tiny].filter(Boolean);
             const vert = cand.find(x=>x.height>=x.width) || cand[0] || {};
             const poster = vert.thumbnail || (vs.tiny&&vs.tiny.thumbnail) || '';
-            return tarjeta(poster, vert.url, h.duration, 'Pixabay');
+            const prev = (vs.tiny&&vs.tiny.url) || (vs.small&&vs.small.url) || vert.url;
+            return tarjeta(poster, vert.url, h.duration, 'Pixabay', prev);
           }).join('');
         }
       }catch(_){/* Pixabay opcional */}
@@ -4629,12 +4635,48 @@ let _reelRec = null, _reelChunks = [];
 // Vídeos que TÚ eliges en "Vídeos para reels" (si hay, mandan sobre los de la IA)
 let _reelClips = [];              // [{url, poster, dur, fuente}]
 
-function anadirClipReel(url, poster, durOriginal, fuente){
+/* Previsualizar un vídeo al pasar el ratón por su miniatura (usa el archivo
+   más ligero, no el de 20 MB; se carga solo al pasar por encima). */
+function previewClipOn(el, url){
+  if(!url || url==='undefined') return;
+  let v = el.querySelector('video.clip-prev');
+  if(!v){
+    v = document.createElement('video');
+    v.className = 'clip-prev';
+    v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'none';
+    el.appendChild(v);
+  }
+  if(!v.getAttribute('src')) v.src = url;
+  v.classList.add('on');
+  v.play().catch(()=>{});
+}
+function previewClipOff(el){
+  const v = el.querySelector('video.clip-prev');
+  if(v){ v.pause(); v.classList.remove('on'); }
+}
+
+/* En la lista de clips elegidos: clic en la miniatura = ver/parar el vídeo */
+function togglePrevClipElegido(i, el){
+  const c = _reelClips[i];
+  if(!c) return;
+  if(el.querySelector('video')){                       // ya se está viendo -> volver a la foto
+    el.innerHTML = `<img src="${c.poster}" alt=""><span class="reel-clip-play">▶</span>`;
+    return;
+  }
+  el.innerHTML = '';
+  const v = document.createElement('video');
+  v.muted = true; v.loop = true; v.playsInline = true;
+  v.src = c.prev || c.url;
+  el.appendChild(v);
+  v.play().catch(()=>{});                              // autoplay no siempre arranca solo
+}
+
+function anadirClipReel(url, poster, durOriginal, fuente, prev){
   if(!url){ toast2('Ese vídeo no tiene descarga directa'); return; }
   if(_reelClips.some(c=>c.url===url)){ toast2('Ese clip ya está en el reel'); return; }
   if(_reelClips.length>=6){ toast2('Máximo 6 clips'); return; }
   const d = Math.min(Math.max(Math.round(durOriginal||5),1), 10) || 5;
-  _reelClips.push({ url, poster, dur:d, fuente:fuente||'Pexels' });
+  _reelClips.push({ url, poster, dur:d, fuente:fuente||'Pexels', prev: prev||url });
   pintarClipsReel();
   toast2(`✓ Clip añadido al reel (${_reelClips.length})`);
 }
@@ -4667,7 +4709,9 @@ function pintarClipsReel(){
   }
   cont.innerHTML = _reelClips.map((c,i)=>`
     <div class="reel-clip">
-      <img src="${c.poster}" alt="">
+      <div class="reel-clip-thumb" title="Clic para ver el vídeo" onclick="togglePrevClipElegido(${i}, this)">
+        <img src="${c.poster}" alt=""><span class="reel-clip-play">▶</span>
+      </div>
       <div class="reel-clip-mid">
         <div class="reel-clip-tit">Clip ${i+1} · ${c.fuente}</div>
         <label class="reel-clip-dur">
