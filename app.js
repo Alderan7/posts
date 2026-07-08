@@ -4898,6 +4898,7 @@ function pintarClipsReel(){
   if(!n){
     cont.innerHTML = '<div style="font-size:10px;color:var(--UI-M);line-height:1.55;padding:8px 0">Ninguno elegido — <b style="color:var(--UI-A)">la IA buscará vídeos</b> según el tema.<br>Para elegirlos tú: panel <b>📷 Fotos/Vídeos</b> → <b>🎬 Vídeos para reels</b> → clic en los que quieras.</div>';
     const t = document.getElementById('reelClipsTotal'); if(t) t.textContent='';
+    if(typeof pintarTimeline === 'function') pintarTimeline();   // ocultar la línea de tiempo
     return;
   }
   cont.innerHTML = _reelClips.map((c,i)=>`
@@ -4921,6 +4922,7 @@ function pintarClipsReel(){
   const total = _reelClips.reduce((s,c)=>s+(+c.dur||0),0);
   const t = document.getElementById('reelClipsTotal');
   if(t) t.textContent = `Suma: ${total.toFixed(1)}s · con voz, el reel dura lo que la voz y estas duraciones se reparten en proporción.`;
+  if(typeof pintarTimeline === 'function') pintarTimeline();
 }
 
 function reelSt(color, txt){
@@ -4947,6 +4949,179 @@ function contarPalabrasGuion(){
   const seg = n / PALABRAS_POR_SEG;
   el.innerHTML = `${n} palabras · el reel durará ~<b style="color:var(--UI-T)">${segundosATexto(seg)}</b>`
     + (seg > 178 ? ' <span style="color:#ff9f43">— se cortará a los 3 min (máximo de Instagram)</span>' : '');
+}
+
+/* ═══════════════════════════════════════════
+   LÍNEA DE TIEMPO: reproduce el montaje de tus clips (con sus duraciones)
+   y te deja grabar la voz encima, viendo lo que vas a publicar.
+   El vídeo va SIN sonido a propósito, para que el micro no lo capte.
+   ═══════════════════════════════════════════ */
+let _tl = { playing:false, raf:null, timer:null, rec:null, chunks:[], grabando:false,
+            base:0, segT0:0 };   // base = segundos ya consumidos; segT0 = inicio real del clip
+
+function tlDur(){ return _reelClips.reduce((s,c)=>s + (+c.dur||0), 0); }
+function tlEstado(txt, color){
+  const el = document.getElementById('tlEstado');
+  if(el){ el.textContent = txt; el.style.color = color || 'var(--UI-M)'; }
+}
+function tlSetTiempo(t){
+  const total = tlDur() || 1;
+  const ph = document.getElementById('tlPlayhead');
+  if(ph) ph.style.left = Math.min(100, (t / total) * 100) + '%';
+  const lbl = document.getElementById('tlTime');
+  if(lbl) lbl.textContent = `${t.toFixed(1)}s / ${total.toFixed(1)}s`;
+}
+function pintarTimeline(){
+  const wrap = document.getElementById('reelTl');
+  if(!wrap) return;
+  if(!_reelClips.length){ tlReset(); wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  const total = tlDur() || 1;
+  const segs = document.getElementById('tlSegs');
+  if(segs) segs.innerHTML = _reelClips.map((c,i)=>
+    `<div class="tl-seg" style="width:${(c.dur/total*100).toFixed(2)}%" title="Clip ${i+1} · ${c.dur}s"><span>${i+1}</span></div>`
+  ).join('');
+  tlSetTiempo(0);
+}
+
+// Para la reproducción SIN tocar la grabación
+function tlReset(){
+  _tl.playing = false;
+  clearTimeout(_tl.timer);
+  if(_tl.raf) cancelAnimationFrame(_tl.raf);
+  const v = document.getElementById('tlVid');
+  if(v) v.pause();
+  const b = document.getElementById('tlPlayBtn');
+  if(b) b.textContent = '▶ Reproducir';
+}
+
+// Espera a que el vídeo esté REPRODUCIENDO de verdad (los clips tardan en
+// bufferear). Sin esto, el reloj corría antes que la imagen y la voz grabada
+// quedaba desfasada respecto al montaje.
+function _esperarReproduciendo(v){
+  return new Promise(res=>{
+    if(!v.paused && v.readyState >= 3) return res();
+    let hecho = false;
+    const ok = ()=>{ if(hecho) return; hecho = true; v.removeEventListener('playing', ok); res(); };
+    v.addEventListener('playing', ok);
+    setTimeout(ok, 4000);                    // por si nunca dispara, no bloquear
+  });
+}
+
+async function _tlClip(v, c, alEmpezar){
+  v.src = c.prev || c.url;
+  v.loop = true; v.muted = true;
+  try{ await v.play(); }catch(e){}
+  await _esperarReproduciendo(v);
+  if(!_tl.playing) return;
+  _tl.segT0 = performance.now();             // el clip empieza AHORA
+  if(typeof alEmpezar === 'function') alEmpezar();
+  return new Promise(res=>{
+    _tl.timer = setTimeout(res, Math.max(200, (+c.dur||1) * 1000));
+  });
+}
+
+// onArranque: se llama justo cuando el primer clip empieza a verse
+async function tlPlay(onArranque){
+  if(!_reelClips.length){ tlEstado('Elige vídeos primero (panel Fotos/Vídeos).', '#ff9f43'); return; }
+  if(_tl.playing){ tlStop(); return; }
+  tlReset();
+  const v = document.getElementById('tlVid');
+  const total = tlDur();
+  _tl.playing = true;
+  _tl.base = 0; _tl.segT0 = performance.now();
+  document.getElementById('tlPlayBtn').textContent = '⏸ Parar';
+  tlSetTiempo(0);
+
+  // El reloj se calcula: clips ya consumidos + tiempo real del clip en curso
+  const tick = ()=>{
+    if(!_tl.playing) return;
+    const t = _tl.base + (performance.now() - _tl.segT0) / 1000;
+    tlSetTiempo(Math.min(t, total));
+    _tl.raf = requestAnimationFrame(tick);
+  };
+
+  for(let i = 0; i < _reelClips.length; i++){
+    if(!_tl.playing) return;                 // te has parado a mitad
+    // En el primer clip: cuando la imagen arranca de verdad, arranca el micro
+    // y el reloj. Así la voz queda sincronizada con el montaje.
+    await _tlClip(v, _reelClips[i], i === 0 ? ()=>{
+      if(typeof onArranque === 'function') onArranque();
+      _tl.raf = requestAnimationFrame(tick);
+    } : null);
+    if(!_tl.playing) return;
+    _tl.base += (+_reelClips[i].dur || 0);
+  }
+  if(_tl.playing) tlFin();
+}
+
+function tlFin(){
+  tlReset();
+  tlSetTiempo(tlDur());
+  if(_tl.grabando) _tlPararGrabacion();      // el vídeo acabó → corta la grabación
+}
+
+function tlStop(){
+  tlReset();
+  if(_tl.grabando) _tlPararGrabacion();
+}
+
+function _tlPararGrabacion(){
+  try{
+    if(_tl.rec && _tl.rec.state === 'recording'){ _tl.rec.stop(); return; }
+  }catch(e){}
+  // Paraste antes de que el vídeo arrancara: el micro ni llegó a grabar.
+  if(_tl.stream){ _tl.stream.getTracks().forEach(t=>t.stop()); _tl.stream = null; }
+  _tl.grabando = false;
+  const btn = document.getElementById('tlRecBtn');
+  if(btn){ btn.textContent = '🔴 Grabar mi voz'; btn.classList.remove('grabando'); }
+  tlEstado('Grabación cancelada.', 'var(--UI-M)');
+}
+
+async function tlGrabar(){
+  if(_tl.grabando){ tlStop(); return; }
+  if(!_reelClips.length){ tlEstado('Elige vídeos primero (panel Fotos/Vídeos).', '#ff9f43'); return; }
+  if(!navigator.mediaDevices?.getUserMedia){ tlEstado('Tu navegador no permite grabar.', '#ff6b6b'); return; }
+
+  let stream;
+  try{ stream = await navigator.mediaDevices.getUserMedia({audio:true}); }
+  catch(e){ tlEstado('No diste permiso al micrófono.', '#ff6b6b'); return; }
+
+  const btn = document.getElementById('tlRecBtn');
+  _tl.chunks = [];
+  _tl.stream = stream;
+  _tl.rec = new MediaRecorder(stream);
+  _tl.grabando = true;
+  _tl.rec.ondataavailable = e => { if(e.data.size) _tl.chunks.push(e.data); };
+  _tl.rec.onstop = async ()=>{
+    stream.getTracks().forEach(t => t.stop());
+    _tl.stream = null;
+    _tl.grabando = false;
+    if(btn){ btn.textContent = '🔴 Grabar mi voz'; btn.classList.remove('grabando'); }
+    const blob = new Blob(_tl.chunks, { type: _tl.rec.mimeType || 'audio/webm' });
+    if(!blob.size){ tlEstado('No se grabó nada.', '#ff6b6b'); return; }
+    _reelAudio = await blobADataURL(blob);
+
+    const a = document.getElementById('tlPrev');
+    if(a){ a.src = URL.createObjectURL(blob); a.hidden = false; }
+    // Usar tu voz automáticamente y reflejarlo en el otro grabador
+    const modo = document.getElementById('reelVozModo');
+    if(modo){ modo.value = 'mia'; cambiarModoVoz(); }
+    const est = document.getElementById('reelGrabEstado');
+    if(est){ est.style.color = 'var(--UI-A)'; est.textContent = '✓ Grabado desde la línea de tiempo.'; }
+    const prev2 = document.getElementById('reelGrabPrev');
+    if(prev2){ prev2.src = a ? a.src : ''; prev2.style.display = ''; }
+    tlEstado(`✓ Grabado (${Math.round(blob.size/1024)} KB). Se usará tu voz en el reel.`, 'var(--UI-A)');
+  };
+
+  if(btn){ btn.textContent = '⏹ Parar grabación'; btn.classList.add('grabando'); }
+  tlEstado('Cargando el vídeo…', 'var(--UI-A)');
+  // El micro NO arranca aquí: arranca cuando la imagen empieza a verse,
+  // para que tu voz cuadre con el montaje.
+  tlPlay(()=>{
+    _tl.rec.start();
+    tlEstado('● Grabando… lee el guion mientras miras el vídeo.', '#ff6b6b');
+  });
 }
 
 /* Vista previa del reel dentro de la app: verlo antes de descargarlo */
@@ -4987,7 +5162,9 @@ function abrirReelModal(){
 function cerrarReelModal(){
   // No cerrar sin querer mientras se graba o se monta el reel
   if(_reelRec && _reelRec.state === 'recording'){ toast2('Para la grabación antes de cerrar'); return; }
+  if(_tl.grabando){ toast2('Para la grabación antes de cerrar'); return; }
   if(document.getElementById('reelGenBtn')?.disabled){ toast2('El reel se está montando…'); return; }
+  tlStop();                                            // parar la línea de tiempo
   document.getElementById('reelPrevVid')?.pause();     // que no siga sonando de fondo
   document.getElementById('reelModal').classList.remove('on');
 }
