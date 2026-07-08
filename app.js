@@ -4691,6 +4691,31 @@ function reelSt(color, txt){
   if(st){ st.style.color = color; st.textContent = txt; }
 }
 
+/* Vista previa del reel dentro de la app: verlo antes de descargarlo */
+function mostrarPrevReel(archivo){
+  const url = '/reel-video/salida/' + encodeURIComponent(archivo);
+  const v = document.getElementById('reelPrevVid');
+  const a = document.getElementById('reelPrevDl');
+  const info = document.getElementById('reelPrevInfo');
+  if(!v || !a) return;
+  if(info) info.textContent = 'Cargando…';
+  v.onloadedmetadata = ()=>{
+    if(info) info.innerHTML = `Duración <b style="color:var(--UI-T)">${v.duration.toFixed(1)}s</b> · ${v.videoWidth}×${v.videoHeight} (9:16)<br>Listo para subir a Instagram.`;
+  };
+  v.onerror = ()=>{ if(info) info.textContent = 'No se pudo cargar la vista previa, pero el MP4 está generado: descárgalo.'; };
+  v.src = url;
+  a.href = url;
+  a.download = archivo;
+  document.getElementById('reelPrev').style.display = '';
+  setTimeout(()=>v.scrollIntoView({behavior:'smooth', block:'nearest'}), 80);
+}
+function ocultarPrevReel(){
+  const v = document.getElementById('reelPrevVid');
+  if(v){ v.pause(); v.removeAttribute('src'); v.load(); }
+  const p = document.getElementById('reelPrev');
+  if(p) p.style.display = 'none';
+}
+
 // El formulario del reel vive en su propia ventana (saturaba el panel lateral)
 function abrirReelModal(){
   document.getElementById('reelModal').classList.add('on');
@@ -4703,6 +4728,7 @@ function cerrarReelModal(){
   // No cerrar sin querer mientras se graba o se monta el reel
   if(_reelRec && _reelRec.state === 'recording'){ toast2('Para la grabación antes de cerrar'); return; }
   if(document.getElementById('reelGenBtn')?.disabled){ toast2('El reel se está montando…'); return; }
+  document.getElementById('reelPrevVid')?.pause();     // que no siga sonando de fondo
   document.getElementById('reelModal').classList.remove('on');
 }
 
@@ -4833,6 +4859,7 @@ async function generarReelBackend(){
 
   if(!hook && !guion){ reelSt('#ff9f43','Escribe un tema o genera un diseño primero.'); return; }
 
+  ocultarPrevReel();                 // fuera la vista previa anterior
   reelSt('#38B6FF','Enviando… la IA busca vídeos, narra y monta el reel.');
   if(btn){ btn.disabled=true; btn.style.opacity=.6; }
   try{
@@ -4864,13 +4891,10 @@ async function generarReelBackend(){
     }
     if(!info || info.estado !== 'listo') throw new Error(info?.error || 'se agotó el tiempo');
 
-    // 3) Descargar el MP4 ya generado
-    const a = document.createElement('a');
-    a.href = '/reel-video/salida/' + encodeURIComponent(info.archivo);
-    a.download = info.archivo;
-    document.body.appendChild(a); a.click(); a.remove();
-    reelSt('#38B6FF','✓ Reel descargado a tu PC.');
-    toast2('✓ Reel MP4 descargado');
+    // 3) Mostrarlo aquí mismo: primero lo ves, y lo descargas si te gusta
+    mostrarPrevReel(info.archivo);
+    reelSt('#38B6FF','✓ Reel listo — míralo abajo y descárgalo si te convence.');
+    toast2('✓ Reel listo');
   }catch(e){
     reelSt('#ff6b6b','No se pudo: '+e.message);
   }finally{

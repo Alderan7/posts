@@ -1100,11 +1100,27 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           </label>
           <div style="font-size:9px;color:var(--UI-M);margin-top:4px;line-height:1.5">La mayoría ve los reels sin sonido.</div>
 
-          <button id="reelGenBtn" onclick="generarReelBackend()" class="reel-btn-main">🎬 Generar y descargar reel</button>
+          <button id="reelGenBtn" onclick="generarReelBackend()" class="reel-btn-main">🎬 Generar reel</button>
           <div id="reelGenStatus" style="font-size:10px;margin-top:8px;line-height:1.55;color:var(--UI-M)">La IA busca vídeos de Pexels según el tema y monta el reel. Tarda 1-3 min.</div>
         </div>
 
       </div>
+
+      <!-- Vista previa: míralo antes de descargarlo -->
+      <div id="reelPrev" style="display:none;border-top:1px solid var(--UI-B);margin-top:20px;padding-top:16px">
+        <div class="reel-paso">Resultado — míralo antes de descargar</div>
+        <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+          <video id="reelPrevVid" controls playsinline preload="metadata"
+            style="width:210px;aspect-ratio:9/16;background:#000;border-radius:8px;border:1px solid var(--UI-B2);flex-shrink:0"></video>
+          <div style="flex:1;min-width:220px">
+            <div id="reelPrevInfo" style="font-size:11px;color:var(--UI-M);line-height:1.7">Cargando…</div>
+            <a id="reelPrevDl" class="reel-btn-main" style="display:block;text-align:center;text-decoration:none" download>⬇ Descargar el MP4</a>
+            <button class="reel-btn-sec" onclick="ocultarPrevReel()">Cerrar vista previa</button>
+            <div style="font-size:9px;color:var(--UI-M);margin-top:8px;line-height:1.5">Si no te convence, cambia el guion, los clips o la voz y vuelve a generar.</div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -1642,6 +1658,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=41"></script>
+<script src="app.js?v=42"></script>
 </body>
 </html>
