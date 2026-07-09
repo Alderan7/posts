@@ -43,6 +43,21 @@ def puerto_libre(inicio=8000, intentos=20):
     return inicio
 
 
+def instancia_ya_abierta(puerto=8000):
+    """¿Ya hay UNA instancia de ESTA app corriendo en este puerto?
+    Si abrimos una segunda instancia en OTRO puerto, el navegador la trata
+    como un sitio distinto: Diseños guardados, IA usadas, etc. de la carpeta
+    IndexedDB/localStorage de un puerto NO se ven en el otro -> "no se
+    guardan" (en realidad se guardaron, pero en el sitio anterior).
+    Por eso: si el 8000 ya sirve esta misma app, reutilizarlo siempre."""
+    import urllib.request
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{puerto}/{ARCHIVO}", timeout=1) as r:
+            return r.status == 200 and b"Rosa Mar" in r.read(2000)
+    except Exception:
+        return False
+
+
 # Trabajos de reel en curso (el montaje tarda minutos y va en segundo plano)
 REEL_JOBS = {}
 REEL_LOCK = threading.Lock()
@@ -80,6 +95,23 @@ def generar_reel_desde_data(data):
     buscar = (data.get("buscar") or "").strip()
     color = data.get("color") or "dark"
     subtitulos = bool(data.get("subtitulos"))
+    transicion = data.get("transicion") or "corte"
+    try:
+        sombra = max(0, min(100, int(data.get("sombra", 45))))
+    except Exception:
+        sombra = 45
+
+    # Música de fondo: SOLO el nombre del archivo (lo eliges en la app, ya
+    # colocado a mano en la carpeta MUSICA). Sin rutas ni "..": se busca tal
+    # cual dentro de esa carpeta, nunca fuera.
+    musica = None
+    nombre_musica = os.path.basename((data.get("musica") or "").strip())
+    if nombre_musica:
+        ruta_musica = os.path.join(base, "MUSICA", nombre_musica)
+        if os.path.exists(ruta_musica):
+            musica = ruta_musica
+        else:
+            print("  [reel] música no encontrada:", nombre_musica, flush=True)
 
     # TU voz grabada en el navegador (data URL base64 -> archivo)
     audio_voz = None
@@ -99,21 +131,24 @@ def generar_reel_desde_data(data):
 
     # Fondo. Cada "clip" puede ser:
     #   - texto  -> palabra que busca la IA/tú en Pexels
-    #   - objeto -> {"url": mp4 elegido a mano, "dur": segundos}
-    videos, duraciones = [], []
+    #   - objeto -> {"url": mp4 elegido a mano, "dur": segundos, "inicio": recorte por delante}
+    videos, duraciones, inicios = [], [], []
     for item in (data.get("clips") or [])[:6]:
         try:
             if isinstance(item, dict):
                 v = RV.descargar_video_url(str(item.get("url") or "").strip())
                 d = item.get("dur")
+                ini = item.get("inicio")
             else:
                 if not str(item).strip():
                     continue
                 v = RV.buscar_video_pexels(str(item).strip(), RV.pexels_key(data.get("pexels_key")))
                 d = None
+                ini = None
             if v:
                 videos.append(v)
                 duraciones.append(float(d) if d else None)
+                inicios.append(float(ini) if ini else 0.0)
         except Exception as e:
             print("  [reel] clip falló (%s): %s" % (item, e), flush=True)
 
@@ -140,7 +175,8 @@ def generar_reel_desde_data(data):
     nombre = "reel_%d.mp4" % int(time.time())
     return RV.crear_reel(video=video, videos=(videos or None),
                          duraciones=(duraciones if any(duraciones) else None),
-                         audio_voz=audio_voz,
+                         inicios=(inicios if any(inicios) else None), transicion=transicion,
+                         sombra=sombra, audio_voz=audio_voz, musica=musica,
                          subtitulos=subtitulos, color=color, hook=hook, sub=sub, cta=cta,
                          logo=logo, narrar=narrar, voz=voz, duracion=dur, salida=nombre)
 
@@ -154,6 +190,23 @@ def main():
         input("Pulsa Enter para cerrar...")
         return
 
+    # Si ya hay OTRA ventana de iniciar.py abierta (el 8000 sigue vivo), no
+    # arranques una segunda en otro puerto: eso deja tus Diseños guardados y
+    # tu progreso "atrapados" en el puerto anterior, como si no se hubieran
+    # guardado. Reutiliza siempre el 8000 cuando ya es esta misma app.
+    if instancia_ya_abierta(8000):
+        url = f"http://localhost:8000/{ARCHIVO}"
+        print("=" * 50)
+        print("  ROSA MARÍA STUDIO")
+        print("=" * 50)
+        print("  Ya había una ventana abierta de la app (puerto 8000).")
+        print(f"  Abriendo esa misma:  {url}")
+        print("  (Así no se te 'pierden' los Diseños guardados en otro puerto).")
+        print("  Puedes cerrar ESTA ventana: la otra sigue sirviendo la app.")
+        print("=" * 50)
+        webbrowser.open(url)
+        return
+
     puerto = puerto_libre(8000)
     url = f"http://localhost:{puerto}/{ARCHIVO}"
 
@@ -161,6 +214,10 @@ def main():
     print("  ROSA MARÍA STUDIO")
     print("=" * 50)
     print(f"  Abriendo:  {url}")
+    if puerto != 8000:
+        print(f"  ⚠ El puerto 8000 estaba ocupado por OTRA cosa (no esta app).")
+        print(f"    Usando el {puerto} en su lugar. Si tenías Diseños guardados")
+        print(f"    con la app en el 8000, aquí NO los verás (son sitios distintos).")
     print("  Para cerrar: cierra esta ventana.")
     print("=" * 50)
 

@@ -32,6 +32,7 @@ Salida en:  salida/
 """
 
 import os
+import re
 import sys
 import csv
 import argparse
@@ -181,8 +182,34 @@ def buscar_fuente(negrita=True):
     return None  # MoviePy usará su fuente por defecto
 
 
+def buscar_fuente_accent(negrita=False):
+    """Fuente de acento de marca — Playfair Display itálica, igual que en el
+    Studio web (handle, citas, detalles editoriales). Si falta, usa None y el
+    llamador cae a Montserrat."""
+    candidata = os.path.join(AQUI, "fonts",
+                              "PlayfairDisplay-BoldItalic.ttf" if negrita else "PlayfairDisplay-Italic.ttf")
+    return candidata if os.path.exists(candidata) else None
+
+
 def _rgba(color, a=255):
     return (color[0], color[1], color[2], a)
+
+
+def _caja_oscura_pil(img, sombra, pad_x=44, pad_y=30, radio=26):
+    """Compone `img` (RGBA) sobre una CAJA negra redondeada semitransparente,
+    para que el texto se lea sobre cualquier vídeo. `sombra` 0-100 = opacidad.
+    Con sombra<=0 devuelve la imagen tal cual."""
+    from PIL import Image, ImageDraw
+    if not sombra or sombra <= 0:
+        return img
+    if img.mode != "RGBA":
+        img = img.convert("RGBA")
+    a = int(min(0.82, sombra / 100.0) * 255)
+    w, h = img.width + pad_x * 2, img.height + pad_y * 2
+    base = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(base).rounded_rectangle([0, 0, w - 1, h - 1], radius=radio, fill=(0, 0, 0, a))
+    base.alpha_composite(img, (pad_x, pad_y))
+    return base
 
 
 def _wrap(txt, max_chars):
@@ -228,6 +255,66 @@ def _texto(txt, font, fontsize, color, size=None, align="center", max_chars=18):
     ImageDraw.Draw(img).multiline_text((pad - x0, pad - y0), wrapped, font=f,
                                        fill=_rgba(color), align=align)
     return ImageClip(np.array(img))
+
+
+def _normaliza_palabra(w):
+    return re.sub(r"[^\wáéíóúñü]", "", w.lower())
+
+
+def _texto_subs(txt, font, fontsize, highlight=None, max_chars=34, sombra=0):
+    """Dibuja UNA línea de subtítulo, palabra por palabra: cada palabra que
+    esté en `highlight` sale en azul de marca, el resto en crema — y todas
+    con un sombreado (stroke) oscuro detrás para que se lean sobre cualquier
+    vídeo de fondo. Devuelve un ImageClip centrado."""
+    from moviepy import ImageClip
+    from PIL import Image, ImageDraw, ImageFont
+    import numpy as np
+
+    highlight = highlight or set()
+    try:
+        f = ImageFont.truetype(font, fontsize)
+    except Exception:
+        f = ImageFont.load_default()
+
+    lineas = (_wrap(txt, max_chars) if max_chars else txt).split("\n")
+    medidor = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+    stroke = max(2, fontsize // 13)                    # grosor del sombreado
+    espacio = medidor.textlength(" ", font=f)
+    filas = []
+    for ln in lineas:
+        palabras = ln.split(" ")
+        anchos = [medidor.textlength(w, font=f) for w in palabras]
+        ancho_linea = sum(anchos) + espacio * (len(palabras) - 1)
+        filas.append((palabras, anchos, ancho_linea))
+    ancho_total = int(max((f[2] for f in filas), default=0)) + stroke * 2
+    alto_linea = int(fontsize * 1.3)
+    pad = stroke + 6
+    img = Image.new("RGBA", (ancho_total + pad * 2, alto_linea * len(filas) + pad * 2), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    y = pad
+    for palabras, anchos, ancho_linea in filas:
+        x = pad + (ancho_total - ancho_linea) / 2      # cada línea centrada
+        for w, aw in zip(palabras, anchos):
+            color = AZUL if _normaliza_palabra(w) in highlight else CREMA
+            d.text((x, y), w, font=f, fill=_rgba(color),
+                   stroke_width=stroke, stroke_fill=(0, 0, 0, 200))
+            x += aw + espacio
+        y += alto_linea
+    img = _caja_oscura_pil(img, sombra, pad_x=30, pad_y=16, radio=20)   # caja tras el subtítulo
+    return ImageClip(np.array(img))
+
+
+def _palabras_resaltadas(texto):
+    """Extrae del guion las palabras marcadas *así* (mismo convenio que usa
+    la IA en los slides) para pintarlas en azul en los subtítulos. Devuelve
+    (texto_limpio_sin_asteriscos, set_de_palabras_normalizadas)."""
+    if not texto or "*" not in texto:
+        return texto, set()
+    resaltar = set()
+    for grupo in re.findall(r"\*([^*]+)\*", texto):
+        for w in grupo.split():
+            resaltar.add(_normaliza_palabra(w))
+    return texto.replace("*", ""), resaltar
 
 
 # ── Voz IA GRATIS (Microsoft Edge TTS: voces neuronales, sin cuenta ni pagar) ──
@@ -331,6 +418,13 @@ def _recortar(clip, d):
     return clip.subclipped(0, d) if hasattr(clip, "subclipped") else clip.subclip(0, d)
 
 
+def _recortar_desde(clip, ini, d):
+    """Recorta `clip` desde el segundo `ini` (recorte por delante) hasta
+    cubrir `d` segundos (recorte por detrás: lo que sobra tras ini+d)."""
+    return (clip.subclipped(ini, ini + d) if hasattr(clip, "subclipped")
+            else clip.subclip(ini, ini + d))
+
+
 def descargar_video_url(url, dest_dir=None):
     """Descarga un mp4 por su URL directa (los clips que eliges a mano).
     Cachea por URL para no bajarlo dos veces. Devuelve la ruta o None."""
@@ -352,64 +446,88 @@ def descargar_video_url(url, dest_dir=None):
     return destino if os.path.getsize(destino) > 10000 else None
 
 
-def _fondo_desde_videos(rutas, dur, duraciones=None):
+def _fondo_desde_videos(rutas, dur, duraciones=None, inicios=None, transicion="corte"):
     """Monta varios clips seguidos. `duraciones` son los segundos que TÚ has
     puesto a cada clip: se usan como proporción para repartir la duración real
     del reel (que la manda la voz). Sin duraciones, se reparte a partes iguales.
+    `inicios` es, por clip, en qué segundo del vídeo ORIGINAL empieza (recorte
+    por delante; la duración de arriba ya recorta por detrás).
+    `transicion`: "corte" (seco, por defecto) o "fundido" (cruzado entre clips).
     Devuelve un clip de `dur` exactos o None."""
     from moviepy import VideoFileClip, concatenate_videoclips
-    pares = [(r, (duraciones[i] if duraciones and i < len(duraciones) else None))
+    pares = [(r, (duraciones[i] if duraciones and i < len(duraciones) else None),
+                 (inicios[i] if inicios and i < len(inicios) else 0.0))
              for i, r in enumerate(rutas or []) if r and os.path.exists(r)]
     if not pares:
         return None
 
     # Pesos: los que no traen duración toman la media de los que sí
-    pesos = [(p if (p and float(p) > 0) else None) for (_, p) in pares]
+    pesos = [(p if (p and float(p) > 0) else None) for (_, p, _) in pares]
     conocidos = [float(p) for p in pesos if p]
     medio = (sum(conocidos) / len(conocidos)) if conocidos else 1.0
     pesos = [float(p) if p else medio for p in pesos]
     suma = sum(pesos) or 1.0
     trozos = [p * dur / suma for p in pesos]
 
+    # Fundido cruzado: cada clip se corta un poco más largo (el solape) para
+    # que, al superponerlo con el siguiente, la duración total no se quede corta.
+    fundido = transicion == "fundido" and len(pares) > 1
+    solape = min([0.45] + [t * 0.3 for t in trozos]) if fundido else 0.0
+
     partes = []
-    for (r, _), t in zip(pares, trozos):
+    for (r, _, ini0), t in zip(pares, trozos):
         if t <= 0.05:
             continue
         c = _cover(VideoFileClip(r))
-        if c.duration < t:                          # si el clip es corto, se repite
-            c = concatenate_videoclips([c] * (int(t // c.duration) + 1))
-        partes.append(_recortar(c, t))
+        t_pedido = t + solape
+        if c.duration < t_pedido:                    # si el clip es corto, se repite
+            c = concatenate_videoclips([c] * (int(t_pedido // c.duration) + 1))
+        ini = min(max(float(ini0 or 0), 0), max(0, c.duration - t_pedido))
+        partes.append(_recortar_desde(c, ini, t_pedido))
     if not partes:
         return None
-    fondo = concatenate_videoclips(partes) if len(partes) > 1 else partes[0]
+
+    if fundido:
+        from moviepy.video.fx import CrossFadeIn
+        partes = [partes[0]] + [p.with_effects([CrossFadeIn(solape)]) for p in partes[1:]]
+        fondo = concatenate_videoclips(partes, method="compose", padding=-solape)
+    else:
+        fondo = concatenate_videoclips(partes) if len(partes) > 1 else partes[0]
     return _recortar(fondo, dur)
 
 
-def crear_reel(video=None, videos=None, duraciones=None, audio_voz=None, subtitulos=False,
+def crear_reel(video=None, videos=None, duraciones=None, inicios=None, transicion="corte",
+               sombra=45, audio_voz=None, subtitulos=False,
                color="dark", hook="", sub="", cta="",
                logo=None, musica=None, duracion=None, salida="reel.mp4",
                font=None, font_reg=None, narrar=None, voz="es-ES-ElviraNeural"):
     """Genera un reel 1080x1920 y lo guarda en `salida`."""
     _check_moviepy()
     from moviepy import (VideoFileClip, ImageClip, ColorClip,
-                         CompositeVideoClip, AudioFileClip, concatenate_audioclips,
-                         concatenate_videoclips)
+                         CompositeVideoClip, AudioFileClip, CompositeAudioClip,
+                         concatenate_audioclips, concatenate_videoclips)
     import numpy as np
     from PIL import Image, ImageDraw
 
-    font     = font     or buscar_fuente(True)
-    font_reg = font_reg or buscar_fuente(False) or font
+    font        = font     or buscar_fuente(True)
+    font_reg    = font_reg or buscar_fuente(False) or font
+    font_accent = buscar_fuente_accent() or font_reg     # Playfair Display (marca) para el handle
     dur = duracion or 15
+
+    # El guion puede traer palabras marcadas *así* (mismo convenio que en los
+    # slides) para resaltarlas en azul de marca en los subtítulos. Se limpian
+    # los asteriscos antes de narrar (si no, la voz IA los leería literales).
+    narrar_limpio, resaltar = _palabras_resaltadas(narrar)
 
     # ── 0) Voz: TU grabación (audio_voz) tiene prioridad; si no, voz IA.
     #        La duración del reel = la de la voz.
     voz_path, marcas = None, []
     if audio_voz and os.path.exists(audio_voz):
         voz_path = audio_voz                                     # tu voz real grabada
-    elif narrar:
+    elif narrar_limpio:
         os.makedirs(DIR_SALIDA, exist_ok=True)
         stem = os.path.splitext(os.path.basename(salida))[0] or "reel"
-        voz_path, marcas = generar_voz(narrar, os.path.join(DIR_SALIDA, f"_voz_{stem}.mp3"), voz)
+        voz_path, marcas = generar_voz(narrar_limpio, os.path.join(DIR_SALIDA, f"_voz_{stem}.mp3"), voz)
     if voz_path:
         try:
             _va = AudioFileClip(voz_path)
@@ -429,7 +547,7 @@ def crear_reel(video=None, videos=None, duraciones=None, audio_voz=None, subtitu
             pass
 
     # ── 1) Fondo: montaje de varios clips, un vídeo, o color de marca ────
-    fondo_mont = _fondo_desde_videos(videos, dur, duraciones) if videos else None
+    fondo_mont = _fondo_desde_videos(videos, dur, duraciones, inicios, transicion) if videos else None
     if fondo_mont is not None:
         fondo = fondo_mont
     elif video and os.path.exists(video):
@@ -480,13 +598,17 @@ def crear_reel(video=None, videos=None, duraciones=None, audio_voz=None, subtitu
     #     PIL nos da control exacto de altura y saltos de línea (fiable).
     if hook or sub:
         bloque = _bloque_texto(hook, sub, font, font_reg)
+        bloque = _caja_oscura_pil(bloque, sombra, pad_x=54, pad_y=42, radio=34)   # caja tras el gancho
         bclip = _dur(ImageClip(np.array(bloque)), dur)
         capas.append(_pos(bclip, ("center", int(H * 0.42) - bloque.height // 2)))
 
     # ── 4) Píldora CTA (fondo azul) abajo, sobre la zona segura ──────────
+    # Solo en la portada (primeros segundos), para que el resto del reel
+    # quede limpio sin la píldora tapando el vídeo.
     if cta:
         pill = _pildora_cta(cta, font, 44)
-        cimg = _dur(ImageClip(np.array(pill)), dur)
+        cta_dur = min(3.0, dur)
+        cimg = _dur(ImageClip(np.array(pill)), cta_dur)
         capas.append(_pos(cimg, ("center", H - SAFE_BOT - 40)))
 
     # ── 6) Logo RM arriba + handle abajo ─────────────────────────────────
@@ -494,19 +616,21 @@ def crear_reel(video=None, videos=None, duraciones=None, audio_voz=None, subtitu
         lg = ImageClip(logo)
         lg = lg.resized(height=90) if hasattr(lg, "resized") else lg.resize(height=90)
         capas.append(_pos(_dur(lg, dur), ("center", 90)))
-    thandle = _dur(_texto(HANDLE, font_reg, 34, _rgba(CREMA)[:3], size=(W, None), align="center"), dur)
+    thandle = _dur(_texto(HANDLE, font_accent, 34, _rgba(CREMA)[:3], size=(W, None), align="center"), dur)
     capas.append(_pos(thandle, ("center", H - 150)))
 
     # ── 6b) Subtítulos sincronizados con la voz ──────────────────────────
     # Con voz IA usamos las marcas reales de edge-tts (exactas). Con tu voz
     # grabada no hay marcas: se reparten proporcionalmente por el audio.
+    # Van en Montserrat Bold (marca), con sombreado para leerse sobre
+    # cualquier vídeo, y las palabras marcadas *así* en azul de marca.
     if subtitulos and voz_path:
-        subs = _agrupar_subtitulos(marcas) if marcas else _subtitulos_repartidos(narrar, dur)
+        subs = _agrupar_subtitulos(marcas) if marcas else _subtitulos_repartidos(narrar_limpio, dur)
         for (ini, fin, txt) in subs:
             fin = min(fin, dur)
             if not txt.strip() or fin <= ini:
                 continue
-            s = _texto(txt, font, 46, _rgba(CREMA)[:3], align="center", max_chars=34)
+            s = _texto_subs(txt, font, 46, resaltar, max_chars=34, sombra=sombra)
             s = (s.with_start(ini).with_duration(fin - ini)
                  if hasattr(s, "with_start") else s.set_start(ini).set_duration(fin - ini))
             capas.append(_pos(s, ("center", H - SAFE_BOT - 150)))
@@ -514,21 +638,32 @@ def crear_reel(video=None, videos=None, duraciones=None, audio_voz=None, subtitu
     final = CompositeVideoClip(capas, size=(W, H))
     final = _dur(final, dur)
 
-    # ── 7) Audio: voz IA (prioridad) o música ────────────────────────────
+    # ── 7) Audio: voz + música de fondo mezcladas ─────────────────────────
+    # Si hay voz, la música suena bajita debajo (no tapa lo que dices).
+    # Si no hay voz, la música suena a volumen normal, sola.
     def _set_audio(cl, aud):
         return cl.with_audio(aud) if hasattr(cl, "with_audio") else cl.set_audio(aud)
+
+    pistas = []
     if voz_path:
         try:
-            final = _set_audio(final, AudioFileClip(voz_path))   # tu guion locutado
+            pistas.append(AudioFileClip(voz_path))            # tu guion locutado
         except Exception as e:
             print("  (aviso) no se pudo añadir la voz:", e)
-    elif musica and os.path.exists(musica):
+    if musica and os.path.exists(musica):
         try:
-            aud = AudioFileClip(musica)
-            aud = aud.subclipped(0, dur) if hasattr(aud, "subclipped") else aud.subclip(0, dur)
-            final = _set_audio(final, aud)
+            from moviepy.audio.fx import MultiplyVolume
+            fondo = AudioFileClip(musica)
+            if fondo.duration < dur:                          # se repite si es corta
+                fondo = concatenate_audioclips([fondo] * (int(dur // fondo.duration) + 1))
+            fondo = _recortar(fondo, dur)
+            vol = 0.15 if pistas else 0.7                      # bajita bajo la voz, normal si va sola
+            pistas.append(fondo.with_effects([MultiplyVolume(vol)]))
         except Exception as e:
             print("  (aviso) no se pudo añadir música:", e)
+
+    if pistas:
+        final = _set_audio(final, pistas[0] if len(pistas) == 1 else CompositeAudioClip(pistas))
 
     os.makedirs(DIR_SALIDA, exist_ok=True)
     ruta = salida if os.path.isabs(salida) else os.path.join(DIR_SALIDA, salida)

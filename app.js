@@ -85,14 +85,53 @@ const NICHO = {
       servicio:['estrategia','ia','autoridad'],
       objecion:['visibilidad','datos','crecimiento'],
     }
+  },
+  productividad: {
+    nombre:'Productividad',
+    eye:'Productividad · Organización · Agenda',
+    hashtags:'#productividad #organizacion #gestiondeltiempo #dueñosdenegocio #agenda #foco #sistemas',
+    persona:'consultora de productividad y organización para dueños de negocio: ayudas a empresarios saturados a ordenar su agenda, priorizar lo que de verdad importa y montar sistemas simples para dejar de vivir apagando fuegos',
+    lector:'un dueño o dueña de negocio (autónomo, pyme, empresario) que trabaja muchas horas, tiene la agenda desbordada, salta de tarea en tarea sin acabar nada y siente que el día no le rinde por mucho que se esfuerce',
+    tono:'cercano, práctico y sin postureo motivacional vacío. Nada de "levántate a las 5am" ni frases de despacho. Hablas de sistemas simples, prioridades reales y recuperar el control del día a día',
+    ctaEj:'ORGANIZA, AGENDA, FOCO',
+    pills:['Gestión del tiempo','Prioridades','Sistemas simples','Menos caos, más foco'],
+    p2head:'Tú te centras en decidir.\nYo te ayudo a que el día te rinda.',
+    p2sub:'Agenda, prioridades y sistemas para dueños de negocio saturados.',
+    usaBanco:false,
+    angulos:{
+      agenda:'una agenda desbordada que decide por ti en vez de tú decidir por ella',
+      priorizar:'hacer mil cosas y no avanzar en lo que de verdad mueve el negocio',
+      delegar:'seguir haciéndolo todo tú porque "así se hace bien y rápido"',
+      foco:'empezar cien tareas a la vez y no terminar ninguna del todo',
+      sistemas:'un sistema simple de organización que sustituye la memoria y el caos',
+      energia:'gestionar tu energía, no solo tu tiempo, para rendir sin quemarte',
+    },
+    labels:{
+      agenda:'Domina tu agenda',
+      priorizar:'Prioriza lo que importa',
+      delegar:'Aprende a delegar',
+      foco:'Recupera el foco',
+      sistemas:'Sistemas que sustituyen el caos',
+      energia:'Gestiona tu energía',
+    },
+    pilares:{
+      dolor:['agenda','foco','priorizar'],
+      educativo:['sistemas','priorizar','delegar'],
+      autoridad:['sistemas','energia','agenda'],
+      conversion:['sistemas','agenda','foco'],
+      reframe:['priorizar','delegar','energia'],
+      servicio:['sistemas','agenda','delegar'],
+      objecion:['delegar','foco','priorizar'],
+    }
   }
 };
-let _nicho = (localStorage.getItem('rm_nicho')==='personal') ? 'personal' : 'reformas';
+const NICHOS_VALIDOS = ['reformas','personal','productividad'];
+let _nicho = NICHOS_VALIDOS.includes(localStorage.getItem('rm_nicho')) ? localStorage.getItem('rm_nicho') : 'reformas';
 function getNicho(){ return _nicho; }
 function N(){ return NICHO[_nicho] || NICHO.reformas; }
 function marcaEye(){ return N().eye; }
 function setNicho(v){
-  _nicho = (v==='personal') ? 'personal' : 'reformas';
+  _nicho = NICHOS_VALIDOS.includes(v) ? v : 'reformas';
   localStorage.setItem('rm_nicho', _nicho);
   const lbl = document.getElementById('nichoLbl'); if(lbl) lbl.textContent = N().nombre;
   if(typeof actualizarAngulos==='function') actualizarAngulos();
@@ -375,6 +414,40 @@ const BANCO = {
     },
   },
 };
+
+// Caption de banco local (sin IA) para el nicho MARCA PERSONAL — antes caía
+// sin querer en las captions de Reformas (#reformas, "captación de obras"...)
+// porque BANCO.instagramCopy solo tenía ángulos de Reformas.
+const COPY_PERSONAL = {
+  crecimiento:{caption:"¿Por qué unas empresas crecen y otras, haciendo lo mismo, se estancan?\n\nCasi siempre es lo mismo: visibilidad, números claros y un sistema que no dependa solo de ti.\n\n¿Cuál de las tres te falta a ti? 👇"},
+  visibilidad:{caption:"Una empresa excelente que el mercado no conoce, no puede crecer.\n\nLa visibilidad no es alcance: es que la persona correcta sepa que existes.\n\n¿Te conocen quienes de verdad podrían contratarte? 👇"},
+  datos:{caption:"¿Decides por números reales o por intuición?\n\nLas empresas que crecen miran sus datos cada semana, no solo en la declaración.\n\nCuéntame cómo lo llevas tú 👇"},
+  ia:{caption:"La IA no te sustituye. Te libera del trabajo repetitivo para que dediques tu tiempo a lo que de verdad mueve tu negocio.\n\n¿Ya la usas en tu día a día? 👇"},
+  estrategia:{caption:"Fiscalidad + marketing + IA no son piezas sueltas: es la misma estrategia vista desde tres ángulos.\n\n¿Cuál de las tres tienes más floja ahora mismo? 👇"},
+  autoridad:{caption:"Tu calidad técnica es impecable. El problema es que nadie lo sabe antes de contratarte.\n\n¿Qué transmite tu presencia digital ahora mismo? 👇"},
+  default:{caption:"Esto separa a las empresas que crecen de las que se estancan, aunque hagan bien su trabajo.\n\nCuéntame tu caso en comentarios 👇"},
+};
+
+// Caption de banco local (sin IA) para el nicho PRODUCTIVIDAD — mismo motivo.
+const COPY_PRODUCTIVIDAD = {
+  agenda:{caption:"Tu agenda no la llevas tú. La lleva quien te escribe último.\n\nSin una agenda que decides tú, decide el ruido de fuera.\n\n¿Quién manda de verdad en tu día? 👇"},
+  priorizar:{caption:"Lo urgente grita. Lo importante casi nunca lo hace, y por eso pierde.\n\nElige tu ÚNICA prioridad del día antes de abrir el móvil.\n\n¿Cuál es la tuya hoy? 👇"},
+  delegar:{caption:"Si tú no lo haces, sientes que no se hace bien. Ese pensamiento es justo lo que te tiene atrapada en tareas de 5€ la hora.\n\n¿Qué podrías soltar esta semana? 👇"},
+  foco:{caption:"La multitarea no ahorra tiempo: lo reparte peor entre más cosas a medias.\n\nEl foco no se fuerza, se protege quitando fricción antes de empezar.\n\n¿Cuánto dura tu bloque de foco más largo? 👇"},
+  sistemas:{caption:"Tu memoria falla incluso con lo que haces siempre. Un checklist no falla.\n\nUn sistema simple sustituye el caos y la memoria.\n\n¿Tienes ya el tuyo? 👇"},
+  energia:{caption:"El descanso no es un premio por trabajar mucho: es lo que te permite trabajar bien.\n\nGestiona tu energía, no solo tu tiempo.\n\n¿Cuándo paraste de verdad la última vez? 👇"},
+  default:{caption:"Menos caos, más foco: así se organiza un negocio que no te quita la vida.\n\nCuéntame tu caso en comentarios 👇"},
+};
+
+// Devuelve {caption, hashtags} correctos para el nicho activo y el ángulo dado.
+// (Antes se usaba SIEMPRE BANCO.instagramCopy, que solo tiene ángulos de
+// Reformas → Marca Personal y Productividad caían en su "default" de Reformas.)
+function copyDataFor(angulo){
+  const n = getNicho();
+  const tabla = n==='personal' ? COPY_PERSONAL : n==='productividad' ? COPY_PRODUCTIVIDAD : null;
+  const base = tabla ? (tabla[angulo] || tabla.default) : (BANCO.instagramCopy[angulo] || BANCO.instagramCopy.default);
+  return { caption: base.caption, hashtags: base.hashtags || N().hashtags };
+}
 
 /* ═══════════════════════════════════════════
    ESTADO GLOBAL
@@ -1236,8 +1309,10 @@ function rProceso(d,n){
     const desc=rest.join(':').trim();
     return`<div class="pstep">
       <div class="pnum">${i+1}</div>
-      <div class="ptitle">${p(title)}</div>
-      <div class="pdesc" style="font-size:${T.items}px">${p(desc)}</div>
+      <div class="pbody">
+        <div class="ptitle">${p(title)}</div>
+        <div class="pdesc" style="font-size:${T.items}px">${p(desc)}</div>
+      </div>
     </div>`;
   }).join('');
   return`<div class="slide ${fc(d.fondo)} ${slideH()} sProceso ${spClass()}">
@@ -1559,9 +1634,320 @@ function rLibre(d,n){
   </div>`;
 }
 
+/* ══════════════════════════════════════════════════════════
+   SLIDES VIRALES — formatos "nativos" que no parecen anuncio
+   (lo que mejor funciona en IG: captura de chat, nota del móvil,
+   y el contraste partido mito/realidad).
+   ══════════════════════════════════════════════════════════ */
+
+// CHAT — captura de conversación (DM / WhatsApp). Parece contenido real,
+// no publicidad → altísimo enganche. items = mensajes; "yo:" (o →/>) = enviado
+// por ti (derecha, azul); el resto = recibido (izquierda, gris).
+function rChat(d,n){
+  const nombre = (d.body||'Cliente nuevo').split('::')[0].trim() || 'Cliente nuevo';
+  const inicial = (nombre[0]||'C').toUpperCase();
+  const msgs = (d.items||[]).filter(Boolean).map(it=>{
+    const m = String(it);
+    const out = /^\s*(yo|out|tú|tu|→|>)\s*[:：]/i.test(m) || /^\s*[→>]/.test(m);
+    const text = m.replace(/^\s*(yo|out|tú|tu|ella|él|el|cliente|in|→|>)\s*[:：]?\s*/i,'');
+    return {out, text};
+  });
+  const burbujas = msgs.map(m=> m.out
+    ? `<div style="align-self:flex-end;max-width:78%;background:#38B6FF;color:#fff;padding:14px 18px;border-radius:20px 20px 6px 20px;font-family:var(--F-SAN);font-size:26px;line-height:1.35">${p(m.text)}</div>`
+    : `<div style="align-self:flex-start;max-width:78%;background:#E7E7EA;color:#1A1A1A;padding:14px 18px;border-radius:20px 20px 20px 6px;font-family:var(--F-SAN);font-size:26px;line-height:1.35">${p(m.text)}</div>`
+  ).join('');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Cm" style="font-size:${T.eye}px">${p(d.eye||'Mensaje real')}</span></div>${logoHTML(d.fondo)}</div>
+    ${d.head?`<h1 class="TDsm Ct" style="margin-top:22px;font-size:${Math.min(T.head,72)}px;text-align:center">${pK(d.head)}</h1>`:''}
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0">
+      <div style="background:#F7F7F9;border-radius:28px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35);max-width:820px;width:100%;margin:24px auto 0">
+        <div style="display:flex;align-items:center;gap:14px;padding:22px 24px;background:#fff;border-bottom:1px solid rgba(0,0,0,.07)">
+          <div style="width:52px;height:52px;border-radius:50%;background:#1A1A1A;color:#F5F1EA;display:flex;align-items:center;justify-content:center;font-family:var(--F-SER);font-style:italic;font-size:24px;flex-shrink:0">${inicial}</div>
+          <div style="flex:1"><div style="font-family:var(--F-SAN);font-weight:600;font-size:24px;color:#1A1A1A">${p(nombre)}</div><div style="display:flex;align-items:center;gap:6px;font-family:var(--F-SAN);font-size:16px;color:#3BC46B"><span style="width:9px;height:9px;border-radius:50%;background:#3BC46B"></span>en línea</div></div>
+        </div>
+        <div style="padding:26px 24px;display:flex;flex-direction:column;gap:14px">${burbujas}</div>
+      </div>
+    </div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// NOTA — captura estilo app de Notas del móvil (anti-diseño, confesión cruda).
+// Funciona porque parece un pensamiento personal, no una pieza de marketing.
+function rNota(d,n){
+  const cuerpo = (d.body||'').split('\n').filter(x=>x.trim().length)
+    .map(l=>`<p style="margin:0 0 16px;font-family:var(--F-SAN);font-size:32px;line-height:1.5;color:#2A2A2A">${p(l)}</p>`).join('');
+  return`<div class="slide ${slideH()}" style="background:#FBF9F4;display:flex;flex-direction:column;padding:0;overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:34px 48px 18px">
+      <span style="font-family:var(--F-SAN);font-size:22px;color:#C8A24A;font-weight:600">‹ Notas</span>
+      <span style="font-family:var(--F-SAN);font-size:20px;color:rgba(26,26,26,.4)">${new Date().toLocaleDateString('es-ES',{day:'numeric',month:'long'})}</span>
+      <span style="font-family:var(--F-SAN);font-size:26px;color:#C8A24A">✎</span>
+    </div>
+    <div style="flex:1;padding:14px 48px 40px;overflow:hidden">
+      <h1 style="font-family:var(--F-SAN);font-weight:700;font-size:${Math.min(T.head,84)}px;line-height:1.1;color:#1A1A1A;margin:0 0 26px">${pK(d.head||'')}</h1>
+      ${cuerpo}
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 48px 40px">
+      <span style="font-family:var(--F-SER);font-style:italic;font-size:${T.cta}px;color:rgba(26,26,26,.4)">${HANDLE}</span>
+      <span style="font-family:var(--F-SAN);font-size:${T.cta}px;color:#38B6FF;font-weight:600;text-transform:uppercase;letter-spacing:.06em">${p(d.cta||'')}</span>
+    </div>
+  </div>`;
+}
+
+// VERSUS — contraste partido: lo que crees vs la realidad (mito/verdad,
+// tú/competencia, antes/después conceptual). items = 2× "Etiqueta::texto".
+function rVersus(d,n){
+  const cols = (d.items||[]).filter(Boolean).slice(0,2);
+  const [la,ta] = (cols[0]||'Lo que crees::…').split('::');
+  const [lb,tb] = (cols[1]||'La realidad::…').split('::');
+  return`<div class="slide ${slideH()}" style="position:relative;overflow:hidden;padding:0;background:#1A1A1A">
+    ${d.head?`<div style="position:absolute;top:0;left:0;right:0;z-index:6;padding:44px 56px 0;text-align:center"><h1 class="TDsm" style="font-size:${Math.min(T.head,64)}px;color:#F5F1EA;line-height:1.1">${pK(d.head)}</h1></div>`:''}
+    <div style="display:flex;height:100%">
+      <div style="flex:1;background:#242424;display:flex;flex-direction:column;justify-content:center;gap:22px;padding:${d.head?'220px':'64px'} 56px 64px">
+        <span style="font-family:var(--F-SAN);font-weight:700;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(245,241,234,.4)">✕ ${p(la||'Mito')}</span>
+        <p style="font-family:var(--F-SAN);font-weight:300;font-size:${Math.round(T.head*.5)}px;line-height:1.25;color:rgba(245,241,234,.72)">${p(ta||'')}</p>
+      </div>
+      <div style="flex:1;background:#38B6FF;display:flex;flex-direction:column;justify-content:center;gap:22px;padding:${d.head?'220px':'64px'} 56px 64px">
+        <span style="font-family:var(--F-SAN);font-weight:700;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,26,26,.55)">✓ ${p(lb||'Realidad')}</span>
+        <p style="font-family:var(--F-SAN);font-weight:500;font-size:${Math.round(T.head*.5)}px;line-height:1.25;color:#1A1A1A">${p(tb||'')}</p>
+      </div>
+    </div>
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:7;width:88px;height:88px;border-radius:50%;background:#1A1A1A;border:3px solid #F5F1EA;display:flex;align-items:center;justify-content:center;font-family:var(--F-SER);font-style:italic;font-size:34px;color:#F5F1EA">VS</div>
+    <div style="position:absolute;bottom:0;left:0;right:0;z-index:6;display:flex;justify-content:space-between;padding:0 56px 40px"><span style="font-family:var(--F-SER);font-style:italic;font-size:${T.cta}px;color:rgba(245,241,234,.55)">${HANDLE}</span><span style="font-family:var(--F-SAN);font-size:${T.cta}px;color:#F5F1EA;text-transform:uppercase;letter-spacing:.06em">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// ENCUESTA — sticker de votación (pregunta + 2 opciones con barras %).
+// items = ["Opción A::60","Opción B::40"] (texto::porcentaje).
+function rEncuesta(d,n){
+  const ops=(d.items||[]).filter(Boolean).slice(0,2);
+  let a=String(ops[0]||'Sí::60').split('::'), b=String(ops[1]||'No::40').split('::');
+  let pa=parseInt(a[1]), pb=parseInt(b[1]);
+  if(isNaN(pa)&&isNaN(pb)){pa=50;pb=50;} else {if(isNaN(pa))pa=100-(pb||0); if(isNaN(pb))pb=100-pa;}
+  const barra=(txt,pct,fill)=>`<div style="position:relative;background:rgba(245,241,234,.12);border-radius:16px;overflow:hidden;height:80px;display:flex;align-items:center">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${fill}"></div>
+      <span style="position:relative;z-index:2;padding:0 26px;font-family:var(--F-SAN);font-weight:600;font-size:30px;color:#F5F1EA">${p(txt)}</span>
+      <span style="position:relative;z-index:2;margin-left:auto;padding:0 26px;font-family:var(--F-SAN);font-weight:800;font-size:32px;color:#F5F1EA">${pct}%</span></div>`;
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'Tú decides')}</span></div>${logoHTML(d.fondo)}</div>
+    <div class="zone" style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:36px">
+      <h1 class="TDsm Ct" style="font-size:${Math.min(T.head,84)}px">${pK(d.head||'¿Tú qué opinas?')}</h1>
+      <div style="display:flex;flex-direction:column;gap:16px">${barra(a[0]||'Sí',pa,'#38B6FF')}${barra(b[0]||'No',pb,'rgba(56,182,255,.38)')}</div>
+    </div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'Vota en comentarios')}</span></div>
+  </div>`;
+}
+
+// BÚSQUEDA — barra tipo Google con la consulta + autocompletado (items).
+function rBusqueda(d,n){
+  const sugs=(d.items||[]).filter(Boolean).slice(0,4).map(s=>`<div style="display:flex;align-items:center;gap:18px;padding:18px 30px;border-top:1px solid rgba(0,0,0,.07)">
+      <span style="opacity:.4;font-size:22px">🔍</span><span style="font-family:var(--F-SAN);font-size:27px;color:#1A1A1A">${p(s)}</span></div>`).join('');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'Lo que todos buscan')}</span></div>${logoHTML(d.fondo)}</div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:30px">
+      ${d.body?`<h1 class="TDsm Ct" style="font-size:${Math.min(T.head,60)}px;text-align:center">${pK(d.body)}</h1>`:''}
+      <div style="background:#fff;border-radius:36px;box-shadow:0 18px 50px rgba(0,0,0,.3);overflow:hidden;max-width:880px;width:100%;margin:0 auto">
+        <div style="display:flex;align-items:center;gap:18px;padding:28px 32px">
+          <span style="font-size:30px">🔍</span>
+          <span style="flex:1;font-family:var(--F-SAN);font-size:32px;color:#1A1A1A;font-weight:500">${p(d.head||'cómo conseguir clientes')}</span>
+        </div>${sugs}
+      </div>
+    </div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// TWEET — tarjeta de X/Twitter (captura viral). body = "Nombre::@handle";
+// head = el texto; items = métricas opcionales ["1.2k","340"].
+function rTweet(d,n){
+  const nh=String(d.body||'Rosa María::@rosamariamedia').split('::');
+  const ini=((nh[0]||'R').trim()[0]||'R').toUpperCase();
+  const met=(d.items||[]).filter(Boolean);
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'')}</span></div>${logoHTML(d.fondo)}</div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <div style="background:#fff;border-radius:26px;box-shadow:0 22px 60px rgba(0,0,0,.32);padding:38px 36px;max-width:880px;width:100%;margin:0 auto">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+          <div style="width:66px;height:66px;border-radius:50%;background:#1A1A1A;color:#F5F1EA;display:flex;align-items:center;justify-content:center;font-family:var(--F-SER);font-style:italic;font-size:30px;flex-shrink:0">${ini}</div>
+          <div><div style="display:flex;align-items:center;gap:8px;font-family:var(--F-SAN);font-weight:700;font-size:28px;color:#1A1A1A">${p(nh[0]||'Rosa María')}<span style="color:#38B6FF;font-size:24px">✔</span></div>
+            <div style="font-family:var(--F-SAN);font-size:22px;color:rgba(26,26,26,.45)">${p(nh[1]||'@rosamariamedia')}</div></div>
+        </div>
+        <div style="font-family:var(--F-SAN);font-size:40px;line-height:1.35;color:#1A1A1A;font-weight:500">${p(d.head||'')}</div>
+        ${met.length?`<div style="display:flex;gap:36px;margin-top:26px;font-family:var(--F-SAN);font-size:22px;color:rgba(26,26,26,.45)">${met.map(m=>`<span>${p(m)}</span>`).join('')}</div>`:''}
+      </div>
+    </div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// CHECKLIST — lista con ✓/✗ ("¿cuántas cumples?"). Prefija "no:" un item para ✗.
+function rChecklist(d,n){
+  const filas=(d.items||[]).filter(Boolean).slice(0,6).map(it=>{
+    const no=/^\s*(no|x)\s*[:：]/i.test(String(it));
+    const txt=String(it).replace(/^\s*(si|sí|no|x)\s*[:：]?\s*/i,'');
+    const ico=no?'<span style="color:#ff6b6b">✗</span>':'<span style="color:#38B6FF">✓</span>';
+    return`<div style="display:flex;align-items:flex-start;gap:18px;padding:18px 0;border-bottom:1px solid ${d.fondo==='light'?'rgba(26,26,26,.1)':'rgba(245,241,234,.12)'}">
+      <span style="font-size:40px;line-height:1;flex-shrink:0;font-weight:700">${ico}</span>
+      <span class="TBdy Ct" style="font-size:${T.items}px;line-height:1.3">${p(txt)}</span></div>`;
+  }).join('');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'Checklist')}</span></div>${logoHTML(d.fondo)}</div>
+    <h1 class="TDsm Ct" style="margin-top:20px;font-size:${Math.min(T.head,80)}px">${pK(d.head||'¿Cuántas cumples?')}</h1>
+    <div style="margin-top:22px;display:flex;flex-direction:column">${filas}</div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// FACTURA — recibo/ticket (ideal fiscalidad). items = "Concepto::importe";
+// body = "Etiqueta total::importe".
+function rFactura(d,n){
+  const rows=(d.items||[]).filter(Boolean).slice(0,6).map(it=>{
+    const pz=String(it).split('::');
+    return`<div style="display:flex;justify-content:space-between;gap:16px;padding:12px 0;font-family:var(--F-SAN);font-size:27px;color:#1A1A1A"><span>${p(pz[0]||'')}</span><span style="font-weight:600;white-space:nowrap">${p(pz[1]||'')}</span></div>`;
+  }).join('');
+  const tot=String(d.body||'TOTAL::').split('::');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'')}</span></div>${logoHTML(d.fondo)}</div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <div style="background:#F7F4EE;border-radius:8px;padding:42px 40px;max-width:720px;width:100%;margin:0 auto;box-shadow:0 20px 50px rgba(0,0,0,.32)">
+        <div style="text-align:center;font-family:var(--F-SAN);font-weight:800;font-size:30px;color:#1A1A1A;letter-spacing:.06em">${p(d.head||'RECIBO')}</div>
+        <div style="border-top:2px dashed rgba(26,26,26,.25);margin:22px 0"></div>
+        ${rows}
+        <div style="border-top:2px dashed rgba(26,26,26,.25);margin:16px 0"></div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--F-SAN);font-weight:800;font-size:34px;color:#1A1A1A"><span>${p(tot[0]||'TOTAL')}</span><span style="color:#38B6FF">${p(tot[1]||'')}</span></div>
+      </div>
+    </div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+/* ══════════ FORMATOS WOW — diseños raros de alto impacto ══════════ */
+
+// NEÓN — rótulo de neón que brilla en la noche.
+function rNeon(d,n){
+  const glow='text-shadow:0 0 6px #38B6FF,0 0 18px #38B6FF,0 0 40px rgba(56,182,255,.75)';
+  return`<div class="slide ${slideH()} ${spClass()}" style="position:relative;overflow:hidden;background:#0a0a12">
+    <div style="position:absolute;inset:26px;border:2px solid rgba(56,182,255,.5);border-radius:22px;box-shadow:0 0 22px rgba(56,182,255,.5),inset 0 0 22px rgba(56,182,255,.22);pointer-events:none"></div>
+    <div class="SH" style="position:relative;z-index:2"><div style="display:flex;align-items:center;gap:12px"><div class="abar" style="background:#ff3ea5;box-shadow:0 0 12px #ff3ea5"></div><span class="TEye" style="font-size:${T.eye}px;color:#ff3ea5;text-shadow:0 0 12px rgba(255,62,165,.85)">${p(d.eye||'')}</span></div>${logoHTML('dark')}</div>
+    <div style="position:relative;z-index:2;flex:1;display:flex;flex-direction:column;justify-content:center;gap:26px;text-align:center;align-items:center">
+      <h1 class="TDlg" style="font-size:${Math.min(T.head+6,112)}px;color:#eafaff;line-height:1.05;${glow}">${pK(d.head||'')}</h1>
+      ${d.body?`<p class="TBdy" style="font-size:${T.body}px;color:rgba(234,250,255,.75)">${p(d.body)}</p>`:''}
+    </div>
+    <div class="SF" style="position:relative;z-index:2"><span class="TCap" style="font-size:${T.cta}px;color:rgba(234,250,255,.45)">${HANDLE}</span><span class="TCap" style="font-size:${T.cta}px;color:#38B6FF;${glow}">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// GLITCH — texto roto con separación de color RGB (edgy).
+function rGlitch(d,n){
+  const t=pK(d.head||''), sz=Math.min(T.head,100);
+  return`<div class="slide ${slideH()} ${spClass()}" style="position:relative;overflow:hidden;background:#0b0b0f">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar" style="background:#00e5ff"></div><span class="TEye" style="font-size:${T.eye}px;color:#00e5ff">${p(d.eye||'SYSTEM ERROR')}</span></div>${logoHTML('dark')}</div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <div style="position:relative">
+        <h1 class="TDlg" style="position:absolute;inset:0;font-size:${sz}px;color:#ff2e97;line-height:1.02;transform:translate(-6px,-3px);opacity:.85">${t}</h1>
+        <h1 class="TDlg" style="position:absolute;inset:0;font-size:${sz}px;color:#00e5ff;line-height:1.02;transform:translate(6px,3px);opacity:.85">${t}</h1>
+        <h1 class="TDlg" style="position:relative;font-size:${sz}px;color:#F5F1EA;line-height:1.02">${t}</h1>
+      </div>
+      ${d.body?`<p class="TBdy" style="font-size:${T.body}px;color:rgba(245,241,234,.7);margin-top:30px">${p(d.body)}</p>`:''}
+    </div>
+    <div class="SF"><span class="TCap" style="font-size:${T.cta}px;color:rgba(245,241,234,.4)">${HANDLE}</span><span class="TCap" style="font-size:${T.cta}px;color:#00e5ff">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// WRAPPED — recap "tu año en números" (colorido, alto impacto). items="Clave::valor".
+function rWrapped(d,n){
+  const rows=(d.items||[]).filter(Boolean).slice(0,4).map(it=>{
+    const pz=String(it).split('::');
+    return`<div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:15px 0;border-bottom:1px solid rgba(26,26,26,.18)">
+      <span style="font-family:var(--F-SAN);font-weight:600;font-size:30px;color:#1A1A1A">${p(pz[0]||'')}</span>
+      <span style="font-family:var(--F-SER);font-style:italic;font-weight:700;font-size:${Math.round(T.stat*.55)}px;color:#1A1A1A;white-space:nowrap">${p(pz[1]||'')}</span></div>`;
+  }).join('');
+  return`<div class="slide ${slideH()} ${spClass()}" style="background:#38B6FF">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar" style="background:#1A1A1A"></div><span class="TEye" style="font-size:${T.eye}px;color:rgba(26,26,26,.6)">${p(d.eye||'TU AÑO EN NÚMEROS')}</span></div>${logoHTML('blue')}</div>
+    <h1 class="TDlg" style="margin-top:16px;font-size:${Math.min(T.head,96)}px;color:#1A1A1A;line-height:1.05">${pK(d.head||'')}</h1>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;margin-top:12px">${rows}</div>
+    <div class="SF"><span class="TCap" style="font-size:${T.cta}px;color:rgba(26,26,26,.55)">${HANDLE}</span><span class="TCap" style="font-size:${T.cta}px;color:#1A1A1A;font-weight:600">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// DASHBOARD — panel de métricas con barras que suben. body=número grande;
+// items="Etiqueta::valor" (alturas relativas).
+function rDashboard(d,n){
+  const bars=(d.items||[]).filter(Boolean).slice(0,6);
+  const vals=bars.map(b=>parseFloat(String(b).split('::')[1])||0);
+  const max=Math.max(1,...vals);
+  const chart=bars.map(b=>{ const pz=String(b).split('::'); const h=Math.max(8,(parseFloat(pz[1])||0)/max*100);
+    return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;justify-content:flex-end;height:100%">
+      <div style="width:66%;height:${h}%;background:#38B6FF;border-radius:8px 8px 0 0;min-height:16px"></div>
+      <span style="font-family:var(--F-SAN);font-size:20px;color:var(--UI-M,rgba(245,241,234,.5))" class="Cm">${p(pz[0]||'')}</span></div>`;}).join('');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'RESULTADOS')}</span></div>${logoHTML(d.fondo)}</div>
+    <h1 class="TDsm Ct" style="margin-top:14px;font-size:${Math.min(T.head,68)}px">${pK(d.head||'')}</h1>
+    <div style="display:flex;align-items:baseline;gap:14px;margin-top:12px">
+      <span style="font-family:var(--F-SAN);font-weight:800;font-size:104px;color:#38B6FF;line-height:1">${p(d.body||'+240%')}</span>
+      <span style="font-family:var(--F-SAN);font-weight:600;font-size:26px;color:#3BC46B">▲ subiendo</span>
+    </div>
+    <div style="flex:1;display:flex;align-items:flex-end;gap:16px;margin-top:22px;min-height:0">${chart}</div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// BRUTAL — tipografía brutalista gigante, líneas alternas invertidas.
+function rBrutal(d,n){
+  const lines=String(d.head||'').split('\n').filter(x=>x.trim());
+  const body=lines.map((ln,i)=> i%2===1
+    ? `<span style="display:inline-block;background:#1A1A1A;color:#F5F1EA;padding:0 16px;transform:rotate(-1.5deg);margin:6px 0">${p(ln)}</span><br>`
+    : `<span style="display:block;color:#1A1A1A">${p(ln)}</span>`).join('');
+  return`<div class="slide ${slideH()} ${spClass()}" style="background:#F5F1EA">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye" style="font-size:${T.eye}px;color:#38B6FF">${p(d.eye||'')}</span></div>${logoHTML('light')}</div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <h1 style="font-family:var(--F-SAN);font-weight:800;font-size:${Math.min(T.head+16,128)}px;line-height:1.02;letter-spacing:-.02em;text-transform:uppercase">${body}</h1>
+      ${d.body?`<p class="TBdy" style="font-size:${T.body}px;color:rgba(26,26,26,.65);margin-top:26px">${p(d.body)}</p>`:''}
+    </div>
+    <div class="SF"><span class="TCap" style="font-size:${T.cta}px;color:rgba(26,26,26,.4)">${HANDLE}</span><span class="TCap" style="font-size:${T.cta}px;color:#38B6FF;font-weight:700">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// TERMINAL — consola/hacker. head=comando; items=salida ("ok:" en verde); body=última línea.
+function rTerminal(d,n){
+  const out=(d.items||[]).filter(Boolean).slice(0,5).map(it=>{
+    const ok=/^\s*(ok|✓|>)\s*[:：]?/i.test(String(it));
+    const txt=String(it).replace(/^\s*(ok|✓|>)\s*[:：]?\s*/i, ok?'✓ ':'');
+    return`<div style="font-family:'Courier New',monospace;font-size:26px;line-height:1.5;color:${ok?'#3BC46B':'rgba(234,250,255,.85)'}">${p(txt)}</div>`;
+  }).join('');
+  return`<div class="slide ${slideH()}" style="background:#0b0f14;padding:0;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:10px;padding:24px 30px;background:#12181f">
+      <span style="width:16px;height:16px;border-radius:50%;background:#ff5f56;display:inline-block"></span>
+      <span style="width:16px;height:16px;border-radius:50%;background:#ffbd2e;display:inline-block"></span>
+      <span style="width:16px;height:16px;border-radius:50%;background:#27c93f;display:inline-block"></span>
+      <span style="margin-left:12px;font-family:'Courier New',monospace;font-size:20px;color:rgba(234,250,255,.4)">${p(d.eye||'rosamaria — bash')}</span>
+    </div>
+    <div style="flex:1;padding:36px;display:flex;flex-direction:column;gap:14px">
+      <div style="font-family:'Courier New',monospace;font-size:30px;color:#38B6FF">$ ${p(d.head||'sistema --activar')}</div>
+      ${out}
+      <div style="font-family:'Courier New',monospace;font-size:30px;color:#eafaff;margin-top:6px">${p(d.body||'')}<span style="display:inline-block;width:16px;height:28px;background:#38B6FF;vertical-align:-4px;margin-left:6px"></span></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:0 36px 40px"><span style="font-family:var(--F-SER);font-style:italic;font-size:${T.cta}px;color:rgba(234,250,255,.4)">${HANDLE}</span><span style="font-family:var(--F-SAN);font-size:${T.cta}px;color:#38B6FF">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
 function renderTipo(d,n){
   if(d.tipo==='reel') return rReel(d,n);
   switch(d.tipo){
+    case'chat':             return rChat(d,n);
+    case'nota':             return rNota(d,n);
+    case'versus':           return rVersus(d,n);
+    case'encuesta':         return rEncuesta(d,n);
+    case'busqueda':         return rBusqueda(d,n);
+    case'tweet':            return rTweet(d,n);
+    case'checklist':        return rChecklist(d,n);
+    case'factura':          return rFactura(d,n);
+    case'neon':             return rNeon(d,n);
+    case'glitch':           return rGlitch(d,n);
+    case'wrapped':          return rWrapped(d,n);
+    case'dashboard':        return rDashboard(d,n);
+    case'brutal':           return rBrutal(d,n);
+    case'terminal':         return rTerminal(d,n);
     case'hook': case'post': return rHead(d,n);
     case'frase':            return rFrase(d,n);
     case'ba':               return rBA(d,n);
@@ -1613,7 +1999,8 @@ function render(d,i){
   const vpos  = d.txtVPos || '';
   const dx    = d.txtDX || 0;
   const dy    = d.txtDY || 0;
-  const needsWrap = align!=='left' || vpos || dx || dy;
+  const tsh   = Math.max(0, Math.min(100, +d.txtShadow || 0));   // sombra oscura tras el texto
+  const needsWrap = align!=='left' || vpos || dx || dy || tsh>0;
   if(needsWrap){
     // Inyectamos estilo scoped: marcamos el slide con un id único
     const uid = 'sl'+i;
@@ -1622,6 +2009,9 @@ function render(d,i){
     if(vpos==='bottom') css += `#${uid} .zone,#${uid} .lzone,#${uid} [class*=zone]{justify-content:flex-end!important}`;
     if(vpos==='center') css += `#${uid} .zone,#${uid} .lzone,#${uid} [class*=zone]{justify-content:center!important}`;
     if(dx||dy)          css += `#${uid} .SP,#${uid} .SP108{transform:translate(${dx}px,${dy}px)}`;
+    // text-shadow se HEREDA → puesto en el slide, cubre TODOS los textos.
+    if(tsh>0){ const a=(tsh/100).toFixed(2), b=(tsh/100*0.9).toFixed(2);
+      css += `#${uid}{text-shadow:0 2px 12px rgba(0,0,0,${a}),0 1px 3px rgba(0,0,0,${b})}`; }
     // Insertar id en el primer div .slide
     html = html.replace(/class="slide/, `id="${uid}" class="slide`);
     html = `<style>${css}</style>` + html;
@@ -1717,9 +2107,25 @@ function setPromptFmt(f,btn){
   const w=document.getElementById('pmSlidesWrap'); if(w) w.style.display = (f==='carrusel')?'flex':'none';
 }
 
+// Muestra/oculta el campo de palabras clave según el tic "con foto"
+function togglePmFoto(){
+  const on = document.getElementById('pmFoto')?.checked;
+  const w = document.getElementById('pmFotoKwWrap');
+  if(w) w.style.display = on ? 'block' : 'none';
+  if(on) setTimeout(()=>document.getElementById('pmFotoKw')?.focus(), 50);
+}
+
 // Tipos de slide que la IA puede usar (foto/fototxt/autoridad/revista llevan imagen)
-const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice','citafoto','numero'];
+const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice','citafoto','numero','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
 const TIPOS_IA_FOTO=['foto','fototxt','autoridad','revista','citafoto'];
+// Tipos que SOLO se ven bien con items rellenos (si la IA los deja vacíos,
+// el slide sale casi en blanco: solo eyebrow + titular). Red de seguridad:
+// si llegan sin items, se convierten a 'hook' (siempre se ve bien con solo texto).
+const TIPOS_NECESITAN_ITEMS=['lista','stats','proceso','servicio','claves','pills','debate','indice','chat','versus','checklist','wrapped','dashboard'];
+function saneaTipoSinItems(slide){
+  if(TIPOS_NECESITAN_ITEMS.includes(slide.tipo) && !(slide.items&&slide.items.length)) slide.tipo='hook';
+  return slide;
+}
 
 // Contrato para la IA: coherencia narrativa estricta según formato/nº de slides
 function contratoDiseno(prompt, fmt, n, cfg){
@@ -1741,7 +2147,7 @@ Devuelve SOLO JSON válido, sin markdown:
   "guion": "solo si es reel: guion de 20-25s (gancho/desarrollo/cierre)",
   "slides": [
     {
-      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt | revista | indice | citafoto | numero",
+      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt | revista | indice | citafoto | numero | chat | nota | versus",
       "fondo": "dark | light | blue",
       "eye": "eyebrow corto (kicker en mayúsculas conceptual)",
       "head": "titular del slide (puedes usar \\n)",
@@ -1756,7 +2162,22 @@ Devuelve SOLO JSON válido, sin markdown:
 items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚMERO::etiqueta"; proceso=3-4 "Título:descripción"; servicio=3-5 frases; debate=exactamente 2 opciones; claves=3 frases; pills=3-4 etiquetas; hook/frase/cta/foto/fototxt/citafoto=[] vacío.
 TIPOS CON FOTO (hazlo VISUAL): "foto", "fototxt", "revista" (portada) o "citafoto" (cita sobre foto) — SIEMPRE con "img" en inglés.
 "indice"=índice "Contenido" (items=temas). "numero"=un dato enorme (head=número, body=qué significa).
-REGLAS: 1er slide engancha. Último = CTA con una palabra de acción. Alterna fondos. "stats"/"numero" solo si el tema pide cifras. Sin tecnicismos vacíos.`;
+TIPOS VIRALES (parecen contenido real, no anuncio — úsalos para enganchar):
+· "chat"=captura de conversación/DM. head=frase gancho arriba; body=nombre del contacto; items=mensajes en orden, prefija con "yo:" los que envías tú y "cliente:" los que recibes. Escribe un diálogo real y creíble.
+· "nota"=captura de la app de Notas del móvil (confesión/reflexión cruda y personal). head=título; body=texto en varias líneas (usa \\n), en 1ª persona, tono honesto sin diseño.
+· "versus"=pantalla partida mito vs realidad. head=el tema; items=exactamente 2 como "Lo que crees::texto" y "La realidad::texto".
+· "encuesta"=sticker de votación. head=la pregunta; items=exactamente 2 opciones "Texto::porcentaje" (ej "Sí::68").
+· "busqueda"=barra de Google. head=lo que se teclea (una duda real del cliente); items=3-4 sugerencias de autocompletado.
+· "tweet"=tarjeta de X. body="Nombre::@handle"; head=el texto del tweet (una opinión con filo).
+· "checklist"=lista con marcas. head=título tipo "¿cuántas cumples?"; items=frases; prefija "no:" las que salen con ✗.
+· "factura"=recibo/ticket (perfecto para dinero/fiscalidad). head=título (ej "LO QUE CUESTA NO TENER SISTEMA"); items="Concepto::importe"; body="TOTAL::importe".
+· "neon"=rótulo de neón que brilla. head=frase corta e impactante; body=subtítulo opcional. Para frases potentes.
+· "glitch"=texto roto con colores. head=palabra o frase corta y provocadora; body=opcional.
+· "wrapped"=recap tipo "tu año en números". head=título; items=3-4 "Etiqueta::valor" (con cifras).
+· "dashboard"=panel de resultados. head=título; body=un número grande (ej "+240%"); items=3-5 "Etiqueta::valor" (barras que suben). Solo con cifras reales.
+· "brutal"=tipografía gigante brutalista. head=2-4 líneas MUY cortas (usa \\n); las pares salen en caja invertida.
+· "terminal"=consola de hacker. head=un "comando" (ej "sistema --activar"); items=líneas de salida (prefija "ok:" las verdes); body=línea final.
+REGLAS: 1er slide engancha (un "chat", "nota", "busqueda", "encuesta" o "hook" potente va MUY bien de portada). Último = CTA con una palabra de acción. Alterna fondos. "stats"/"numero"/"factura" solo si el tema pide cifras. Sin tecnicismos vacíos.`;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1963,23 +2384,35 @@ async function iaJSON(prompt, opts){
 }
 
 // Motor: pide el diseño a la IA, sanea y descarga fotos. Devuelve {arr,out}.
-async function pedirDisenoIA(prompt, fmt, n, cfg, onStatus){
+// opcFoto = {usar:true/false, kw:'palabras clave'} — si viene, manda sobre lo que decida la IA:
+//   usar===false → quita cualquier foto que la IA hubiera puesto.
+//   usar===true con kw → fuerza esa búsqueda (Pexels → Pixabay) en vez de la que elige la IA.
+async function pedirDisenoIA(prompt, fmt, n, cfg, onStatus, opcFoto){
   const out = await iaJSON(contratoDiseno(prompt,fmt,n,cfg),
     { maxTokens:2600, temperature:0.85, onStatus });
   let arr=(Array.isArray(out.slides)?out.slides:[]).map(s=>{
     let tipo=TIPOS_IA.includes(s.tipo)?s.tipo:'hook';
+    if(opcFoto && opcFoto.usar===false && TIPOS_IA_FOTO.includes(tipo)) tipo='hook';
     let fondo=['dark','light','blue'].includes(s.fondo)?s.fondo:'dark';
     let items=Array.isArray(s.items)?s.items.filter(x=>x!=null&&String(x).trim()):[];
     const slide={ tipo, fondo, eye:String(s.eye||'').slice(0,60), head:String(s.head||'').slice(0,180),
       body:String(s.body||'').slice(0,240), items, cta:String(s.cta||'').slice(0,60) };
-    if(TIPOS_IA_FOTO.includes(tipo)){ slide.img=String(s.img||s.head||'').slice(0,50); slide.overlay='dark'; slide.imgLayout='bg-full'; slide.txtPos='bottom'; slide.ovOpacity=68; }
-    return slide;
+    if(TIPOS_IA_FOTO.includes(tipo)){
+      slide.img = (opcFoto && opcFoto.usar && opcFoto.kw) ? opcFoto.kw : String(s.img||s.head||'').slice(0,50);
+      slide.overlay='dark'; slide.imgLayout='bg-full'; slide.txtPos='bottom'; slide.ovOpacity=68;
+    }
+    return saneaTipoSinItems(slide);
   }).filter(s=>s.head||s.items.length);
   if(!arr.length) throw new Error('la IA no devolvió slides');
+  // El usuario pidió foto pero la IA no puso ningún slide de tipo foto → forzamos el primero.
+  if(opcFoto && opcFoto.usar && opcFoto.kw && !arr.some(s=>TIPOS_IA_FOTO.includes(s.tipo))){
+    const s0=arr[0];
+    s0.tipo='foto'; s0.img=opcFoto.kw; s0.overlay='dark'; s0.imgLayout='bg-full'; s0.txtPos='bottom'; s0.ovOpacity=68;
+  }
   const conFoto=arr.filter(s=>TIPOS_IA_FOTO.includes(s.tipo)&&s.img);
   if(conFoto.length){
     if(onStatus) onStatus(`Buscando ${conFoto.length} imagen(es)…`);
-    await Promise.all(conFoto.map(async s=>{ const id=await fetchPexelsFoto(s.img); if(id) s.imgFondo=id; else s.tipo='hook'; }));
+    await Promise.all(conFoto.map(async s=>{ const id=await fetchFotoConFallback(s.img); if(id) s.imgFondo=id; else s.tipo='hook'; }));
   }
   return {arr,out};
 }
@@ -2003,18 +2436,22 @@ async function generarDesdePrompt(){
   const status=document.getElementById('promptStatus');
   const btn=document.getElementById('pmGen');
   if(!prompt){ if(status){status.style.color='#ff9f43';status.textContent='Escribe qué quieres diseñar.';} return; }
-  if(!hayIA()){ if(status){status.style.color='#ff9f43';status.textContent='Necesitas una key de IA (pestaña Generar).';} return; }
+  if(!hayIA()){ if(status){status.style.color='#ff9f43';status.textContent='Sin IA disponible ahora. Usa ⚡ Generar o 🗓 Plan 30 — funcionan sin IA.';} return; }
 
   const fmt=_promptFmt;
   const n = fmt==='carrusel' ? (parseInt(document.getElementById('pmSlides')?.value)||6) : 1;
   const cfg=N();
   const libre=document.getElementById('pmLibre')?.checked;
+  const conFoto=document.getElementById('pmFoto')?.checked;
+  const fotoKw=(document.getElementById('pmFotoKw')?.value||'').trim();
+  if(conFoto && !fotoKw){ if(status){status.style.color='#ff9f43';status.textContent='Pon las palabras clave de la foto.';} return; }
+  const opcFoto={ usar: !!conFoto, kw: fotoKw };
   if(libre){ return generarLibre(prompt, fmt, n, cfg, status, btn); }   // modo experimental
 
   if(btn) btn.classList.add('loading');
   if(status){ status.style.color='#38B6FF'; status.textContent='Diseñando con IA…'; }
   try{
-    const {arr,out}=await pedirDisenoIA(prompt,fmt,n,cfg,m=>{ if(status) status.textContent=m; });
+    const {arr,out}=await pedirDisenoIA(prompt,fmt,n,cfg,m=>{ if(status) status.textContent=m; }, opcFoto);
     aplicarDisenoIA(arr,out,fmt,n);
     if(status){ status.style.color='#38B6FF'; status.textContent='✓ Diseño creado.'; }
     cerrarPromptModal(); abrirTabEditar();
@@ -2029,7 +2466,7 @@ async function generarDesdePrompt(){
 // Regenerar SOLO el slide actual con IA, manteniendo su tipo y encajando en la historia
 async function regenerarSlide(){
   if(!SLIDES.length){ toast2('Genera algo primero'); return; }
-  if(!hayIA()){ toast2('Necesitas una key de IA (pestaña Generar)'); return; }
+  if(!hayIA()){ toast2('Sin IA ahora. Edita el slide a mano o usa 🗓 Plan 30'); return; }
   const btn=document.getElementById('btnRegen');
   const d=SLIDES[cur], cfg=N();
   const contexto=SLIDES.map((s,i)=>`${i===cur?'>> ESTE':'  '} [${i+1}] ${s.tipo}: ${(s.head||s.items?.[0]||'').slice(0,60)}`).join('\n');
@@ -2050,9 +2487,10 @@ items según tipo: lista/claves=frases; stats=3-4 "NÚMERO::etiqueta"; proceso="
     ['txtAlign','txtVPos','txtDX','txtDY','txtScale'].forEach(k=>{ if(d[k]!=null) nuevo[k]=d[k]; });   // conservar ajustes
     if(TIPOS_IA_FOTO.includes(tipo)){
       nuevo.overlay='dark'; nuevo.imgLayout='bg-full'; nuevo.txtPos='bottom'; nuevo.ovOpacity=68;
-      if(s.img){ const id=await fetchPexelsFoto(s.img); if(id) nuevo.imgFondo=id; else nuevo.tipo='hook'; }
+      if(s.img){ const id=await fetchFotoConFallback(s.img); if(id) nuevo.imgFondo=id; else nuevo.tipo='hook'; }
       else if(d.imgFondo) nuevo.imgFondo=d.imgFondo;
     }
+    saneaTipoSinItems(nuevo);
     SLIDES[cur]=nuevo;
     show(cur); refreshThumb(cur);
     toast2('✓ Slide regenerado');
@@ -2086,7 +2524,7 @@ REGLAS: no solapes texto ilegible; deja márgenes (~6%); 1 titular grande por sl
     let arr=Array.isArray(out.slides)?out.slides:[];
     if(!arr.length) throw new Error('sin slides');
     // descargar imágenes de los elementos img
-    for(const s of arr){ for(const e of (s.elementos||[])){ if(e.t==='img' && e.img && !/^https?:|^data:/.test(e.img)){ const id=await fetchPexelsFoto(e.img); if(id) e.img=id; } } }
+    for(const s of arr){ for(const e of (s.elementos||[])){ if(e.t==='img' && e.img && !/^https?:|^data:/.test(e.img)){ const id=await fetchFotoConFallback(e.img); if(id) e.img=id; } } }
     const slides=arr.slice(0,cnt).map(s=>({tipo:'libre', fondo:'dark', bg:s.bg, elementos:(s.elementos||[]).slice(0,8)}));
     SLIDES.length=0; slides.forEach(s=>SLIDES.push(s));
     setModo(fmt==='carrusel'?'carrusel':fmt==='reel'?'reel':'post');
@@ -2262,11 +2700,21 @@ const STATS_PERSONAL=[
   ["+150%::Alcance orgánico","5h::Ahorradas por semana con IA","+18%::Margen tras revisar números","+40%::Oportunidades cualificadas"],
   ["+62%::Consultas cualificadas","-30%::Coste de captación","3::Sistemas automatizados","+22%::Rentabilidad"],
 ];
+const STATS_PRODUCTIVIDAD=[
+  ["-40%::Horas perdidas en caos","+3h::Recuperadas cada día","x2::Tareas realmente acabadas","0::Bolas en el aire a la vez"],
+  ["-25%::Reuniones innecesarias","+5h::A la semana con foco real","1::Prioridad clara cada día","-60%::Interrupciones evitables"],
+  ["+35%::Tareas delegadas con éxito","-2h::De pantalla antes de dormir","4::Bloques de foco al día","+20%::Energía al cierre del día"],
+];
 function bancoStats(){
-  return (getNicho()==='personal') ? rnd(STATS_PERSONAL) : rnd(BANCO.stats);
+  const n=getNicho();
+  if(n==='personal') return rnd(STATS_PERSONAL);
+  if(n==='productividad') return rnd(STATS_PRODUCTIVIDAD);
+  return rnd(BANCO.stats);
 }
 function bloqueStats(eye){
-  return {tipo:'stats',fondo:'light',eye: getNicho()==='personal'?'Números que importan':'Resultados que hablan',
+  const n=getNicho();
+  const eyeTxt = n==='personal' ? 'Números que importan' : n==='productividad' ? 'Lo que cambia con un sistema' : 'Resultados que hablan';
+  return {tipo:'stats',fondo:'light',eye:eyeTxt,
     head:'',body:'',items:bancoStats(),cta:''};
 }
 
@@ -2299,7 +2747,7 @@ function bloqueDebate(ai,deb,cta){
 // guardar, comentar una palabra y enviar a un socio → más guardados/comentarios.
 function ctaAccion(cta){
   const word = String(cta||'').replace(/^Escr[ií]beme\s+/i,'').trim() || 'REFORMAS';
-  const personal = getNicho()==='personal';
+  const personal = getNicho()!=='reformas';
   const quien = personal ? 'tu negocio' : 'tu empresa de reformas';
   const acciones = [
     { head:`Si quieres clientes que pagan lo que vales,\nescríbeme una palabra.`,
@@ -2926,7 +3374,7 @@ function refrescarCopy(){
   if(!container) return;
   const angulo = COPY_CTX.angulo;
   const ai = COPY_CTX.ai;
-  const copyData = BANCO.instagramCopy[angulo] || BANCO.instagramCopy.default;
+  const copyData = copyDataFor(angulo);
   const esc = s => String(s==null?'':s).replace(/[<>]/g,'');
 
   // Hook REAL = titular del primer slide generado (lo que se ve en la imagen)
@@ -2948,12 +3396,12 @@ function refrescarCopy(){
   } else if(ai && ai.caption){
     caption = ai.caption;
     if(ctaReal && !caption.toLowerCase().includes(ctaReal.toLowerCase().slice(0,12))) caption += `\n\n${ctaReal} 👇`;
-    hashtags = (getNicho()==='personal') ? N().hashtags : (copyData.hashtags||N().hashtags);
+    hashtags = copyData.hashtags;
   } else {
     // Banco local: usar la caption propia (su apertura ya complementa; NO anteponer el hook)
     caption = copyData.caption||'';
     if(ctaReal && !caption.includes(ctaReal)) caption += `\n\n${ctaReal} 👇`;
-    hashtags = (getNicho()==='personal') ? N().hashtags : (copyData.hashtags||N().hashtags);
+    hashtags = copyData.hashtags;
   }
 
   // ── Reel: además mostrar el GUION generado ──
@@ -3313,83 +3761,79 @@ async function buscarVideosPexels(page){
   }
 }
 
-/* ─── Música libre de derechos (Jamendo, Creative Commons) ─── */
-function getJamendoKey(){ return (localStorage.getItem('jamendo_key')|| (window.RM_CONFIG&&RM_CONFIG.jamendo_key) || '').trim(); }
-function guardarKeyJamendo(v){
-  localStorage.setItem('jamendo_key',(v||'').trim());
-  const st=document.getElementById('musStatus');
-  if(st){ if(getJamendoKey()){ st.style.color='#38B6FF'; st.textContent='✓ Client ID guardado. Busca música arriba.'; }
-    else { st.style.color='var(--UI-M)'; st.textContent='Gratis en developer.jamendo.com (crea una app → Client ID).'; } }
+/* ─── Tu música (carpeta MUSICA del proyecto) ───
+   Nada de API ni buscador: tú copias tus mp3/wav a la carpeta "MUSICA"
+   (junto a este HTML) y la app simplemente lee esa carpeta, la escuchas
+   aquí y eliges cuál suena de fondo en el próximo reel. */
+const CARPETA_MUSICA = 'MUSICA';
+let _musicaLista = [];      // [{nombre, url}] leídos de la carpeta
+let _musicaSel = '';        // nombre del archivo elegido para el reel
+let _musAudio = null;       // <audio> de la preview en curso
+
+async function verMusicaLocal(){
+  soloResultado('musResults', '🎵 Tu música (carpeta MUSICA)');
+  await listarMusicaLocal();
 }
 
-let _musQ='', _musPage=0, _musAudio=null;
-function verMasMusica(){ buscarMusica(_musPage+1); }
-
-async function buscarMusica(page){
-  page = page || 0;
+async function listarMusicaLocal(){
   const status=document.getElementById('musStatus');
-  const q=(page>0)?_musQ:(document.getElementById('musQ')?.value?.trim());
-  if(!q){ if(status){status.style.color='#ff9f43';status.textContent='Escribe qué música buscar.';} return; }
-  const key=getJamendoKey();
-  if(!key){ if(status){status.style.color='#ff9f43';status.textContent='Pega tu Client ID de Jamendo (gratis en developer.jamendo.com).';} return; }
-  _musQ=q; _musPage=page;
-
-  const box=document.getElementById('musResults'), grid=document.getElementById('musGrid');
-  soloResultado('musResults', '🎵 Música: '+q);
-  if(page===0) grid.innerHTML='<div class="mlib-empty">🔍 Buscando música...</div>';
-
+  const grid=document.getElementById('musGrid');
+  if(status){ status.style.color='var(--UI-A)'; status.textContent='Leyendo la carpeta MUSICA…'; }
   try{
-    const PER=20, offset=page*PER;
-    const url=`https://api.jamendo.com/v3.0/tracks/?client_id=${key}&format=json&limit=${PER}&offset=${offset}`
-            + `&search=${encodeURIComponent(q)}&audioformat=mp32&order=popularity_total&include=musicinfo`;
-    const r=await fetch(url);
-    const d=await r.json();
-    if(d.headers?.status!=='success'){ grid.innerHTML=`<div class="mlib-empty" style="color:#ff6b6b">❌ Client ID inválido o sin acceso.</div>`; return; }
-    const tracks=d.results||[];
-    if(!tracks.length){ if(page===0) grid.innerHTML='<div class="mlib-empty">Sin música.<br>Prueba otro término.</div>'; return; }
-    const fmt=s=>{s=Math.round(s||0);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
-    const filas=tracks.map(t=>{
-      const dl=(t.audiodownload_allowed?t.audiodownload:t.audio)||t.audio;
-      const nombre=(t.name||'').replace(/'/g,'’'), artista=(t.artist_name||'').replace(/'/g,'’');
-      return `<div style="display:flex;align-items:center;gap:8px;background:#0A0A0A;border:1px solid var(--UI-B);border-radius:5px;padding:6px 8px">
-        <button onclick="reproMusica('${(t.audio||'').replace(/'/g,'%27')}',this)" title="Escuchar" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;border:none;background:var(--UI-A);color:#fff;cursor:pointer;font-size:11px">▶</button>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:10px;color:var(--UI-T);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nombre}</div>
-          <div style="font-size:8px;color:var(--UI-M);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${artista} · ${fmt(t.duration)}</div>
-        </div>
-        <button onclick="descargarMusica('${(dl||'').replace(/'/g,'%27')}','${nombre.replace(/[^a-z0-9]/gi,'_').slice(0,30)}')" title="Descargar" style="flex-shrink:0;width:26px;height:26px;border-radius:5px;border:1px solid var(--UI-B2);background:var(--UI-B);color:var(--UI-A);cursor:pointer;font-size:12px">⬇</button>
-      </div>`;
-    }).join('');
-    const btnOld=document.getElementById('musMasBtn'); if(btnOld) btnOld.remove();
-    if(page===0) grid.innerHTML=filas; else grid.insertAdjacentHTML('beforeend',filas);
-    if(tracks.length>=PER) grid.insertAdjacentHTML('beforeend',
-      `<button id="musMasBtn" onclick="verMasMusica()" style="padding:7px;font-size:9px;font-weight:600;background:var(--UI-B);border:1px solid var(--UI-A);color:var(--UI-A);border-radius:4px;cursor:pointer">Ver más ↓</button>`);
-    if(status){ status.style.color='#38B6FF'; status.textContent='▶ escucha · ⬇ descarga (a Descargas → reel-video/videos_entrada/).'; }
+    const res = await fetch(CARPETA_MUSICA + '/');
+    if(!res.ok) throw new Error('no accesible');
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    _musicaLista = Array.from(doc.querySelectorAll('a[href]'))
+      .map(a => a.getAttribute('href'))
+      .filter(h => h && /\.(mp3|wav|m4a|ogg)$/i.test(h))
+      .map(href => ({ nombre: decodeURIComponent(href.replace(/\/$/, '')), url: CARPETA_MUSICA + '/' + href }));
+    pintarMusicaLocal();
+    if(status){
+      status.style.color = _musicaLista.length ? '#38B6FF' : 'var(--UI-M)';
+      status.textContent = _musicaLista.length
+        ? `▶ escucha · pulsa "Usar" para ponerla de fondo en el próximo reel.`
+        : `Sin música. Copia tus mp3/wav a la carpeta "${CARPETA_MUSICA}" (junto a este HTML) y vuelve a abrir esto.`;
+    }
   }catch(e){
-    grid.innerHTML=`<div class="mlib-empty" style="color:#ff6b6b">Error: ${e.message}</div>`;
+    if(grid) grid.innerHTML='';
+    if(status){ status.style.color='#ff6b6b'; status.textContent='No pude leer la carpeta (¿abriste con iniciar.py?).'; }
   }
 }
 
-// Reproducir/parar preview
+function pintarMusicaLocal(){
+  const grid=document.getElementById('musGrid');
+  if(!grid) return;
+  if(!_musicaLista.length){
+    grid.innerHTML = `<div class="mlib-empty">Sin música.<br>Copia tus mp3/wav a la carpeta<br><b>${CARPETA_MUSICA}</b> y pulsa 🎵 otra vez.</div>`;
+    return;
+  }
+  grid.innerHTML = _musicaLista.map(t=>{
+    const activa = _musicaSel === t.nombre;
+    const nombreEsc = t.nombre.replace(/'/g,"\\'");
+    return `<div style="display:flex;align-items:center;gap:8px;background:#0A0A0A;border:1px solid ${activa?'var(--UI-A)':'var(--UI-B)'};border-radius:5px;padding:6px 8px">
+      <button onclick="reproMusica('${t.url.replace(/'/g,'%27')}',this)" title="Escuchar" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;border:none;background:var(--UI-A);color:#fff;cursor:pointer;font-size:11px">▶</button>
+      <div style="flex:1;min-width:0;font-size:10px;color:var(--UI-T);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.nombre.replace(/</g,'&lt;')}</div>
+      <button onclick="elegirMusicaReel('${nombreEsc}')" title="Usar de fondo en el próximo reel"
+        style="flex-shrink:0;padding:4px 9px;border-radius:5px;border:1px solid ${activa?'var(--UI-A)':'var(--UI-B2)'};background:${activa?'var(--UI-A)':'var(--UI-B)'};color:${activa?'#fff':'var(--UI-A)'};cursor:pointer;font-size:9px;font-weight:600">${activa?'✓ Elegida':'Usar'}</button>
+    </div>`;
+  }).join('');
+}
+
+// Elige (o quita, si vuelves a pulsar) la música de fondo del próximo reel
+function elegirMusicaReel(nombre){
+  _musicaSel = (_musicaSel === nombre) ? '' : nombre;
+  pintarMusicaLocal();
+  const info=document.getElementById('musicaSelInfo');
+  if(info) info.textContent = _musicaSel ? `🎵 Sonará de fondo: "${_musicaSel}"` : 'Copia tus mp3 a la carpeta MUSICA (junto a este HTML) y ábrelos aquí.';
+}
+
+// Reproducir/parar preview (un único audio sonando a la vez)
 function reproMusica(url, btn){
   if(_musAudio){ _musAudio.pause(); document.querySelectorAll('#musGrid button').forEach(b=>{ if(b.textContent==='⏸') b.textContent='▶'; }); }
   if(btn && btn.textContent==='⏸'){ btn.textContent='▶'; _musAudio=null; return; }
   _musAudio=new Audio(url); _musAudio.play().catch(()=>{});
   if(btn){ btn.textContent='⏸'; _musAudio.onended=()=>{ btn.textContent='▶'; }; }
-}
-
-// Descargar mp3
-async function descargarMusica(url, nombre){
-  if(!url) return;
-  const status=document.getElementById('musStatus');
-  if(status){ status.style.color='#38B6FF'; status.textContent='Descargando música...'; }
-  try{
-    const res=await fetch(url); const blob=await res.blob();
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-    a.download=`musica_${nombre||'jamendo'}.mp3`; a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href),1500);
-    if(status){ status.style.color='#38B6FF'; status.textContent='✓ Descargada. Muévela a reel-video/videos_entrada/ (o úsala en IG).'; }
-  }catch(e){ window.open(url,'_blank'); if(status){ status.style.color='#ff9f43'; status.textContent='Se abrió en otra pestaña: guárdala con clic derecho.'; } }
 }
 
 // Descarga el mp4 al ordenador (va a Descargas; muévelo a reel-video/videos_entrada/)
@@ -3500,7 +3944,7 @@ function copiar(txt){
 }
 
 function copiarTodo(angulo, hookEnc){
-  const copyData = BANCO.instagramCopy[angulo] || BANCO.instagramCopy.default;
+  const copyData = copyDataFor(angulo);
   const full = decodeURIComponent(hookEnc) + '\n\n' + copyData.caption + '\n\n' + copyData.hashtags;
   copiar(full);
 }
@@ -3660,6 +4104,7 @@ function ed(f,v){
   if(f==='txtPos')    d.txtPos=v;
   if(f==='imgLayout') d.imgLayout=v;
   if(f==='txtScale')  d.txtScale=parseInt(v);
+  if(f==='txtShadow') d.txtShadow=parseInt(v);
   if(f==='txtDX')     d.txtDX=parseInt(v);
   if(f==='txtDY')     d.txtDY=parseInt(v);
   if(f==='imgX2')     d.imgX2=parseInt(v);
@@ -3718,6 +4163,41 @@ function renderItemsList(){
 }
 function setV(k,v){document.documentElement.style.setProperty(k,v);show(cur);buildThumbs()}
 
+/* ── Poner cualquier palabra en AZUL de marca ──
+   Recuerda el último campo de texto del editor donde tocaste (headline,
+   cuerpo o items) y, al pulsar el botón, envuelve la palabra seleccionada
+   en *asteriscos* (que el diseño pinta en azul). Vuelve a pulsar = quitar. */
+let _campoTexto = null;
+document.addEventListener('focusin', e=>{
+  const el = e.target;
+  if(el && (el.id==='cHead' || el.id==='cBody' || (el.tagName==='TEXTAREA' && el.closest('#itemsList')))){
+    _campoTexto = el;
+  }
+});
+function marcarAzul(){
+  const el = _campoTexto;
+  if(!el || !document.body.contains(el)){ toast2('Toca primero el texto (Headline, Cuerpo o Items)'); return; }
+  const RE = /[\wáéíóúñüÁÉÍÓÚÑÜ]/;
+  let v = el.value, s = el.selectionStart, e = el.selectionEnd;
+  if(s===e){                                   // sin selección: coge la palabra bajo el cursor
+    while(s>0 && RE.test(v[s-1])) s--;
+    while(e<v.length && RE.test(v[e])) e++;
+  }
+  if(s===e){ toast2('Selecciona la palabra que quieres en azul'); return; }
+  const antes=v.slice(0,s), sel=v.slice(s,e), despues=v.slice(e);
+  let nuevo, ns=s, nlen=sel.length;
+  if(/^\*.+\*$/.test(sel)){                     // ya marcada dentro de la selección → quitar
+    nuevo = antes + sel.slice(1,-1) + despues; nlen = sel.length-2;
+  } else if(antes.endsWith('*') && despues.startsWith('*')){  // marcada por fuera → quitar
+    nuevo = antes.slice(0,-1) + sel + despues.slice(1); ns = s-1;
+  } else {                                      // poner en azul
+    nuevo = antes + '*' + sel + '*' + despues; nlen = sel.length+2;
+  }
+  el.value = nuevo;
+  el.dispatchEvent(new Event('input', {bubbles:true}));   // dispara ed()/editItemTxt y repinta
+  el.focus(); try{ el.setSelectionRange(ns, ns+nlen); }catch(_){}
+}
+
 /* ── Controles del modo dos fotos ── */
 function setDuo(prop, val){
   if(!SLIDES.length) return;
@@ -3751,12 +4231,13 @@ function setTxtVPos(v){
 function resetTextoSlide(){
   if(!SLIDES.length) return;
   const d=SLIDES[cur];
-  d.txtScale=100; d.txtAlign='left'; d.txtVPos='center'; d.txtDX=0; d.txtDY=0;
+  d.txtScale=100; d.txtAlign='left'; d.txtVPos='center'; d.txtDX=0; d.txtDY=0; d.txtShadow=0;
   sincronizarTextoSlide(d);
   show(cur); refreshThumb(cur);
 }
 function sincronizarTextoSlide(d){
   const sc=document.getElementById('rTxtScale'); if(sc){sc.value=d.txtScale??100; document.getElementById('vTxtScale').textContent=(d.txtScale??100)+'%'}
+  const ts=document.getElementById('rTxtShadow'); if(ts){ts.value=d.txtShadow??0; document.getElementById('vTxtShadow').textContent=(d.txtShadow??0)+'%'}
   const dx=document.getElementById('rTxtDX'); if(dx){dx.value=d.txtDX??0; document.getElementById('vTxtDX').textContent=(d.txtDX??0)+'px'}
   const dy=document.getElementById('rTxtDY'); if(dy){dy.value=d.txtDY??0; document.getElementById('vTxtDY').textContent=(d.txtDY??0)+'px'}
   const al=d.txtAlign||'left';
@@ -3773,7 +4254,10 @@ function sincronizarTextoSlide(d){
 const TIPO_L={hook:'Hook',frase:'Frase',ba:'BA Texto',lista:'Lista',
   stats:'Stats',proceso:'Proceso',servicio:'Servicio',debate:'Debate',
   cta:'CTA',post:'Post',foto:'Foto BG',bafoto:'BA Foto',
-  fototxt:'Foto+Txt',autoridad:'Autoridad'};
+  fototxt:'Foto+Txt',autoridad:'Autoridad',
+  chat:'Chat/DM',nota:'Nota',versus:'Versus',
+  encuesta:'Encuesta',busqueda:'Búsqueda',tweet:'Tweet',checklist:'Checklist',factura:'Factura',
+  neon:'Neón',glitch:'Glitch',wrapped:'Wrapped',dashboard:'Dashboard',brutal:'Brutalista',terminal:'Terminal'};
 
 function buildThumbs(){
   const panel=document.getElementById('sideL');
@@ -4105,9 +4589,17 @@ function copyDeIdea(idea, ai){
    ═══════════════════════════════════════════ */
 // Banco de ideas según el nicho activo (reformas / marca personal)
 function bancoIdeas(){
-  return (getNicho()==='personal') ? (window.IDEAS_PERSONAL||[]) : (window.IDEAS_365||[]);
+  const n=getNicho();
+  if(n==='personal') return window.IDEAS_PERSONAL||[];
+  if(n==='productividad') return window.IDEAS_PRODUCTIVIDAD||[];
+  return window.IDEAS_365||[];
 }
-function usadasKey(){ return (getNicho()==='personal') ? 'ideas_usadas_personal' : 'ideas_usadas'; }
+function usadasKey(){
+  const n=getNicho();
+  if(n==='personal') return 'ideas_usadas_personal';
+  if(n==='productividad') return 'ideas_usadas_productividad';
+  return 'ideas_usadas';
+}
 
 function getUsadas(){
   try{ return JSON.parse(localStorage.getItem(usadasKey())||'{}'); }
@@ -4135,10 +4627,16 @@ const MAP_PILAR_ANGULO = {
 };
 
 function anguloDesdeIdea(idea){
+  const nicho=getNicho();
   // Marca personal: mapear por Pilar
-  if(getNicho()==='personal'){
+  if(nicho==='personal'){
     const p=(idea.pilar||'').toLowerCase();
     return MAP_PILAR_PERSONAL[p] || rnd(Object.keys(N().angulos||{crecimiento:1}));
+  }
+  // Productividad: mapear por Pilar
+  if(nicho==='productividad'){
+    const p=(idea.pilar||'').toLowerCase();
+    return MAP_PILAR_PRODUCTIVIDAD[p] || rnd(Object.keys(N().angulos||{agenda:1}));
   }
   const dolor=(idea.dolor||'').toLowerCase();
   for(const k in MAP_PILAR_ANGULO){ if(dolor.includes(k.split(' ')[0])) return MAP_PILAR_ANGULO[k]; }
@@ -4167,6 +4665,12 @@ function actualizarFiltroPilar(){
 const MAP_PILAR_PERSONAL={
   'marketing':'visibilidad', 'fiscalidad':'datos', 'mentalidad':'autoridad',
   'storytelling':'crecimiento', 'ia':'ia', 'marca personal':'autoridad', 'venta':'estrategia',
+};
+
+// Mapear pilar del banco de productividad → ángulo del nicho productividad
+const MAP_PILAR_PRODUCTIVIDAD={
+  'agenda':'agenda', 'prioridades':'priorizar', 'delegación':'delegar', 'delegacion':'delegar',
+  'foco':'foco', 'sistemas':'sistemas', 'energía':'energia', 'energia':'energia', 'herramientas':'sistemas',
 };
 
 function renderBanco(){
@@ -4248,7 +4752,8 @@ function usarIdeaBanco(dia){
 
   // Sembrar con el contenido REAL de la idea
   if(slides[0]){ slides[0].head=idea.hook; slides[0].eye=idea.objetivo||idea.pilar; }
-  const ctaCorto = idea.cta && idea.cta.length>40 ? (getNicho()==='personal'?'Escríbeme INFO':'Escríbeme') : (idea.cta||'');
+  const _nch=getNicho();
+  const ctaCorto = idea.cta && idea.cta.length>40 ? (_nch==='personal'?'Escríbeme INFO':_nch==='productividad'?'Escríbeme ORGANIZA':'Escríbeme') : (idea.cta||'');
   const ult=slides[slides.length-1];
   if(ult && ctaCorto) ult.cta=ctaCorto;
 
@@ -4277,7 +4782,7 @@ function repostIdea(dia){
 function verIdeaCompleta(dia){
   const it=bancoIdeas().find(i=>String(i.dia)===String(dia));
   if(!it) return;
-  if(getNicho()==='personal'){
+  if(getNicho()==='personal' || getNicho()==='productividad'){
     alert(`DÍA ${it.dia} · ${it.formato} · ${it.pilar}\n`+
       `\n▸ TEMA:\n${it.idea}`+
       `\n\n▸ GANCHO:\n${it.hook}`+
@@ -4361,7 +4866,7 @@ async function expPPTX(){
 
     // Layouts visuales/complejos: exportar el slide como IMAGEN fiel (los de
     // texto simple siguen siendo elementos editables en Canva).
-    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','ba','bafoto','foto','fototxt','autoridad'];
+    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','ba','bafoto','foto','fototxt','autoridad','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
     if(IMG_ONLY_PPTX.includes(d.tipo)){
       let ok=false;
       try{ const cv=await capture(i); slide.addImage({ data:cv.toDataURL('image/png'), x:0,y:0,w:10.8,h:13.5 }); ok=true; }catch(e){}
@@ -4473,10 +4978,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     if(RM_CONFIG.gemini_key && !localStorage.getItem('gemini_key')) localStorage.setItem('gemini_key', RM_CONFIG.gemini_key);
     if(RM_CONFIG.openrouter_key && !localStorage.getItem('openrouter_key')) localStorage.setItem('openrouter_key', RM_CONFIG.openrouter_key);
     if(RM_CONFIG.pixabay_key && !localStorage.getItem('pixabay_key')) localStorage.setItem('pixabay_key', RM_CONFIG.pixabay_key);
-    if(RM_CONFIG.jamendo_key && !localStorage.getItem('jamendo_key')) localStorage.setItem('jamendo_key', RM_CONFIG.jamendo_key);
   }
-  const jk=document.getElementById('jamendoKey');
-  if(jk){ jk.value=getJamendoKey(); guardarKeyJamendo(jk.value); }
   // Restaurar keys de IA + qué IA usar, y reflejar el estado
   const gk=document.getElementById('groqKey');       if(gk) gk.value = getGroqKey();
   const gmk=document.getElementById('geminiKey');    if(gmk) gmk.value = getGeminiKey();
@@ -4561,6 +5063,29 @@ async function fetchPexelsFoto(query){
     if(!dataUrl) return null;
     return pushMedia(dataUrl, `IA · ${(query||'foto').slice(0,20)}`);
   }catch(e){ return null; }
+}
+
+// Trae UNA foto de Pixabay por palabra clave y la incrusta en la biblioteca.
+// Devuelve el id (para asignar como fondo) o null si falla.
+async function fetchPixabayFoto(query){
+  try{
+    const key=getPixabayKey();
+    if(!key) return null;
+    const res=await fetch(`https://pixabay.com/api/?key=${key}&q=${encodeURIComponent(query||'business')}&image_type=photo&orientation=vertical&per_page=8&safesearch=true`);
+    if(!res.ok) return null;
+    const data=await res.json();
+    const fotos=data.hits||[];
+    if(!fotos.length) return null;
+    const ph=fotos[Math.floor(Math.random()*fotos.length)];   // variedad
+    const dataUrl=await fetchDataURL(ph.largeImageURL||ph.webformatURL);
+    if(!dataUrl) return null;
+    return pushMedia(dataUrl, `IA · ${(query||'foto').slice(0,20)}`);
+  }catch(e){ return null; }
+}
+
+// Busca la foto en Pexels y, si no encuentra nada, cae a Pixabay.
+async function fetchFotoConFallback(query){
+  return (await fetchPexelsFoto(query)) || (await fetchPixabayFoto(query));
 }
 
 // Precarga simple (perfil, feed): descarga y añade a la biblioteca.
@@ -4762,6 +5287,100 @@ async function eliminarFavorito(id){
 function abrirFavoritos(){ document.getElementById('favModal').classList.add('on'); renderFavoritos(); }
 function cerrarFavoritos(){ document.getElementById('favModal').classList.remove('on'); }
 
+/* ═══════════════════════════════════════════
+   PLAN 30 DÍAS  —  calendario ya redactado (datos-calendario.js)
+   Funciona SIN IA: cada día vuelca un slide de portada listo al editor.
+   ═══════════════════════════════════════════ */
+function abrirCalendario(){ const m=document.getElementById('calModal'); if(m){ m.classList.add('on'); renderCalendario(); } }
+function cerrarCalendario(){ document.getElementById('calModal')?.classList.remove('on'); }
+
+function renderCalendario(){
+  const cont=document.getElementById('calGrid'); if(!cont) return;
+  const cal=window.RM_CALENDARIO||[];
+  if(!cal.length){ cont.innerHTML='<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:30px;line-height:1.6">No se pudo cargar el calendario.<br>Falta <b>datos-calendario.js</b> (ábrelo con iniciar.py).</div>'; return; }
+  const TIPO_L2={nota:'📝 Nota',chat:'💬 Chat',versus:'⚔ Versus',frase:'❝ Frase',lista:'☰ Lista'};
+  cont.innerHTML=cal.map((d,i)=>`
+    <div class="cal-card" onclick="usarDiaCalendario(${i})" title="Volcar este día al editor">
+      <div class="cal-top">
+        <span class="cal-dia">DÍA ${d.n}</span>
+        <div class="cal-badges"><span class="cal-b">${favEsc(d.formato)}</span><span class="cal-b">${TIPO_L2[d.slide&&d.slide.tipo]||favEsc((d.slide&&d.slide.tipo)||'')}</span></div>
+      </div>
+      <div class="cal-gancho">${favEsc(((d.slide&&d.slide.head)||'').replace(/\n/g,' ')).slice(0,95)}</div>
+      <div class="cal-pilar">${favEsc(d.pilar||'')}</div>
+    </div>`).join('');
+}
+
+function usarDiaCalendario(i){
+  const cal=window.RM_CALENDARIO||[];
+  const d=cal[i];
+  if(!d||!d.slide){ toast2('Ese día no está disponible'); return; }
+  // El plan es de la marca personal (fiscalidad + marketing + IA): fijar nicho.
+  if(_nicho!=='personal'){ setNicho('personal'); const ns=document.getElementById('nichoSel'); if(ns) ns.value='personal'; }
+  const cover=JSON.parse(JSON.stringify(d.slide));
+  const slides=[cover];
+  // Carrusel COMPLETO sin IA: portada → desarrollo (ya escrito) → cierre CTA.
+  if(d.formato==='Carrusel'){
+    (d.desarrollo||[]).forEach(s=>slides.push(JSON.parse(JSON.stringify(s))));
+    slides.push({tipo:'cta', fondo:'blue', eye:cover.eye||'', head:'¿Te ayudo con esto?',
+      body:'Escríbeme y le damos una vuelta a tu caso, sin humo.', cta:d.cta||'Escríbeme'});
+  }
+  SLIDES.length=0; slides.forEach(s=>SLIDES.push(s));
+  cur=0;
+  const modoNuevo = (d.formato==='Reel'||d.formato==='Historia') ? 'reel'
+                  : (d.formato==='Post' ? 'post' : 'carrusel');
+  setModo(modoNuevo);                                   // reconstruye vista + miniaturas
+  COPY_CTX={angulo:'sistema', ai:null, idea:{caption:(cover.head||'').replace(/\n/g,' '), hashtags:(N().hashtags||''), cta:d.cta||''}};
+  if(typeof refrescarCopy==='function') refrescarCopy();
+  cerrarCalendario();
+  if(typeof abrirTabEditar==='function') abrirTabEditar();
+  toast2('✓ Día '+d.n+' cargado — edítalo o guárdalo en ⭐ Diseños');
+}
+
+/* ═══════════════════════════════════════════
+   PLANTILLAS VIRALES  —  25 diseños por temática (datos-plantillas.js)
+   Funciona SIN IA: vuelca un slide viral completo al editor.
+   ═══════════════════════════════════════════ */
+let _plnFiltro='Todas';
+const _PLN_TIPO={nota:'📝 Nota',chat:'💬 Chat',versus:'⚔ Versus',encuesta:'📊 Encuesta',
+  busqueda:'🔍 Búsqueda',tweet:'🐦 Tweet',checklist:'✅ Checklist',factura:'🧾 Factura',
+  frase:'❝ Frase',lista:'☰ Lista',numero:'# Número'};
+
+function abrirPlantillas(){ const m=document.getElementById('plnModal'); if(m){ m.classList.add('on'); renderPlantillas(); } }
+function cerrarPlantillas(){ document.getElementById('plnModal')?.classList.remove('on'); }
+function filtrarPlantillas(t){
+  _plnFiltro=t||'Todas';
+  document.querySelectorAll('#plnTabs .pln-tab').forEach(b=>b.classList.toggle('on', b.dataset.t===_plnFiltro));
+  renderPlantillas();
+}
+function renderPlantillas(){
+  const cont=document.getElementById('plnGrid'); if(!cont) return;
+  const all=window.RM_PLANTILLAS||[];
+  if(!all.length){ cont.innerHTML='<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:30px;line-height:1.6">No se pudieron cargar las plantillas.<br>Falta <b>datos-plantillas.js</b> (ábrelo con iniciar.py).</div>'; return; }
+  const items=all.map((p,i)=>({p,i})).filter(x=>_plnFiltro==='Todas' || x.p.tema===_plnFiltro);
+  cont.innerHTML=items.map(({p,i})=>`
+    <div class="cal-card" onclick="usarPlantilla(${i})" title="Volcar esta plantilla al editor">
+      <div class="cal-top">
+        <span class="cal-dia">${favEsc(p.tema==='General'?'CUALQUIER NICHO':p.tema.toUpperCase())}</span>
+        <div class="cal-badges"><span class="cal-b">${_PLN_TIPO[p.slide&&p.slide.tipo]||favEsc((p.slide&&p.slide.tipo)||'')}</span></div>
+      </div>
+      <div class="cal-gancho">${favEsc(((p.slide&&p.slide.head)||p.titulo||'').replace(/\n/g,' ')).slice(0,95)}</div>
+      <div class="cal-pilar">${favEsc(p.titulo||'')}</div>
+    </div>`).join('') || '<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:30px">Sin plantillas en esta temática.</div>';
+}
+function usarPlantilla(i){
+  const pl=(window.RM_PLANTILLAS||[])[i];
+  if(!pl||!pl.slide){ toast2('Esa plantilla no está disponible'); return; }
+  const nichoPl=pl.nicho||'personal';
+  if(_nicho!==nichoPl){ setNicho(nichoPl); const ns=document.getElementById('nichoSel'); if(ns) ns.value=nichoPl; }
+  SLIDES.length=0; SLIDES.push(JSON.parse(JSON.stringify(pl.slide)));
+  cur=0; setModo('carrusel');
+  COPY_CTX={angulo:'sistema', ai:null, idea:{caption:((pl.slide.head||'').replace(/\n/g,' ')), hashtags:(N().hashtags||''), cta:pl.slide.cta||''}};
+  if(typeof refrescarCopy==='function') refrescarCopy();
+  cerrarPlantillas();
+  if(typeof abrirTabEditar==='function') abrirTabEditar();
+  toast2('✓ Plantilla cargada — edítala o guárdala en ⭐ Diseños');
+}
+
 async function renderFavoritos(){
   const cont=document.getElementById('favGrid');
   if(!cont) return;
@@ -4774,7 +5393,7 @@ async function renderFavoritos(){
     return;
   }
   cont.innerHTML=all.map(f=>{
-    const badge=f.nicho==='personal'?'👤 Personal':'🏗 Reformas';
+    const badge=f.nicho==='personal'?'👤 Personal':f.nicho==='productividad'?'🗂 Productividad':'🏗 Reformas';
     const nSl=(f.slides||[]).length;
     const fecha=f.fecha?new Date(f.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short'}):'';
     const thumb=f.thumb
@@ -4807,6 +5426,15 @@ function guardarVozReel(v){
   localStorage.setItem('rm_voz_reel', v || VOZ_REEL_DEF);
   toast2('✓ Voz del reel: ' + (document.getElementById('reelVozSel')?.selectedOptions[0]?.textContent || v));
 }
+
+// Transición entre los clips del reel: corte seco (por defecto) o fundido cruzado
+function getTransicionReel(){ return localStorage.getItem('rm_reel_transicion') || 'corte'; }
+function guardarTransicionReel(v){ localStorage.setItem('rm_reel_transicion', v || 'corte'); }
+
+// Sombra oscura tras el texto del reel (0-100). Caja semitransparente detrás
+// del gancho/subtítulos para que se lean sobre cualquier vídeo.
+function getSombraReel(){ const v=localStorage.getItem('rm_reel_sombra'); return v==null?45:parseInt(v); }
+function guardarSombraReel(v){ localStorage.setItem('rm_reel_sombra', String(parseInt(v)||0)); }
 
 // Deja el guion del reel listo para LOCUTAR: quita la cabecera, el caption y
 // las acotaciones ("Gancho (0-2s):", "Desarrollo:", comillas...) para que la
@@ -4869,7 +5497,7 @@ function anadirClipReel(url, poster, durOriginal, fuente, prev){
   if(_reelClips.some(c=>c.url===url)){ toast2('Ese clip ya está en el reel'); return; }
   if(_reelClips.length>=6){ toast2('Máximo 6 clips'); return; }
   const d = Math.min(Math.max(Math.round(durOriginal||5),1), 10) || 5;
-  _reelClips.push({ url, poster, dur:d, fuente:fuente||'Pexels', prev: prev||url });
+  _reelClips.push({ url, poster, dur:d, inicio:0, fuente:fuente||'Pexels', prev: prev||url });
   pintarClipsReel();
   toast2(`✓ Clip añadido al reel (${_reelClips.length})`);
 }
@@ -4878,6 +5506,12 @@ function vaciarClipsReel(){ _reelClips = []; pintarClipsReel(); }
 function setDurClip(i, v){
   const n = Math.min(Math.max(parseFloat(v)||1, 0.5), 30);
   if(_reelClips[i]) _reelClips[i].dur = n;
+  pintarClipsReel();
+}
+// Recorta el clip por delante: en qué segundo del vídeo original empieza
+function setInicioClip(i, v){
+  const n = Math.max(parseFloat(v)||0, 0);
+  if(_reelClips[i]) _reelClips[i].inicio = n;
   pintarClipsReel();
 }
 function moverClipReel(i, delta){
@@ -4908,7 +5542,13 @@ function pintarClipsReel(){
       </div>
       <div class="reel-clip-mid">
         <div class="reel-clip-tit">Clip ${i+1} · ${c.fuente}</div>
-        <label class="reel-clip-dur">
+        <label class="reel-clip-dur" title="Recorta por delante: en qué segundo del vídeo original empieza">
+          desde
+          <input type="number" min="0" step="0.5" value="${c.inicio||0}"
+                 onchange="setInicioClip(${i}, this.value)"> s
+        </label>
+        <label class="reel-clip-dur" title="Cuánto dura este clip en el reel (recorta el resto, por detrás)">
+          dura
           <input type="number" min="0.5" max="30" step="0.5" value="${c.dur}"
                  onchange="setDurClip(${i}, this.value)"> s
         </label>
@@ -5154,10 +5794,23 @@ function abrirReelModal(){
   document.getElementById('reelModal').classList.add('on');
   const vs = document.getElementById('reelVozSel'); if(vs) vs.value = getVozReel();
   const ps = document.getElementById('reelPalabras'); if(ps) ps.value = String(getPalabrasReel());
+  const trs = document.getElementById('reelTransicion'); if(trs) trs.value = getTransicionReel();
+  const som = document.getElementById('reelSombra'); if(som){ som.value = getSombraReel(); const sv=document.getElementById('reelSombraVal'); if(sv) sv.textContent = getSombraReel()+'%'; }
   cambiarModoVoz();
   pintarClipsReel();
   contarPalabrasGuion();
   setTimeout(()=>document.getElementById('reelPrompt')?.focus(), 100);
+  _pedirPermisoMic();
+}
+
+// Pide el permiso del micrófono al abrir "Crear reel" (una vez aceptado, el
+// navegador lo recuerda para este sitio y no lo vuelve a preguntar al grabar).
+async function _pedirPermisoMic(){
+  if(!navigator.mediaDevices?.getUserMedia) return;
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    stream.getTracks().forEach(t => t.stop());
+  }catch(e){ /* el usuario decidirá cuando pulse "Grabar mi voz" */ }
 }
 function cerrarReelModal(){
   // No cerrar sin querer mientras se graba o se monta el reel
@@ -5173,7 +5826,7 @@ function cerrarReelModal(){
 async function generarGuionReel(){
   const prompt = (document.getElementById('reelPrompt')?.value||'').trim();
   if(!prompt){ reelSt('#ff9f43','Escribe primero el tema del reel.'); return null; }
-  if(!hayIA()){ reelSt('#ff9f43','Necesitas una key de IA (pestaña Generar).'); return null; }
+  if(!hayIA()){ reelSt('#ff9f43','Sin IA ahora: escribe tú el guion en el recuadro de abajo (o cópialo de 🗓 Plan 30).'); return null; }
   const btn = document.getElementById('reelGuionBtn');
   if(btn){ btn.disabled=true; btn.textContent='✨ Escribiendo…'; }
   reelSt('#38B6FF','La IA está escribiendo el guion…');
@@ -5193,13 +5846,14 @@ MUY IMPORTANTE sobre "guion": es el texto que se va a LOCUTAR en voz alta.
 Debe tener OBLIGATORIAMENTE entre ${lo} y ${hi} PALABRAS (cuéntalas antes de responder).
 ${estructura}
 Nada de acotaciones, ni "(0-2s)", ni las palabras "gancho" o "cierre".
+Marca 2-4 palabras o frases cortas CLAVE del guion rodeándolas de asteriscos, ej: "vas a *triplicar* tus reservas" — en los subtítulos del vídeo saldrán resaltadas en azul de marca. No abuses: solo lo realmente importante.
 
 Devuelve SOLO JSON válido, sin markdown:
 {
  "hook": "titular potente para la pantalla, máx 45 caracteres",
  "sub": "subtítulo corto, máx 70 caracteres",
  "cta": "llamada a la acción de 2-3 palabras (ej: Guarda esto)",
- "guion": "texto locutado de ${lo}-${hi} palabras",
+ "guion": "texto locutado de ${lo}-${hi} palabras, con 2-4 *palabras clave* marcadas con asteriscos",
  "keywords": ["3-4 búsquedas EN INGLÉS de vídeo de stock, 2-3 palabras cada una, coherentes con el tema y visualmente distintas entre sí"]
 }`;
   // La cascada (Groq → Gemini → OpenRouter) se encarga de saltar si falta cuota.
@@ -5311,7 +5965,7 @@ async function generarReelBackend(){
   const cta  = _reelIA.cta  || String(d.cta||'').replace(/\s*[→↓]\s*$/,'').trim();
   // Si has elegido vídeos a mano, mandan ellos (con su duración). Si no, la IA.
   const clips = _reelClips.length
-    ? _reelClips.map(c=>({ url:c.url, dur:Number(c.dur)||5 }))
+    ? _reelClips.map(c=>({ url:c.url, dur:Number(c.dur)||5, inicio:Number(c.inicio)||0 }))
     : (_reelIA.keywords.length ? _reelIA.keywords : (prompt ? [prompt] : []));
 
   if(!hook && !guion){ reelSt('#ff9f43','Escribe un tema o genera un diseño primero.'); return; }
@@ -5327,6 +5981,9 @@ async function generarReelBackend(){
         narrar: (modoVoz==='sin') ? null : guion,
         audio:  (modoVoz==='mia') ? _reelAudio : null,
         voz: getVozReel(),
+        musica: _musicaSel || null,
+        transicion: getTransicionReel(),
+        sombra: getSombraReel(),
         subtitulos: !!document.getElementById('reelSubs')?.checked && modoVoz!=='sin'
       }) });
     if(!res.ok){

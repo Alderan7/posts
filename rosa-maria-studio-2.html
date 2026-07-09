@@ -13,6 +13,9 @@
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script src="datos-ideas.js"></script>
 <script src="datos-ideas-personal.js"></script>
+<script src="datos-ideas-productividad.js" onerror="/* opcional: sin banco de productividad, el nicho avisa */"></script>
+<script src="datos-calendario.js" onerror="/* opcional: sin calendario, el botón avisa */"></script>
+<script src="datos-plantillas.js" onerror="/* opcional: sin plantillas, el botón avisa */"></script>
 <style>
 /* ═══════════════════════════════════════════════════
    MANUAL DE BRANDING — PALETA EXACTA
@@ -476,14 +479,18 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .slbl{font-family:var(--F-SAN);letter-spacing:.12em;text-transform:uppercase;color:rgba(26,26,26,.4);font-weight:500;line-height:1.3}
 .SD .slbl{color:rgba(245,241,234,.35)}
 
-.sProceso .stepsrow{display:flex;align-items:flex-start;gap:0;flex:1;margin-top:36px}
-.pstep{flex:1;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:0 14px;position:relative}
-.pstep:not(:last-child)::after{content:'';position:absolute;top:26px;left:calc(50% + 26px);width:calc(100% - 52px);height:2px;background:rgba(56,182,255,.2)}
+/* Proceso — línea de tiempo vertical (de arriba a abajo): cada paso ocupa el
+   ancho completo, así el texto nunca compite por hueco entre columnas ni se corta. */
+.sProceso .stepsrow{display:flex;flex-direction:column;flex:1;justify-content:center;margin-top:8px}
+.pstep{position:relative;display:flex;gap:26px;padding:0 0 40px;align-items:flex-start}
+.pstep:last-child{padding-bottom:0}
+.pstep:not(:last-child)::before{content:'';position:absolute;left:25px;top:52px;bottom:0;width:2px;background:rgba(56,182,255,.25)}
 .pnum{width:52px;height:52px;border-radius:50%;background:#38B6FF;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--F-SAN);font-size:21px;font-weight:600;flex-shrink:0;z-index:1}
-.ptitle{font-family:var(--F-SAN);font-size:34px;font-weight:500;line-height:1.15}
+.pbody{flex:1;padding-top:6px;min-width:0}
+.ptitle{font-family:var(--F-SAN);font-size:34px;font-weight:600;line-height:1.2;margin-bottom:8px}
 .SL .ptitle{color:#1A1A1A} .SD .ptitle{color:#F5F1EA}
-.pdesc{font-family:var(--F-SAN);font-size:21px;line-height:1.45;font-weight:300}
-.SL .pdesc{color:rgba(26,26,26,.55)} .SD .pdesc{color:rgba(245,241,234,.55)}
+.pdesc{font-family:var(--F-SAN);font-size:22px;line-height:1.5;font-weight:300}
+.SL .pdesc{color:rgba(26,26,26,.6)} .SD .pdesc{color:rgba(245,241,234,.6)}
 
 .sServ .svzone{flex:1;display:flex;flex-direction:column;margin-top:36px}
 .svrow{display:flex;align-items:center;gap:20px;padding:24px 0;border-bottom:1px solid rgba(26,26,26,.1)}
@@ -728,8 +735,20 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 #resModal .resm-grid .mlib-item,#preModal .resm-grid .mlib-item{aspect-ratio:9/16}
 #resModal .mlib-use,#preModal .mlib-use{font-size:13px}
 /* Modal favoritos / diseños guardados */
-#favModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
-#favModal.on{display:flex}
+#favModal,#calModal,#plnModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
+#favModal.on,#calModal.on,#plnModal.on{display:flex}
+.pln-tab{border:1px solid var(--UI-B2);background:transparent;color:var(--UI-M);border-radius:20px;padding:5px 14px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif}
+.pln-tab:hover{border-color:var(--UI-A);color:var(--UI-A)}
+.pln-tab.on{background:var(--UI-A);border-color:var(--UI-A);color:#fff}
+.cal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;align-content:start}
+.cal-card{background:var(--UI-B);border:1px solid var(--UI-B2);border-radius:8px;padding:11px 12px;cursor:pointer;transition:border-color .15s,transform .1s;display:flex;flex-direction:column;gap:6px}
+.cal-card:hover{border-color:var(--UI-A);transform:translateY(-1px)}
+.cal-card .cal-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.cal-card .cal-dia{font-size:9px;font-weight:700;color:var(--UI-A);letter-spacing:.04em}
+.cal-card .cal-badges{display:flex;gap:4px}
+.cal-card .cal-b{font-size:8px;padding:2px 6px;border-radius:4px;background:var(--UI-B2);color:var(--UI-T);white-space:nowrap}
+.cal-card .cal-gancho{font-size:12px;color:var(--UI-T);font-weight:500;line-height:1.35}
+.cal-card .cal-pilar{font-size:8px;color:var(--UI-M);text-transform:uppercase;letter-spacing:.1em}
 .fav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;align-content:start}
 .fav-card{border:1px solid var(--UI-B2);border-radius:9px;overflow:hidden;background:var(--UI-B);display:flex;flex-direction:column}
 .fav-thumb{cursor:pointer;position:relative;line-height:0}
@@ -971,6 +990,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         style="background:var(--UI-B);border:1px solid var(--UI-A);color:var(--UI-A);padding:3px 5px;border-radius:4px;font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer">
         <option value="reformas">🏗 Reformas</option>
         <option value="personal">👤 Marca Personal</option>
+        <option value="productividad">🗂 Productividad</option>
       </select>
     </div>
     <div style="display:flex;flex-direction:column;gap:2px;margin-left:4px;flex-shrink:0">
@@ -1019,6 +1039,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     </div>
     <button class="btn btn-gh" id="btnGuionReel" onclick="descargarGuionReel()" style="display:none" title="Descarga el guión del reel en .txt">📝 Guión</button>
     <button class="btn btn-gh" id="btnFav" onclick="abrirFavoritos()" title="Guarda diseños que te gusten y reutilízalos cuando quieras">⭐ Diseños</button>
+    <button class="btn btn-gh" id="btnPlan" onclick="abrirCalendario()" title="30 días de contenido ya escrito. Funciona sin IA: elige un día y lo edita">🗓 Plan 30</button>
+    <button class="btn btn-gh" id="btnPlantillas" onclick="abrirPlantillas()" title="25 plantillas virales por temática (marketing, IA, fiscalidad...). Sin IA">🔥 Plantillas</button>
     <button class="btn btn-out" id="btnPrompt" onclick="abrirPromptModal()" title="Describe lo que quieres y la IA diseña el post/carrusel/reel entero">✨ Prompt</button>
     <button class="btn btn-out" id="btnMes" onclick="generarMes()" title="Fábrica: genera el contenido de varios días con ideas del banco y lo descarga en un ZIP">📅 Mes</button>
     <button class="btn btn-gen" id="btnGen" onclick="generar()">
@@ -1054,7 +1076,15 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         <label style="font-size:10px;color:var(--UI-M);display:flex;align-items:center;gap:5px;cursor:pointer" title="La IA compone libremente por coordenadas (más creativo, pero puede descuadrar)">
           <input type="checkbox" id="pmLibre" style="accent-color:var(--UI-A)">🎨 modo libre (experimental)
         </label>
+        <label style="font-size:10px;color:var(--UI-M);display:flex;align-items:center;gap:5px;cursor:pointer" title="Elige tú si el diseño lleva foto, en vez de dejarlo a la IA">
+          <input type="checkbox" id="pmFoto" onchange="togglePmFoto()" style="accent-color:var(--UI-A)">🖼 con foto
+        </label>
         <button class="btn btn-gen" id="pmGen" onclick="generarDesdePrompt()" style="margin-left:auto"><span class="spinner"></span><span id="pmGenTxt">⚡ Diseñar</span></button>
+      </div>
+      <div id="pmFotoKwWrap" style="display:none">
+        <input type="text" id="pmFotoKw" placeholder="Palabras clave para buscar la foto (en cualquier idioma). Ej: cocina reformada, oficina moderna..."
+          style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:9px 11px;border-radius:6px;font-size:12px;font-family:'Montserrat',sans-serif">
+        <div style="font-size:9px;color:var(--UI-M);margin-top:4px;line-height:1.5">Se busca en Pexels y, si no encuentra nada, en Pixabay.</div>
       </div>
       <div id="promptStatus" style="font-size:11px;color:var(--UI-M);line-height:1.5">La IA (Groq) diseña el contenido entero según tu descripción. Necesitas tu key de Groq activa.</div>
     </div>
@@ -1074,6 +1104,44 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     </div>
     <div class="resm-body">
       <div id="favGrid" class="fav-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PLAN 30 DÍAS — contenido ya escrito, funciona sin IA -->
+<div id="calModal" onclick="if(event.target===this)cerrarCalendario()">
+  <div class="resm-box" style="width:min(900px,95vw);height:auto;max-height:90vh">
+    <div class="resm-head">
+      <span>🗓 Plan 30 días — elige un día y edítalo</span>
+      <button onclick="cerrarCalendario()" class="resm-close">✕</button>
+    </div>
+    <div style="padding:12px 18px;border-bottom:1px solid var(--UI-B);flex-shrink:0;font-size:10px;color:var(--UI-M);line-height:1.5">
+      30 días de contenido ya redactado. <b style="color:var(--UI-A)">No necesita IA</b>: pulsa un día, se vuelca al editor listo para ajustar, descargar o guardar en ⭐ Diseños.
+    </div>
+    <div class="resm-body">
+      <div id="calGrid" class="cal-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PLANTILLAS VIRALES — 25 por temática, sin IA -->
+<div id="plnModal" onclick="if(event.target===this)cerrarPlantillas()">
+  <div class="resm-box" style="width:min(920px,95vw);height:auto;max-height:90vh">
+    <div class="resm-head">
+      <span>🔥 Plantillas virales — elige y edita</span>
+      <button onclick="cerrarPlantillas()" class="resm-close">✕</button>
+    </div>
+    <div id="plnTabs" style="display:flex;gap:6px;padding:12px 18px;border-bottom:1px solid var(--UI-B);flex-shrink:0;flex-wrap:wrap;align-items:center">
+      <button class="pln-tab on" data-t="Todas" onclick="filtrarPlantillas('Todas')">Todas</button>
+      <button class="pln-tab" data-t="Marketing" onclick="filtrarPlantillas('Marketing')">Marketing</button>
+      <button class="pln-tab" data-t="IA" onclick="filtrarPlantillas('IA')">IA</button>
+      <button class="pln-tab" data-t="Fiscalidad" onclick="filtrarPlantillas('Fiscalidad')">Fiscalidad</button>
+      <button class="pln-tab" data-t="Productividad" onclick="filtrarPlantillas('Productividad')">Productividad</button>
+      <button class="pln-tab" data-t="General" onclick="filtrarPlantillas('General')">Cualquier nicho</button>
+      <span style="margin-left:auto;font-size:9px;color:var(--UI-M)">Sin IA · se vuelca al editor</span>
+    </div>
+    <div class="resm-body">
+      <div id="plnGrid" class="cal-grid"></div>
     </div>
   </div>
 </div>
@@ -1122,6 +1190,14 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           </div>
           <div id="reelClipsList"></div>
           <div id="reelClipsTotal" style="font-size:9px;color:var(--UI-M);margin-top:5px;line-height:1.5"></div>
+          <div id="reelTransicionWrap" style="display:flex;align-items:center;gap:8px;margin-top:8px">
+            <label style="font-size:10px;color:var(--UI-M);white-space:nowrap">Transición</label>
+            <select id="reelTransicion" onchange="guardarTransicionReel(this.value)" title="Cómo se pasa de un clip al siguiente"
+              style="flex:1;padding:7px">
+              <option value="corte">✂ Corte seco</option>
+              <option value="fundido">🌫 Fundido cruzado</option>
+            </select>
+          </div>
         </div>
 
         <!-- Columna derecha: voz + subtítulos + generar -->
@@ -1159,6 +1235,14 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
             <input type="checkbox" id="reelSubs" checked style="accent-color:var(--UI-A)">💬 subtítulos sincronizados
           </label>
           <div style="font-size:9px;color:var(--UI-M);margin-top:4px;line-height:1.5">La mayoría ve los reels sin sonido.</div>
+
+          <div class="reel-paso" style="margin-top:14px">6 · Sombra tras el texto</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" id="reelSombra" min="0" max="100" value="45" style="flex:1;accent-color:var(--UI-A)"
+              oninput="guardarSombraReel(this.value);document.getElementById('reelSombraVal').textContent=this.value+'%'">
+            <span id="reelSombraVal" style="font-size:10px;color:var(--UI-A);font-weight:600;min-width:34px;text-align:right">45%</span>
+          </div>
+          <div style="font-size:9px;color:var(--UI-M);margin-top:4px;line-height:1.5">Caja oscura tras el gancho y los subtítulos para que se lean sobre cualquier vídeo. 0% = sin sombra.</div>
 
           <button id="reelGenBtn" onclick="generarReelBackend()" class="reel-btn-main">🎬 Generar reel</button>
           <div id="reelGenStatus" style="font-size:10px;margin-top:8px;line-height:1.55;color:var(--UI-M)">La IA busca vídeos de Pexels según el tema y monta el reel. Tarda 1-3 min.</div>
@@ -1242,6 +1326,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         <div class="mlib-grid resm-grid" id="vidGrid"></div>
       </div>
       <div id="musResults" class="resm-panel" style="display:none">
+        <div id="musStatus" style="font-size:11px;color:var(--UI-M);margin-bottom:8px;max-width:640px;margin-left:auto;margin-right:auto"></div>
         <div id="musGrid" style="display:flex;flex-direction:column;gap:7px;max-width:640px;margin:0 auto"></div>
       </div>
     </div>
@@ -1316,16 +1401,12 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         <div style="font-size:8px;color:var(--UI-M);margin-top:4px;line-height:1.5">Vídeo, guion, voz y subtítulos. Requiere abrir con <b style="color:var(--UI-A)">iniciar.py</b>.</div>
       </div>
 
-      <!-- Buscar música libre de derechos (Jamendo, Creative Commons) -->
+      <!-- Tu música (carpeta MUSICA del proyecto, sin API ni key) -->
       <div style="border-top:1px solid var(--UI-B);margin-top:8px;padding-top:8px">
-        <div style="font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--UI-M);margin-bottom:4px">🎵 Música libre (Jamendo)</div>
-        <div class="pexels-bar">
-          <input type="text" id="musQ" placeholder="corporativo, inspirador, upbeat..." onkeydown="if(event.key==='Enter')buscarMusica()">
-          <button onclick="buscarMusica()" title="Buscar música libre de derechos">🎵</button>
-        </div>
-        <input type="password" id="jamendoKey" placeholder="client_id de Jamendo" oninput="guardarKeyJamendo(this.value)"
-          style="width:100%;margin-top:4px;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:4px 6px;border-radius:4px;font-size:9px;font-family:'Montserrat',sans-serif">
-        <div id="musStatus" style="font-size:8px;margin-top:3px;line-height:1.5;color:var(--UI-M)">Gratis en developer.jamendo.com (crea una app → Client ID).</div>
+        <div style="font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--UI-M);margin-bottom:4px">🎵 Tu música (carpeta MUSICA)</div>
+        <button onclick="verMusicaLocal()" title="Escuchar y elegir música de la carpeta MUSICA"
+          style="width:100%;border:1px solid var(--UI-B2);background:var(--UI-B);color:var(--UI-A);padding:7px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif">🎵 Ver mi música</button>
+        <div id="musicaSelInfo" style="font-size:8px;color:var(--UI-M);margin-top:5px;line-height:1.5">Copia tus mp3 a la carpeta <b>MUSICA</b> (junto a este HTML) y ábrelos aquí.</div>
       </div>
     </div>
 
@@ -1395,6 +1476,24 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
               <option value="bafoto">Before/After con fotos</option>
               <option value="fototxt">Foto + texto (mitad/mitad)</option>
               <option value="autoridad">Autoridad / Retrato</option>
+            </optgroup>
+            <optgroup label="── Virales ──">
+              <option value="chat">Chat / DM (captura)</option>
+              <option value="nota">Nota del móvil</option>
+              <option value="versus">Versus (mito/realidad)</option>
+              <option value="encuesta">Encuesta (votación %)</option>
+              <option value="busqueda">Búsqueda (Google)</option>
+              <option value="tweet">Tweet (tarjeta X)</option>
+              <option value="checklist">Checklist (✓/✗)</option>
+              <option value="factura">Factura / recibo</option>
+            </optgroup>
+            <optgroup label="── WOW / especiales ──">
+              <option value="neon">Neón (brilla)</option>
+              <option value="glitch">Glitch (RGB roto)</option>
+              <option value="wrapped">Wrapped (recap)</option>
+              <option value="dashboard">Dashboard (métricas)</option>
+              <option value="brutal">Brutalista (tipo gigante)</option>
+              <option value="terminal">Terminal (consola)</option>
             </optgroup>
           </select>
         </div>
@@ -1513,6 +1612,15 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <label>Cuerpo</label>
           <textarea id="cBody" rows="3" oninput="ed('body',this.value)"></textarea>
         </div>
+        <div class="crow">
+          <label>Resaltar</label>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <button onclick="marcarAzul()" onmousedown="event.preventDefault()"
+              title="Selecciona una palabra en Headline, Cuerpo o Items y ponla en azul de marca (vuelve a pulsar para quitarla)"
+              style="border:1px solid var(--UI-A);background:rgba(56,182,255,.12);color:var(--UI-A);border-radius:4px;padding:7px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif">🔵 Poner palabra en azul</button>
+            <div style="font-size:8px;color:var(--UI-M);line-height:1.4">Selecciona la palabra en el texto de arriba y pulsa el botón.</div>
+          </div>
+        </div>
         <div class="crow" id="rowItems">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
             <label>Items</label>
@@ -1538,6 +1646,10 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         <div class="crow">
           <label>Tamaño del texto</label>
           <div class="rrow"><input type="range" id="rTxtScale" min="70" max="130" value="100" oninput="ed('txtScale',this.value);document.getElementById('vTxtScale').textContent=this.value+'%'"><span class="rval" id="vTxtScale">100%</span></div>
+        </div>
+        <div class="crow">
+          <label>Sombra tras el texto</label>
+          <div class="rrow"><input type="range" id="rTxtShadow" min="0" max="100" value="0" oninput="ed('txtShadow',this.value);document.getElementById('vTxtShadow').textContent=this.value+'%'"><span class="rval" id="vTxtShadow">0%</span></div>
         </div>
         <div class="crow">
           <label>Alineación</label>
@@ -1770,6 +1882,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=62"></script>
+<script src="app.js?v=73"></script>
 </body>
 </html>
