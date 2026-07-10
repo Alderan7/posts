@@ -2584,8 +2584,17 @@ function render(d,i){
     if(sHead!==1) css += `#${uid} h1{font-size:${Math.round(baseT.head*sHead)}px!important}`;
     if(sEye!==1)  css += `#${uid} .TEye{font-size:${Math.round(baseT.eye*sEye)}px!important}`;
     // text-shadow se HEREDA → puesto en el slide, cubre TODOS los textos.
-    if(tsh>0){ const a=(tsh/100).toFixed(2), b=(tsh/100*0.9).toFixed(2);
-      css += `#${uid}{text-shadow:0 2px 12px rgba(0,0,0,${a}),0 1px 3px rgba(0,0,0,${b})}`; }
+    // Contorno real (no una sombra difusa: sobre fondos claros una sombra difusa
+    // no aporta contraste). El nivel del slider controla el grosor/opacidad del
+    // contorno, de 0 (nada) a máximo (contorno fuerte + sombra suave de apoyo).
+    if(tsh>0){
+      const k=tsh/100;
+      const off=(1+k*2.5).toFixed(2), alpha=(0.35+k*0.55).toFixed(2), blur=(k*16).toFixed(1), blurA=(k*0.5).toFixed(2);
+      css += `#${uid}{text-shadow:
+        -${off}px -${off}px 0 rgba(0,0,0,${alpha}),${off}px -${off}px 0 rgba(0,0,0,${alpha}),
+        -${off}px ${off}px 0 rgba(0,0,0,${alpha}),${off}px ${off}px 0 rgba(0,0,0,${alpha}),
+        0 3px ${blur}px rgba(0,0,0,${blurA})}`;
+    }
     // Insertar id en el primer div .slide
     html = html.replace(/class="slide/, `id="${uid}" class="slide`);
     html = `<style>${css}</style>` + html;
