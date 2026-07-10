@@ -2078,7 +2078,7 @@ function rVersus(d,n){
   const fa=fitFontParrafo(ta, maxF, 420, boxH);
   const fb=fitFontParrafo(tb, maxF, 420, boxH);
   return`<div class="slide ${slideH()}" style="position:relative;overflow:hidden;padding:0;background:#1A1A1A">
-    ${d.head?`<div style="position:absolute;top:0;left:0;right:0;z-index:6;padding:44px 56px 0;text-align:center"><h1 class="TDsm" style="font-size:${Math.min(T.head,64)}px;color:#F5F1EA;line-height:1.1">${pK(d.head)}</h1></div>`:''}
+    ${d.head?`<div style="position:absolute;top:0;left:0;right:0;z-index:6;padding:44px 56px 0;text-align:center"><h1 class="TDsm" style="font-size:${Math.min(T.head,64)}px;color:#F5F1EA;line-height:1.1;text-shadow:0 2px 14px rgba(0,0,0,.55),0 1px 4px rgba(0,0,0,.5)">${pK(d.head)}</h1></div>`:''}
     <div style="display:flex;height:100%">
       <div style="flex:1;background:#242424;display:flex;flex-direction:column;justify-content:center;gap:22px;padding:${d.head?'220px':'64px'} 56px 64px">
         <span style="font-family:var(--F-SAN);font-weight:700;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(245,241,234,.4)">✕ ${p(la||'Mito')}</span>
