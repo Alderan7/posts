@@ -1518,9 +1518,12 @@ function rLista(d,n){
 
 function rStats(d,n){
   const items=(d.items||[]).filter(Boolean);
+  // Ancho aprox. de cada celda según el nº de columnas, para que un número
+  // largo ("20.000 €") no se salga de su celda con el tamaño fijo T.stat.
+  const anchoCelda = items.length===3 ? 280 : items.length<=1 ? 900 : 420;
   const cells=items.map(it=>{
     const [num,lbl]=it.split('::');
-    return`<div class="scell"><div class="snum" style="font-size:${T.stat}px">${p(num)}</div><div class="slbl" style="font-size:17px">${p(lbl)}</div></div>`;
+    return`<div class="scell"><div class="snum" style="font-size:${fitFontNumero(num,T.stat,anchoCelda)}px">${p(num)}</div><div class="slbl" style="font-size:17px">${p(lbl)}</div></div>`;
   }).join('');
   // Columnas según cuántos datos hay REALMENTE: así 2 o 3 stats ocupan una sola
   // fila completa en vez de dejar un hueco vacío en una rejilla 2x2 fija.
@@ -1863,13 +1866,22 @@ function rCitaFoto(d,n){
   </div>`;
 }
 
+// Tamaño de fuente del número gigante (.snum) según su longitud, para que
+// nunca se salga del slide (antes era fijo a 300px y "30.000€" se cortaba).
+function fitFontNumero(str, max=300, anchoDisponible=900){
+  const s=String(str||'');
+  const puntuacion=(s.match(/[.,]/g)||[]).length;
+  const peso=Math.max(1, s.length - puntuacion*0.6);
+  return Math.max(70, Math.min(max, Math.floor(anchoDisponible/(peso*0.62))));
+}
+
 // Número gigante (hero editorial): un dato enorme + etiqueta + contexto
 function rNumero(d,n){
   const num=(d.head||d.items?.[0]||'+100%');
   return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
     <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'')}</span></div>${logoHTML(d.fondo)}</div>
     <div class="zone" style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:10px">
-      <div class="snum" style="font-size:300px;line-height:.9">${p(num)}</div>
+      <div class="snum" style="font-size:${fitFontNumero(num)}px;line-height:.9">${p(num)}</div>
       ${d.body?`<h2 class="TDsm Ct" style="font-size:${Math.min(T.head,64)}px">${pK(d.body)}</h2>`:''}
       ${d.items&&d.items[1]?`<p class="TBdy Cb" style="font-size:${T.body}px;max-width:760px">${p(d.items[1])}</p>`:''}
     </div>
@@ -1894,7 +1906,7 @@ function rInsignia(d,n){
       <div style="display:flex;align-items:center;gap:8px;color:#38B6FF">
         ${rama}
         <div style="display:flex;flex-direction:column;align-items:center;gap:8px;min-width:200px">
-          <div class="snum" style="font-size:170px;line-height:.85">${p(d.head||'0')}</div>
+          <div class="snum" style="font-size:${fitFontNumero(d.head||'0',170,600)}px;line-height:.85">${p(d.head||'0')}</div>
           ${d.body?`<div class="TEye Ct" style="font-size:${T.eye+4}px;letter-spacing:.14em">${p(d.body)}</div>`:''}
         </div>
         <div style="transform:scaleX(-1)">${rama}</div>
@@ -1920,7 +1932,7 @@ function rIconoNum(d,n){
   return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
     <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'')}</span></div>${logoHTML(d.fondo)}</div>
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center">
-      <div class="snum" style="font-size:170px;line-height:.85">${p(d.head||'0')}</div>
+      <div class="snum" style="font-size:${fitFontNumero(d.head||'0',170,850)}px;line-height:.85">${p(d.head||'0')}</div>
       <div style="width:60px;height:60px;color:#38B6FF">${icono}</div>
       ${d.body?`<h2 class="TDsm Ct" style="font-size:${Math.min(T.head,56)}px;max-width:820px">${pK(d.body)}</h2>`:''}
       ${d.items&&d.items[0]?`<p class="TBdy Ct" style="font-size:${T.body}px;max-width:760px">${p(d.items[0])}</p>`:''}
