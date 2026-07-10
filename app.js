@@ -123,9 +123,178 @@ const NICHO = {
       servicio:['sistemas','agenda','delegar'],
       objecion:['delegar','foco','priorizar'],
     }
+  },
+  fiscalidad: {
+    nombre:'Fiscalidad',
+    eye:'Asesoría Fiscal · Autónomos y Pymes',
+    hashtags:'#fiscalidad #autonomos #asesoriafiscal #irpf #hacienda #pymes #impuestos #renta',
+    persona:'asesora fiscal especializada en autónomos y pymes que traduce la letra pequeña de Hacienda a decisiones claras: cuánto pagas, cuánto puedes ahorrar y qué plazo se te viene encima',
+    lector:'un autónomo o dueño de pyme que lleva sus impuestos por inercia, desconfía de Hacienda, no tiene claro qué puede deducirse ni qué cambia cada año, y se entera de las novedades tarde (a veces por una sanción)',
+    tono:'claro, cercano y sin alarmismo barato, pero con urgencia real cuando hay un plazo de por medio. Traduce SIEMPRE la jerga (RETA, IRPF, modelo 130, Verifactu...) a lenguaje llano la primera vez que aparece. Habla de ahorro real, plazos y tranquilidad, nunca de miedo por miedo',
+    ctaEj:'AHORRA, DECLARA, EVITA SANCIONES',
+    pills:['Renta y IRPF','Autónomos y RETA','Deducciones reales','Novedades AEAT'],
+    p2head:'Tú te centras en tu negocio.\nYo me centro en que Hacienda no te sorprenda.',
+    p2sub:'Impuestos claros, plazos controlados y el ahorro que de verdad puedes conseguir.',
+    usaBanco:false,
+    angulos:{
+      verifactu:'la obligación de facturación electrónica Verifactu que se acerca, y por qué conviene prepararse ya aunque Hacienda vuelva a mover la fecha',
+      cuotaautonomo:'la cuota de autónomos por tramos de ingresos reales, y por qué muchos siguen pagando de más (o de menos) sin saberlo',
+      rentairpf:'la Campaña de la Renta y los cambios que pillan a los autónomos por sorpresa cada año',
+      deducciones:'gastos que sí puedes deducirte como autónomo y que casi nadie aprovecha',
+      controlhacienda:'el control creciente de Hacienda sobre Bizum y pagos electrónicos, y qué significa para un autónomo',
+      sanciones:'errores fiscales pequeños que acaban en sanción por no conocer el plazo o la norma',
+    },
+    labels:{
+      verifactu:'Verifactu: la letra pequeña',
+      cuotaautonomo:'Tu cuota de autónomo, bien calculada',
+      rentairpf:'La Renta sin sustos',
+      deducciones:'Deducciones que no usas',
+      controlhacienda:'Hacienda ya ve tu Bizum',
+      sanciones:'La sanción que se evita',
+    },
+    pilares:{
+      dolor:['sanciones','controlhacienda','cuotaautonomo'],
+      educativo:['deducciones','rentairpf','verifactu'],
+      autoridad:['verifactu','deducciones','controlhacienda'],
+      conversion:['deducciones','sanciones','rentairpf'],
+      reframe:['cuotaautonomo','controlhacienda','sanciones'],
+      servicio:['rentairpf','deducciones','verifactu'],
+      objecion:['cuotaautonomo','sanciones','deducciones'],
+    },
+    quienEs:'tu negocio',
+    p5head:'Tu negocio, en el móvil\nde quien busca un asesor fiscal.',
+    p5body:'Fiscalidad clara para autónomos y pymes · Respuesta en 24h',
+    porQueYo:[
+      'Especializada en fiscalidad para autónomos y pymes, no en cientos de trámites genéricos a la vez.',
+      'Solo trabajo con clientes a los que puedo dar seguimiento real cada trimestre.',
+      'Te explico cada cambio en lenguaje llano, nunca en jerga de la AEAT.',
+      'Tú te centras en tu negocio. Yo me centro en que Hacienda no te sorprenda.'],
+    paraQuienEs:[
+      'Eres autónomo o tienes una pyme y llevas los impuestos por inercia.',
+      'Ya tienes gestoría pero sientes que solo presenta modelos, sin avisarte de nada más.',
+      'Estás harto de enterarte de los cambios fiscales tarde, o por una sanción.',
+      'Quieres sabes qué te puedes deducir de verdad y no perder plazos nunca más.'],
+    testimonios:[
+      {q:'Descubrí que llevaba dos años pagando de más en mi cuota de autónomo sin saberlo.', n:'Cliente', r:'Autónoma · Servicios · Madrid'},
+      {q:'Por primera vez entiendo qué declaro y por qué, no solo firmo lo que me mandan.', n:'Cliente', r:'Pyme · Comercio · Sevilla'},
+      {q:'Me avisó de Verifactu con meses de margen. Otros clientes lo descubrieron el último mes.', n:'Cliente', r:'Autónomo · Hostelería · Valencia'},
+    ],
+    banco:{
+      hooks:{
+        verifactu:[
+          "Verifactu ya tiene fecha.\n\nY la mayoría de autónomos todavía no ha movido un dedo.",
+          "Hacienda vuelve a retrasar Verifactu.\n\nLo peor que puedes hacer es relajarte por eso.",
+          "Tu programa de facturación actual, ¿cumple ya con Verifactu?\n\nSi no lo sabes, esto es para ti.",
+          "El día que Verifactu sea obligatorio, ya será tarde para improvisar.",
+        ],
+        cuotaautonomo:[
+          "Pagas tu cuota de autónomo cada mes.\n\n¿Sabes si es la que te corresponde de verdad?",
+          "15 tramos. Ingresos reales.\n\nY la mayoría sigue cotizando a ojo.",
+          "Cambiaste de tramo hace un año.\n\nY nunca has vuelto a mirarlo.",
+          "Tienes derecho a cambiar de tramo 6 veces al año.\n\n¿Cuántas has usado?",
+        ],
+        rentairpf:[
+          "Cada campaña de la Renta trae una sorpresa nueva.\n\nEste año no tiene por qué ser la tuya.",
+          "Si estuviste de alta como autónomo un solo día de este año, tienes que declarar.\n\nAunque hayas ganado poco.",
+          "La Renta no perdona la letra pequeña.\n\nY cada año cambia.",
+          "¿Sabes ya qué casillas nuevas te afectan este año?",
+        ],
+        deducciones:[
+          "Hay gastos que ya pagas y que no te estás deduciendo.\n\nEso también es dinero perdido.",
+          "La mayoría de autónomos deja dinero en la mesa por miedo a «llamar la atención» a Hacienda.",
+          "Deducir bien no es un truco.\n\nEs conocer la norma mejor que quien te cobra por no explicártela.",
+          "¿Cuánto llevas sin revisar qué te puedes deducir de verdad?",
+        ],
+        controlhacienda:[
+          "Tu banco ya informa a Hacienda de lo que cobras por Bizum.\n\n¿Lo sabías?",
+          "El control sobre pagos electrónicos ha subido un nivel.\n\nY casi nadie se ha enterado.",
+          "No es que Hacienda te vigile más.\n\nEs que tiene más datos que nunca para cruzar.",
+          "Si cobras por Bizum sin declararlo, el problema ya no es «si te pillan». Es «cuándo».",
+        ],
+        sanciones:[
+          "Una sanción de Hacienda casi nunca viene de un fraude.\n\nViene de un plazo que se pasó.",
+          "El error no fue no pagar.\n\nFue no saber que tenías que presentar algo ese mes.",
+          "La mayoría de sanciones a autónomos son evitables.\n\nSolo hace falta saber qué mirar y cuándo.",
+          "¿Cuánto te ha costado ya un despiste con Hacienda?",
+        ],
+      },
+      frases:[
+        "Los impuestos no se improvisan.\nSe planifican.",
+        "Lo que no sabes que puedes deducir,\nlo pagas de más.",
+        "Hacienda no perdona el desconocimiento.\nPero se puede anticipar.",
+        "Un plazo que se pasa\ncuesta más que un asesor.",
+        "No se trata de pagar menos.\nSe trata de pagar lo justo.",
+        "Tu cuota de autónomo\ntambién se puede optimizar.",
+        "La tranquilidad fiscal\ntambién se construye.",
+        "Verifactu no es una amenaza.\nEs una fecha en el calendario.",
+        "Cada euro que no deduces bien\nes un euro que regalas.",
+        "Declarar bien empieza\nmeses antes de la Renta.",
+      ],
+      subtitulos:[
+        "Esto es lo que cambia este año y casi nadie te lo explica así.",
+        "No es teoría fiscal. Es lo que aplico con mis clientes cada mes.",
+        "Lo que Hacienda no te explica con estas palabras.",
+        "Traducido de la jerga de la AEAT a lenguaje humano.",
+        "Cuatro cambios que sí te afectan si eres autónomo.",
+        "La diferencia entre pagar de más y pagar lo justo.",
+        "Lo que reviso con cada cliente antes de cada plazo.",
+        "Desliza para no llevarte la sorpresa este trimestre.",
+      ],
+      ctas:[
+        "Escríbeme RENTA","Escríbeme AUTONOMOS","Escríbeme DEDUCCIONES","Escríbeme VERIFACTU",
+        "Escríbeme FISCAL","Escríbeme AHORRO","Escríbeme CUOTA","Escríbeme HACIENDA",
+        "Escríbeme PLAZOS","Escríbeme ASESORIA",
+      ],
+      listas:{
+        verifactu:[["*Verifactu* exige que tu programa de facturación cumpla un formato validado por Hacienda.","*El plazo se ha movido* más de una vez: prepararte ahora evita las prisas de última hora.","*No es solo tecnología*: cambia cómo emites, corriges y conservas cada factura.","*Empezar antes* te da margen para elegir el sistema, no para sufrirlo."]],
+        cuotaautonomo:[["*15 tramos* según tus rendimientos netos reales, no según lo que factures.","*Puedes cambiar de tramo* hasta 6 veces al año si tus ingresos varían.","*Muchos siguen en el tramo* que eligieron al darse de alta, sin volver a mirarlo.","*Ajustar bien tu tramo* evita pagar de más... o una regularización con recargo."]],
+        rentairpf:[["*Estar de alta un solo día* como autónomo ya te obliga a presentar la Renta.","*Las rentas sin retención* se cruzan cada año con más precisión.","*Hay casillas nuevas* que no existían la campaña anterior.","*Revisar antes de presentar* evita errores que cuestan más que una revisión."]],
+        deducciones:[["*Suministros de tu casa* si trabajas desde ella, con el porcentaje correcto.","*Vehículo y combustible* si el uso profesional está bien justificado.","*Formación y herramientas* que usas para tu actividad, aunque no lo parezca.","*Dietas y manutención* dentro de los límites que marca la norma."]],
+        controlhacienda:[["*Los bancos informan* de los cobros por Bizum y plataformas similares.","*Se cruzan datos* entre lo que declaras y lo que se mueve en tus cuentas.","*No declarar un ingreso* ya no depende de que «no se vea».","*Lo importante* no es ocultar, es declarar bien desde el principio."]],
+        sanciones:[["*Un plazo olvidado* pesa más que un error de cálculo pequeño.","*El primer aviso* de Hacienda casi siempre es evitable con recordatorios simples.","*Regularizar antes* de que te reclamen sale mucho más barato.","*Un calendario fiscal claro* es la diferencia entre estrés y control."]],
+        default:[["*Estabilidad fiscal*: saber qué plazo viene antes de que llegue.","*Deducciones reales*: no dejar dinero encima de la mesa por desconocimiento.","*Cero sorpresas*: cada cambio de la AEAT, explicado antes de que te afecte.","*Tranquilidad*: un calendario claro en vez de ir plazo a plazo con miedo."]],
+      },
+      debates:[
+        ["¿Mejor *gestoría* o *asesoría fiscal* especializada?","Asesoría especializada. Conoce tu sector, no solo rellena modelos.","Gestoría. Más barata y para lo básico, es suficiente."],
+        ["¿Declarar cuanto antes o *esperar al final del plazo*?","Cuanto antes. Si Hacienda te debe dinero, lo recibes antes.","Al final. Da más margen para reunir toda la documentación."],
+        ["¿Verifactu es una *amenaza* o una *oportunidad*?","Oportunidad. Obliga a poner orden en algo que ya deberías tener claro.","Amenaza. Es un coste y una complicación más para el autónomo."],
+      ],
+      stats:[
+        ["+340€::Ahorro medio anual por cliente","0::Sanciones evitadas con calendario fiscal","48h::Respuesta media a una consulta","15::Tramos de cuota revisados cada trimestre"],
+        ["6::Cambios de tramo posibles al año","30%::Reducción media al optimizar deducciones","100%::Trámites de alta/baja ya online","1::Plazo que marca la diferencia"],
+      ],
+      procesos:[
+        ["Diagnóstico:Reviso tu situación fiscal actual en detalle.","Plan:Diseño un calendario de plazos y deducciones a tu medida.","Ejecución:Presento y reviso cada modelo en plazo.","Seguimiento:Ajusto tu cuota y deducciones cada trimestre."],
+        ["Alta:Te doy de alta o reviso tu situación actual como autónomo.","Organización:Ordenamos gastos, facturas y deducciones desde el primer día.","Presentación:Modelos presentados en plazo, sin sustos.","Revisión:Cierre de año con margen para optimizar antes de la Renta."],
+      ],
+      servicios:[
+        ["Gestión de IRPF y modelos trimestrales","Revisión de cuota de autónomo por tramos","Detección de deducciones no aplicadas","Calendario fiscal con avisos de plazos","Acompañamiento en la Campaña de la Renta"],
+        ["Alta y baja de autónomos 100% online","Adaptación a Verifactu antes del plazo","Revisión de facturación y deducciones","Resolución de requerimientos de Hacienda","Reportes claros, sin tecnicismos"],
+      ],
+      eyebrows:[
+        "Asesoría Fiscal · Autónomos y Pymes","Fiscalidad · IRPF · Autónomos",
+        "Hacienda sin sustos · Asesoría Fiscal","Plazos, deducciones y ahorro real",
+      ],
+      instagramCopy:{
+        verifactu:{caption:"¿Tu facturación ya está lista para Verifactu?\n\nHacienda ha movido la fecha, pero no la obligación.\n\n¿Ya lo tienes controlado o lo vas a dejar para el último mes? 👇",
+          hashtags:"#verifactu #autonomos #facturacionelectronica #asesoriafiscal #hacienda #fiscalidad #pymes #irpf"},
+        cuotaautonomo:{caption:"¿Sabes en qué tramo de cuota estás cotizando ahora mismo?\n\nMuchos autónomos pagan de más (o de menos) sin saberlo.\n\nCuéntame: ¿cuándo revisaste tu tramo por última vez? 👇",
+          hashtags:"#cuotaautonomo #reta #autonomos #segsocial #asesoriafiscal #fiscalidad #ahorro #pymes"},
+        rentairpf:{caption:"¿Estuviste de alta como autónomo aunque fuera un solo día este año?\n\nEso ya te obliga a presentar la Renta.\n\n¿Lo tenías controlado? 👇",
+          hashtags:"#renta #irpf #autonomos #declaracionrenta #aeat #asesoriafiscal #fiscalidad #hacienda"},
+        deducciones:{caption:"Hay gastos que ya pagas cada mes y que probablemente no te estás deduciendo.\n\nEso también es dinero que dejas sobre la mesa.\n\n¿Revisas tus deducciones cada trimestre? 👇",
+          hashtags:"#deducciones #autonomos #ahorrofiscal #asesoriafiscal #fiscalidad #irpf #pymes #impuestos"},
+        controlhacienda:{caption:"Tu banco ya informa a Hacienda de lo que cobras por Bizum.\n\nNo es para asustarte: es para que declares bien desde el principio.\n\n¿Lo sabías? 👇",
+          hashtags:"#hacienda #bizum #autonomos #controlfiscal #asesoriafiscal #fiscalidad #aeat #pymes"},
+        sanciones:{caption:"La mayoría de sanciones a autónomos no son por fraude.\n\nSon por un plazo que se pasó sin darse cuenta.\n\n¿Tienes tu calendario fiscal controlado? 👇",
+          hashtags:"#sanciones #hacienda #autonomos #calendariofiscal #asesoriafiscal #fiscalidad #plazos #pymes"},
+        default:{caption:"¿Cómo llevas tus impuestos este trimestre?\n\nCuéntame en comentarios 👇",
+          hashtags:"#fiscalidad #autonomos #asesoriafiscal #irpf #hacienda #pymes #impuestos"},
+      },
+    },
   }
 };
-const NICHOS_VALIDOS = ['reformas','personal','productividad'];
+const NICHOS_VALIDOS = ['reformas','personal','productividad','fiscalidad'];
 let _nicho = NICHOS_VALIDOS.includes(localStorage.getItem('rm_nicho')) ? localStorage.getItem('rm_nicho') : 'reformas';
 function getNicho(){ return _nicho; }
 function N(){ return NICHO[_nicho] || NICHO.reformas; }
@@ -139,7 +308,7 @@ function setNicho(v){
   if(typeof renderBanco==='function') renderBanco();
 }
 
-const BANCO = {
+const BANCO_BASE = {
   angulos: {
     bocaboca:   "dependencia del boca a boca y por qué destruye la estabilidad de una empresa de reformas",
     regateo:    "clientes que solo te piden precio, visitas perdidas y tiempo que te roban",
@@ -415,6 +584,19 @@ const BANCO = {
   },
 };
 
+// BANCO "activo": por defecto es BANCO_BASE (contenido de Reformas), pero si el
+// nicho seleccionado tiene su propio `banco` (p.ej. Fiscalidad), cada clave
+// (hooks, frases, listas, stats...) se redirige automáticamente a ese banco
+// propio. Así TODO el generador local (sin IA) funciona por nicho sin tener
+// que tocar cada uno de los +50 sitios donde se usa BANCO.xxx.
+const BANCO = new Proxy(BANCO_BASE, {
+  get(target, prop){
+    const custom = NICHO[_nicho] && NICHO[_nicho].banco;
+    if(custom && Object.prototype.hasOwnProperty.call(custom, prop)) return custom[prop];
+    return Reflect.get(target, prop);
+  }
+});
+
 // Caption de banco local (sin IA) para el nicho MARCA PERSONAL — antes caía
 // sin querer en las captions de Reformas (#reformas, "captación de obras"...)
 // porque BANCO.instagramCopy solo tenía ángulos de Reformas.
@@ -474,11 +656,54 @@ let T = { eye:16, head:104, body:30, items:26, stat:88, cta:16 };
    HELPERS
    ═══════════════════════════════════════════ */
 function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)] }
+
+// 12 estilos de subrayado/resaltado seleccionables (mismo orden que el menú ▾ del editor)
+const ESTILOS_SUBRAYADO = [
+  {open:'__', close:'__', cls:'ul'},
+  {open:'~~', close:'~~', cls:'ulm'},
+  {open:'##', close:'##', cls:'ulbox'},
+  {open:'^^', close:'^^', cls:'uldbl'},
+  {open:'::', close:'::', cls:'ulwavy'},
+  {open:'!!', close:'!!', cls:'ulthick'},
+  {open:'>>', close:'<<', cls:'uldot'},
+  {open:'@@', close:'@@', cls:'ulcirc'},
+  {open:'%%', close:'%%', cls:'ulstrike'},
+  {open:'==', close:'==', cls:'ulinv'},
+  {open:'``', close:'``', cls:'ulchipl'},
+  {open:';;', close:';;', cls:'ulbrush'},
+];
+// Tipografía elegible para una palabra suelta (menú ▾ junto al botón Fuente)
+const ESTILOS_FUENTE = [
+  {open:'{{', close:'}}', cls:'f-ser'},
+  {open:'[[', close:']]', cls:'f-san'},
+];
+function _escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
 function p(s){
   if(!s) return '';
-  return s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+  ESTILOS_SUBRAYADO.forEach(st=>{
+    s = s.replace(new RegExp(_escRe(st.open)+'(.+?)'+_escRe(st.close),'g'), `<span class="${st.cls}">$1</span>`);
+  });
+  ESTILOS_FUENTE.forEach(st=>{
+    s = s.replace(new RegExp(_escRe(st.open)+'(.+?)'+_escRe(st.close),'g'), `<span class="${st.cls}">$1</span>`);
+  });
+  return s.replace(/\+\+(.+?)\+\+/g,'<strong class="xb">$1</strong>')   // extra negrita
+          .replace(/\/\/(.+?)\/\//g,'<em class="itx">$1</em>')          // cursiva
+          .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
           .replace(/\*(.+?)\*/g,'<em class="kw">$1</em>')   // palabra clave → azul
           .replace(/\n/g,'<br>');
+}
+
+// Quita todas las marcas de resaltado/subrayado/negrita/fuente (para exports en texto plano)
+function quitarMarcas(s){
+  if(!s) return s;
+  ESTILOS_SUBRAYADO.forEach(st=>{
+    s = s.replace(new RegExp(_escRe(st.open)+'(.+?)'+_escRe(st.close),'g'), '$1');
+  });
+  ESTILOS_FUENTE.forEach(st=>{
+    s = s.replace(new RegExp(_escRe(st.open)+'(.+?)'+_escRe(st.close),'g'), '$1');
+  });
+  return s.replace(/\+\+(.+?)\+\+/g,'$1').replace(/\/\/(.+?)\/\//g,'$1').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\*(.+?)\*/g,'$1');
 }
 
 // Auto-resaltado de palabras clave del negocio (azul de marca)
@@ -643,7 +868,7 @@ function usarMedia(id){
   const d = SLIDES[cur];
   if(!d) return;
 
-  const tiposFoto = ['foto','fototxt','autoridad','bafoto'];
+  const tiposFoto = ['foto','fototxt','autoridad','bafoto','manomovil','fotominimal'];
 
   if(tiposFoto.includes(d.tipo)){
     // Slide ya es de tipo foto — asignar al destino correcto
@@ -794,24 +1019,32 @@ function sugerirLayoutIA(){
 }
 
 function sincronizarPanelImg(d){
-  const tiposConFoto   = ['foto','fototxt','autoridad'];
+  const tiposConFoto   = ['foto','fototxt','autoridad','manomovil','fotominimal'];
   const tiposConFondo  = tiposConFoto;
   const tiposConBA     = ['bafoto'];
-  const tiposConOverlay= tiposConFoto;
-  const tiposConLayout = tiposConFoto;
+  // 'manomovil' tiene layout fijo (foto dentro de la pantalla del móvil): sin tinte/overlay ni duo/posición de texto
+  const tiposConOverlay= ['foto','fototxt','autoridad'];
+  const tiposConLayout = ['foto','fototxt','autoridad'];
 
   const hasFoto = tiposConFondo.includes(d.tipo);
   const hasBA   = tiposConBA.includes(d.tipo);
+  const hasOverlay = tiposConOverlay.includes(d.tipo);
+  const hasLayout  = tiposConLayout.includes(d.tipo);
   document.getElementById('rowImgFondo').style.display   = hasFoto ? '' : 'none';
   document.getElementById('rowImgBef').style.display     = hasBA   ? '' : 'none';
   document.getElementById('rowImgAft').style.display     = hasBA   ? '' : 'none';
   document.getElementById('rowIAbtn').style.display      = hasFoto ? '' : 'none';
-  document.getElementById('rowImgOverlay').style.display = hasFoto ? '' : 'none';
-  document.getElementById('rowOvOpacity').style.display  = (hasFoto && (d.overlay||'dark')!=='none') ? '' : 'none';
-  document.getElementById('rowImgLayout').style.display  = hasFoto ? '' : 'none';
-  document.getElementById('rowImg2').style.display       = (hasFoto && d.imgLayout==='duo') ? '' : 'none';
+  document.getElementById('rowImgOverlay').style.display = hasOverlay ? '' : 'none';
+  document.getElementById('rowOvOpacity').style.display  = (hasOverlay && (d.overlay||'dark')!=='none') ? '' : 'none';
+  document.getElementById('rowImgLayout').style.display  = hasLayout ? '' : 'none';
+  document.getElementById('rowImg2').style.display       = (hasLayout && d.imgLayout==='duo') ? '' : 'none';
   document.getElementById('rowImgPos').style.display     = hasFoto ? '' : 'none';
-  document.getElementById('rowTxtPos').style.display     = hasFoto ? '' : 'none';
+  document.getElementById('rowTxtPos').style.display     = hasLayout ? '' : 'none';
+  const rowIcono=document.getElementById('rowIcono');
+  if(rowIcono){
+    rowIcono.style.display = d.tipo==='icononum' ? '' : 'none';
+    const ci=document.getElementById('cIcono'); if(ci) ci.value=d.icono||'flecha';
+  }
 
   // Sincronizar sliders
   if(hasFoto){
@@ -1284,10 +1517,14 @@ function rLista(d,n){
 </div>`;}
 
 function rStats(d,n){
-  const cells=(d.items||[]).map(it=>{
+  const items=(d.items||[]).filter(Boolean);
+  const cells=items.map(it=>{
     const [num,lbl]=it.split('::');
     return`<div class="scell"><div class="snum" style="font-size:${T.stat}px">${p(num)}</div><div class="slbl" style="font-size:17px">${p(lbl)}</div></div>`;
   }).join('');
+  // Columnas según cuántos datos hay REALMENTE: así 2 o 3 stats ocupan una sola
+  // fila completa en vez de dejar un hueco vacío en una rejilla 2x2 fija.
+  const cols = items.length===3 ? '1fr 1fr 1fr' : items.length<=1 ? '1fr' : '1fr 1fr';
   return`<div class="slide ${fc(d.fondo)} ${slideH()} sStats ${spClass()}">
   <div class="SH">
     <div style="display:flex;align-items:center;gap:12px">
@@ -1296,7 +1533,7 @@ function rStats(d,n){
     </div>
     ${logoHTML(d.fondo)}
   </div>
-  <div class="sgrid">${cells}</div>
+  <div class="sgrid" style="grid-template-columns:${cols}">${cells}</div>
   <div class="SF">
     <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
     <span class="TCap Cm" style="font-size:${T.cta}px">${n} · ${SLIDES.length}</span>
@@ -1514,6 +1751,33 @@ function rMovil(d,n){
   </div>
 </div>`;}
 
+// Viral "mano sosteniendo iPhone": tu foto/reel aparece dentro de la pantalla del
+// mockup (mano real, no dibujo CSS). Reutiliza bgImgTag para el pan/zoom de la foto,
+// igual que en 'foto', 'fototxt', etc. El hueco de pantalla está medido a mano sobre
+// mockup-iphone-mano.png (rect: 28.6% / 15.5% / 30.8% / 64.1% del PNG cuadrado 800×800).
+function rManoMovil(d,n){
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}" style="display:flex;flex-direction:column">
+  <div class="SH">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="abar"></div>
+      <span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye)}</span>
+    </div>
+    ${logoHTML(d.fondo)}
+  </div>
+  <h1 class="TDmd Ct" style="margin-top:20px;font-size:${Math.min(T.head,66)}px;text-align:center">${pK(d.head)}</h1>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;min-height:0;padding:16px 0">
+    <div class="mm-wrap">
+      <div class="mm-screen">${bgImgTag(d.imgFondo,'',d)}</div>
+      <img class="mm-frame" src="mockup-iphone-mano.png" alt="">
+    </div>
+  </div>
+  ${d.body?`<p class="TBdy Ct" style="font-size:${T.body}px;text-align:center;padding:0 60px">${p(d.body)}</p>`:''}
+  <div class="SF">
+    <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
+    <span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta)}</span>
+  </div>
+</div>`;}
+
 // Portada de REEL 9:16 — hook grande centrado, con zonas seguras IG/TikTok
 function rReel(d,n){
   const url=getImgUrl(d.imgFondo);
@@ -1610,6 +1874,94 @@ function rNumero(d,n){
       ${d.items&&d.items[1]?`<p class="TBdy Cb" style="font-size:${T.body}px;max-width:760px">${p(d.items[1])}</p>`:''}
     </div>
     <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// Insignia de autoridad/premio: número grande flanqueado por un laurel (SVG),
+// con una etiqueta debajo. Ideal para prueba social ("7 premios · 30 galardones").
+function rInsignia(d,n){
+  const rama = `<svg viewBox="0 0 60 200" xmlns="http://www.w3.org/2000/svg" style="width:64px;height:210px;flex-shrink:0">
+    <path d="M30 10 C10 30 10 60 25 80 C10 95 10 120 25 140 C10 155 10 180 30 195" stroke="currentColor" stroke-width="3" fill="none"/>
+    <ellipse cx="18" cy="30" rx="10" ry="5" fill="currentColor" transform="rotate(-30 18 30)"/>
+    <ellipse cx="14" cy="60" rx="10" ry="5" fill="currentColor" transform="rotate(-20 14 60)"/>
+    <ellipse cx="16" cy="95" rx="10" ry="5" fill="currentColor" transform="rotate(-25 16 95)"/>
+    <ellipse cx="14" cy="125" rx="10" ry="5" fill="currentColor" transform="rotate(-15 14 125)"/>
+    <ellipse cx="18" cy="160" rx="10" ry="5" fill="currentColor" transform="rotate(-30 18 160)"/>
+  </svg>`;
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'')}</span></div>${logoHTML(d.fondo)}</div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px;color:#38B6FF">
+        ${rama}
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;min-width:200px">
+          <div class="snum" style="font-size:170px;line-height:.85">${p(d.head||'0')}</div>
+          ${d.body?`<div class="TEye Ct" style="font-size:${T.eye+4}px;letter-spacing:.14em">${p(d.body)}</div>`:''}
+        </div>
+        <div style="transform:scaleX(-1)">${rama}</div>
+      </div>
+      ${d.items&&d.items[0]?`<p class="TBdy Ct" style="font-size:${T.body}px;margin-top:8px;max-width:760px">${p(d.items[0])}</p>`:''}
+    </div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// Set de iconos lineales (trazo, sin relleno) para el slide "Numerado con icono"
+const ICONOS_LINEA = {
+  flecha:    `<svg viewBox="0 0 48 48"><path d="M24 40V8M12 20l12-12 12 12" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  check:     `<svg viewBox="0 0 48 48"><path d="M8 25l10 10 22-22" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  grafico:   `<svg viewBox="0 0 48 48"><path d="M6 40h36M12 40V26M22 40V16M32 40V22M42 40V10" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`,
+  calendario:`<svg viewBox="0 0 48 48"><rect x="6" y="10" width="36" height="32" rx="4" stroke="currentColor" stroke-width="3" fill="none"/><path d="M6 20h36M15 6v8M33 6v8" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>`,
+  reloj:     `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="3" fill="none"/><path d="M24 14v10l8 6" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`,
+};
+// Numerado con icono lineal: número grande + pictograma simple + texto de apoyo.
+// Refuerza visualmente la idea sin depender de una foto (muy usado en nicho B2B/agencias).
+function rIconoNum(d,n){
+  const icono = ICONOS_LINEA[d.icono] || ICONOS_LINEA.flecha;
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'')}</span></div>${logoHTML(d.fondo)}</div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center">
+      <div class="snum" style="font-size:170px;line-height:.85">${p(d.head||'0')}</div>
+      <div style="width:60px;height:60px;color:#38B6FF">${icono}</div>
+      ${d.body?`<h2 class="TDsm Ct" style="font-size:${Math.min(T.head,56)}px;max-width:820px">${pK(d.body)}</h2>`:''}
+      ${d.items&&d.items[0]?`<p class="TBdy Ct" style="font-size:${T.body}px;max-width:760px">${p(d.items[0])}</p>`:''}
+    </div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// Micro-relato en 3 tiempos: tres líneas de tamaño/peso escalonado, revelación
+// progresiva de arriba a abajo (reutiliza eye/head/body como línea 1/2/3).
+function rRelato3(d,n){
+  const l1=d.eye||'', l2=d.head||'', l3=d.body||'';
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div></div>${logoHTML(d.fondo)}</div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:22px">
+      ${l1?`<div class="TEye Ct" style="font-size:${T.eye+8}px;letter-spacing:.06em;opacity:.55">${p(l1)}</div>`:''}
+      ${l2?`<h1 class="TDmd Ct" style="font-size:${Math.min(T.head,90)}px">${pK(l2)}</h1>`:''}
+      ${l3?`<h1 class="TDlg Ct" style="font-size:${Math.min(T.head+16,124)}px">${pK(l3)}</h1>`:''}
+    </div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// Foto-silueta minimalista: solo foto + una frase corta anclada abajo, sin
+// eyebrow, sin pills, sin caja — deja "respirar" la imagen (formato aspiracional).
+function rFotoMinimal(d,n){
+  const url=getImgUrl(d.imgFondo);
+  const isDark = d.fondo!=='light';
+  const txt = isDark?'#F5F1EA':'#1A1A1A';
+  const op=(d.ovOpacity??35)/100;
+  const x=d.imgX??50, y=d.imgY??50, z=(d.imgZoom??110)/100;
+  const bg = url
+    ? `<img src="${url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:${x}% ${y}%;transform:scale(${z});transform-origin:${x}% ${y}%" alt="">`
+    : `<div style="position:absolute;inset:0;background:#111"></div>`;
+  return`<div class="slide ${slideH()} ${spClass()}" style="position:relative;overflow:hidden">
+    ${bg}
+    <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,${Math.min(1,op+.3)}) 0%,rgba(0,0,0,0) 42%)"></div>
+    <div style="position:relative;z-index:2;display:flex;justify-content:center">${logoHTML('dark')}</div>
+    <div style="position:relative;z-index:2;flex:1;display:flex;align-items:flex-end">
+      ${d.body?`<p class="TCap" style="font-size:${T.cta+8}px;color:${txt};font-style:italic;line-height:1.3">${p(d.body)}</p>`:''}
+    </div>
   </div>`;
 }
 
@@ -1965,6 +2317,11 @@ function renderTipo(d,n){
     case'claves':           return rClaves(d,n);
     case'testimonio':       return rTestimonio(d,n);
     case'movil':            return rMovil(d,n);
+    case'manomovil':        return rManoMovil(d,n);
+    case'insignia':         return rInsignia(d,n);
+    case'icononum':         return rIconoNum(d,n);
+    case'relato3':          return rRelato3(d,n);
+    case'fotominimal':      return rFotoMinimal(d,n);
     case'revista':          return rRevista(d,n);
     case'indice':           return rIndice(d,n);
     case'citafoto':         return rCitaFoto(d,n);
@@ -2050,7 +2407,7 @@ async function generar(){
 
   txEl.textContent=`${pilar.toUpperCase()} · ${angulo}`;
 
-  const numSlides = parseInt(document.getElementById('cNumSlidesTop')?.value || document.getElementById('cNumSlides')?.value)||7;
+  const numSlides = parseInt(document.getElementById('cNumSlidesTop')?.value)||7;
   const forz = getFeedForzada();
   if(modo==='carrusel' && forz) setFeedPos(parseInt(forz));
 
@@ -2159,7 +2516,7 @@ Devuelve SOLO JSON válido, sin markdown:
   ]
 }
 
-items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚMERO::etiqueta"; proceso=3-4 "Título:descripción"; servicio=3-5 frases; debate=exactamente 2 opciones; claves=3 frases; pills=3-4 etiquetas; hook/frase/cta/foto/fototxt/citafoto=[] vacío.
+items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚMERO::etiqueta"; proceso=3-4 items "NombreDelPaso:explicación breve" — NombreDelPaso es una palabra o frase corta REAL y DISTINTA en cada item (ej. "Diagnóstico:Reviso tu situación actual.", "Plan:Diseño la estrategia."); NUNCA escribas literalmente la palabra "Título" o "Descripción", son solo el nombre del campo, no el contenido; servicio=3-5 frases; debate=exactamente 2 opciones; claves=3 frases; pills=3-4 etiquetas; hook/frase/cta/foto/fototxt/citafoto=[] vacío.
 TIPOS CON FOTO (hazlo VISUAL): "foto", "fototxt", "revista" (portada) o "citafoto" (cita sobre foto) — SIEMPRE con "img" en inglés.
 "indice"=índice "Contenido" (items=temas). "numero"=un dato enorme (head=número, body=qué significa).
 TIPOS VIRALES (parecen contenido real, no anuncio — úsalos para enganchar):
@@ -2475,7 +2832,7 @@ Este ${modo==='reel'?'reel':modo==='post'?'post':'carrusel'} tiene estos slides:
 ${contexto}
 Reescribe SOLO el slide ">> ESTE" (posición ${cur+1}), MANTENIENDO su tipo "${d.tipo}". Debe encajar en la historia (coherente con el anterior y el siguiente) y aportar algo NUEVO (no repetir lo que ya dicen los otros).
 Devuelve SOLO JSON de UN slide: {"tipo":"${d.tipo}","fondo":"dark|light|blue","eye":"kicker corto","head":"titular","body":"subtítulo opcional","items":[], "img":"solo si lleva foto: 2-3 palabras EN INGLÉS", "cta":"pie corto"}
-items según tipo: lista/claves=frases; stats=3-4 "NÚMERO::etiqueta"; proceso="Título:desc"; debate=2 opciones; pills=etiquetas; indice=temas; hook/frase/cta/foto/citafoto=[].`;
+items según tipo: lista/claves=frases; stats=3-4 "NÚMERO::etiqueta"; proceso=items "NombreDelPaso:explicación breve" con un nombre de paso REAL y distinto en cada uno (nunca literalmente la palabra "Título" o "Descripción"); debate=2 opciones; pills=etiquetas; indice=temas; hook/frase/cta/foto/citafoto=[].`;
   if(btn){ btn.disabled=true; btn.textContent='🔄 …'; }
   try{
     const s = await iaJSON(contrato, { maxTokens:900, temperature:0.9 });
@@ -2728,14 +3085,12 @@ function quizasStats(eye,angulo,cta){
   return bloqueLista(null,angulo||'sistema','light',eye,cta||rnd(BANCO.ctas));
 }
 function bloqueStatsMetrica(){
+  const items = getNicho()==='fiscalidad'
+    ? ['*Ahorro medio*: lo que un cliente deja de pagar de más al año.','*Sanciones evitadas*: plazos que no se pasan por tener calendario.','*Tiempo de respuesta*: cuánto tardo en resolver una duda fiscal.','*Tramos revisados*: la frecuencia con la que ajusto tu cuota real.']
+    : ['*CPL (Coste por lead)*: lo que pagas por cada contacto cualificado.','*Tasa de cierre*: cuántos leads se convierten en obras reales.','*ROI*: por cada euro invertido, cuánto recuperas.','*Coste por obra*: el dato que de verdad importa a tu negocio.'];
   return {tipo:'lista',fondo:'light',eye:'Qué significa cada número',
     head:'Antes de ver las cifras, entiende qué miden.',
-    body:'',
-    items:['*CPL (Coste por lead)*: lo que pagas por cada contacto cualificado.',
-           '*Tasa de cierre*: cuántos leads se convierten en obras reales.',
-           '*ROI*: por cada euro invertido, cuánto recuperas.',
-           '*Coste por obra*: el dato que de verdad importa a tu negocio.'],
-    cta:'Ahora sí, los números →'};
+    body:'', items, cta:'Ahora sí, los números →'};
 }
 function bloqueDebate(ai,deb,cta){
   return {tipo:'debate',fondo:'dark',eye:'Tú decides',
@@ -2746,7 +3101,7 @@ function bloqueDebate(ai,deb,cta){
 // CTA de cierre VARIADO: no siempre "escríbeme". Rota entre DM (~40%),
 // guardar, comentar una palabra y enviar a un socio → más guardados/comentarios.
 function ctaAccion(cta){
-  const word = String(cta||'').replace(/^Escr[ií]beme\s+/i,'').trim() || 'REFORMAS';
+  const word = String(cta||'').replace(/^Escr[ií]beme\s+/i,'').trim() || (N().ctaEj||'REFORMAS').split(',')[0].trim();
   const personal = getNicho()!=='reformas';
   const quien = personal ? 'tu negocio' : 'tu empresa de reformas';
   const acciones = [
@@ -3058,7 +3413,7 @@ function buildCarrusel(angulo,ai,numSlides=7){
           body:ai?ai.frase_sub:rnd(BANCO.subtitulos),items:[],cta:'Sigue →'},
         {tipo:'lista',fondo:'light',eye:'Por qué yo',
           head:'Lo que me diferencia de quien promete y no entrega.',body:'',
-          items:['Especializada 100% en empresas de reformas en España.',
+          items:N().porQueYo||['Especializada 100% en empresas de reformas en España.',
             'Solo acepto clientes con los que puedo generar resultados reales.',
             'Reportes en lenguaje de negocio, sin tecnicismos.',
             'Tú te centras en las obras. Yo me centro en llenar tu agenda.'],cta:'Cómo lo hago →'},
@@ -3136,8 +3491,8 @@ function buildCarrusel(angulo,ai,numSlides=7){
     // P5 — Móvil con tu anuncio (centro del grid, estilo plantilla)
     case 5:{
       const portada = {tipo:'movil',fondo:'dark',eye:'Así te ve tu cliente ideal',
-        head:'Tu empresa, en el móvil\nde quien busca reformar.',
-        body:'Reformas de alto valor · Presupuesto en 24h',
+        head:N().p5head||'Tu empresa, en el móvil\nde quien busca reformar.',
+        body:N().p5body||'Reformas de alto valor · Presupuesto en 24h',
         items:[],cta:'Desliza →'};
       const medios = [
         {tipo:'hook',fondo:'dark',eye:'Por qué esto importa',
@@ -3165,7 +3520,7 @@ function buildCarrusel(angulo,ai,numSlides=7){
       const medios = [
         {tipo:'lista',fondo:'light',eye:'Para quién es',
           head:'Este servicio es para ti si...',body:'',
-          items:['Tienes una empresa de reformas con equipo propio.',
+          items:N().paraQuienEs||['Tienes una empresa de reformas con equipo propio.',
             'Ya tienes obras pero quieres más estabilidad y previsibilidad.',
             'Estás harto de depender del boca a boca o de leads sin filtrar.',
             'Quieres escalar sin que todo dependa de ti.'],cta:'Cómo funciona →'},
@@ -3180,7 +3535,7 @@ function buildCarrusel(angulo,ai,numSlides=7){
     // P7 — Testimonio / caso de éxito (dark, estilo plantilla)
     // (la Revelación de 8 variantes sigue disponible en buildRevelacion)
     case 7:{
-      const t = rnd(TESTIMONIOS_RM);
+      const t = rnd(N().testimonios||TESTIMONIOS_RM);
       const portada = {tipo:'testimonio',fondo:'dark',eye:'Lo que dicen mis clientes',
         head:t.q, body:`${t.n}::${t.r}`, items:[], cta:'El caso completo →'};
       const medios = [
@@ -3329,7 +3684,7 @@ ${hook}
 ${sub}
 
 ${cta} 👇
-#reformas #empresadereformas #marketingdigital #metaads #reformasintegrales`;
+${N().hashtags}`;
 
   return [{tipo:'reel', fondo:'dark', eye:'Reel', head:hook, body:sub,
     items:[], cta:'Dale al play', ovOpacity:55}];
@@ -4013,8 +4368,6 @@ function descargarGuionReel(){
 // Cambiar nº de slides del carrusel actual al vuelo
 function cambiarNumSlides(n){
   n = parseInt(n);
-  // Sincronizar con el selector del tab Generar
-  const gen=document.getElementById('cNumSlides'); if(gen) gen.value = (n>=5&&n<=7)?n:7;
   if(modo==='post' || !SLIDES.length) return;
 
   const actual = SLIDES.length;
@@ -4103,6 +4456,7 @@ function ed(f,v){
   if(f==='ovOpacity') d.ovOpacity=parseInt(v);
   if(f==='txtPos')    d.txtPos=v;
   if(f==='imgLayout') d.imgLayout=v;
+  if(f==='icono')     d.icono=v;
   if(f==='txtScale')  d.txtScale=parseInt(v);
   if(f==='txtShadow') d.txtShadow=parseInt(v);
   if(f==='txtDX')     d.txtDX=parseInt(v);
@@ -4174,7 +4528,8 @@ document.addEventListener('focusin', e=>{
     _campoTexto = el;
   }
 });
-function marcarAzul(){
+/* ── Helper genérico: envuelve/desenvuelve la palabra seleccionada con un marcador ── */
+function _envolverPalabra(marca, msgVacio){
   const el = _campoTexto;
   if(!el || !document.body.contains(el)){ toast2('Toca primero el texto (Headline, Cuerpo o Items)'); return; }
   const RE = /[\wáéíóúñüÁÉÍÓÚÑÜ]/;
@@ -4183,20 +4538,84 @@ function marcarAzul(){
     while(s>0 && RE.test(v[s-1])) s--;
     while(e<v.length && RE.test(v[e])) e++;
   }
-  if(s===e){ toast2('Selecciona la palabra que quieres en azul'); return; }
+  if(s===e){ toast2(msgVacio); return; }
   const antes=v.slice(0,s), sel=v.slice(s,e), despues=v.slice(e);
+  const ml=marca.length, mEsc=marca.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const reDentro=new RegExp('^'+mEsc+'.+'+mEsc+'$');
   let nuevo, ns=s, nlen=sel.length;
-  if(/^\*.+\*$/.test(sel)){                     // ya marcada dentro de la selección → quitar
-    nuevo = antes + sel.slice(1,-1) + despues; nlen = sel.length-2;
-  } else if(antes.endsWith('*') && despues.startsWith('*')){  // marcada por fuera → quitar
-    nuevo = antes.slice(0,-1) + sel + despues.slice(1); ns = s-1;
-  } else {                                      // poner en azul
-    nuevo = antes + '*' + sel + '*' + despues; nlen = sel.length+2;
+  if(reDentro.test(sel)){                       // ya marcada dentro de la selección → quitar
+    nuevo = antes + sel.slice(ml,-ml) + despues; nlen = sel.length-ml*2;
+  } else if(antes.endsWith(marca) && despues.startsWith(marca)){  // marcada por fuera → quitar
+    nuevo = antes.slice(0,-ml) + sel + despues.slice(ml); ns = s-ml;
+  } else {                                      // aplicar marca
+    nuevo = antes + marca + sel + marca + despues; nlen = sel.length+ml*2;
   }
   el.value = nuevo;
   el.dispatchEvent(new Event('input', {bubbles:true}));   // dispara ed()/editItemTxt y repinta
   el.focus(); try{ el.setSelectionRange(ns, ns+nlen); }catch(_){}
 }
+function marcarAzul(){ _envolverPalabra('*', 'Selecciona la palabra que quieres en azul'); }
+function marcarNegrita(){ _envolverPalabra('**', 'Selecciona la palabra que quieres en negrita'); }
+function marcarNegritaExtra(){ _envolverPalabra('++', 'Selecciona la palabra que quieres en negrita extra'); }
+function marcarCursiva(){ _envolverPalabra('//', 'Selecciona la palabra que quieres en cursiva'); }
+
+/* ── Aplica un estilo de una lista de opciones (subrayado, fuente…) a la palabra
+   seleccionada. Si ya lleva CUALQUIER estilo de esa lista, se desenvuelve primero:
+   si era el mismo que se pidió, queda "limpia" (toggle off); si era otro, cambia. ── */
+function _aplicarEstiloDeLista(lista, idx, msgVacio, cerrarMenuFn){
+  const est = lista[idx];
+  if(!est) return;
+  const el = _campoTexto;
+  if(!el || !document.body.contains(el)){ toast2('Toca primero el texto (Headline, Cuerpo o Items)'); return; }
+  const RE = /[\wáéíóúñüÁÉÍÓÚÑÜ]/;
+  let v = el.value, s = el.selectionStart, e = el.selectionEnd;
+  if(s===e){
+    while(s>0 && RE.test(v[s-1])) s--;
+    while(e<v.length && RE.test(v[e])) e++;
+  }
+  if(s===e){ toast2(msgVacio); if(cerrarMenuFn) cerrarMenuFn(); return; }
+  let antes=v.slice(0,s), sel=v.slice(s,e), despues=v.slice(e), eraElMismo=false;
+  for(const st of lista){
+    const reDentro=new RegExp('^'+_escRe(st.open)+'(.+)'+_escRe(st.close)+'$');
+    const m = sel.match(reDentro);
+    if(m){ sel=m[1]; if(st===est) eraElMismo=true; break; }
+    if(antes.endsWith(st.open) && despues.startsWith(st.close)){
+      antes=antes.slice(0,-st.open.length); despues=despues.slice(st.close.length);
+      if(st===est) eraElMismo=true; break;
+    }
+  }
+  let nuevo;
+  if(eraElMismo){ nuevo = antes+sel+despues; }
+  else{ nuevo = antes+est.open+sel+est.close+despues; }
+  const ns = antes.length;
+  const nlen = eraElMismo ? sel.length : est.open.length+sel.length+est.close.length;
+  el.value = nuevo;
+  el.dispatchEvent(new Event('input', {bubbles:true}));
+  el.focus(); try{ el.setSelectionRange(ns, ns+nlen); }catch(_){}
+  if(cerrarMenuFn) cerrarMenuFn();
+}
+function marcarEstiloSubrayado(idx){ _aplicarEstiloDeLista(ESTILOS_SUBRAYADO, idx, 'Selecciona la palabra que quieres subrayar', cerrarMenuSubrayado); }
+function marcarFuente(idx){ _aplicarEstiloDeLista(ESTILOS_FUENTE, idx, 'Selecciona la palabra para cambiar su tipografía', cerrarMenuFuente); }
+
+function _toggleMenu(id, ev){
+  ev.stopPropagation();
+  const m=document.getElementById(id);
+  if(!m) return;
+  m.style.display = (m.style.display==='flex') ? 'none' : 'flex';
+}
+function _cerrarMenu(id){ const m=document.getElementById(id); if(m) m.style.display='none'; }
+function toggleMenuSubrayado(ev){ _toggleMenu('menuSubrayado', ev); }
+function cerrarMenuSubrayado(){ _cerrarMenu('menuSubrayado'); }
+function toggleMenuFuente(ev){ _toggleMenu('menuFuente', ev); }
+function cerrarMenuFuente(){ _cerrarMenu('menuFuente'); }
+document.addEventListener('click', e=>{
+  [['menuSubrayado','btnMenuSubrayado'],['menuFuente','btnMenuFuente']].forEach(([id,btn])=>{
+    const m=document.getElementById(id);
+    if(m && m.style.display==='flex' && !m.contains(e.target) && e.target.id!==btn){
+      m.style.display='none';
+    }
+  });
+});
 
 /* ── Controles del modo dos fotos ── */
 function setDuo(prop, val){
@@ -4257,7 +4676,9 @@ const TIPO_L={hook:'Hook',frase:'Frase',ba:'BA Texto',lista:'Lista',
   fototxt:'Foto+Txt',autoridad:'Autoridad',
   chat:'Chat/DM',nota:'Nota',versus:'Versus',
   encuesta:'Encuesta',busqueda:'Búsqueda',tweet:'Tweet',checklist:'Checklist',factura:'Factura',
-  neon:'Neón',glitch:'Glitch',wrapped:'Wrapped',dashboard:'Dashboard',brutal:'Brutalista',terminal:'Terminal'};
+  neon:'Neón',glitch:'Glitch',wrapped:'Wrapped',dashboard:'Dashboard',brutal:'Brutalista',terminal:'Terminal',
+  manomovil:'Móvil en mano', insignia:'Insignia',
+  icononum:'Numerado+Icono', relato3:'Micro-relato', fotominimal:'Foto minimalista'};
 
 function buildThumbs(){
   const panel=document.getElementById('sideL');
@@ -4476,7 +4897,7 @@ async function generarMes(dias){
   const bakSlides=SLIDES.slice(), bakCur=cur;
 
   const zip=new JSZip();
-  const numSlides=parseInt(document.getElementById('cNumSlidesTop')?.value||document.getElementById('cNumSlides')?.value)||7;
+  const numSlides=parseInt(document.getElementById('cNumSlidesTop')?.value)||7;
   const cal=[['Dia idea','Formato','Pilar','Posicion feed','Hook','CTA','Busqueda visual','Carpeta']];
   let totalImgs=0;
   const usarIA = hayIA();   // si hay alguna IA, cada día lleva copy único
@@ -4581,7 +5002,7 @@ function copyDeIdea(idea, ai){
   const cuerpo = (ai&&ai.cta_body)||idea.idea;
   const cta = (ai&&ai.cta_word)?`Escríbeme ${ai.cta_word}`:idea.cta;
   const guion=esReel?`\n\n— GUION REEL —\nEstructura: ${idea.estructura}\nIdea visual: ${idea.visual}\nÁngulo: ${idea.angulo}`:'';
-  return `${hook}\n\n${cuerpo}\n\n${cta}${guion}\n\n#reformas #empresadereformas #marketingparareformas #metaads #googleads`;
+  return `${hook}\n\n${cuerpo}\n\n${cta}${guion}\n\n${N().hashtags}`;
 }
 
 /* ═══════════════════════════════════════════
@@ -4592,12 +5013,14 @@ function bancoIdeas(){
   const n=getNicho();
   if(n==='personal') return window.IDEAS_PERSONAL||[];
   if(n==='productividad') return window.IDEAS_PRODUCTIVIDAD||[];
+  if(n==='fiscalidad') return window.IDEAS_FISCALIDAD||[];   // aún sin banco de 30 días: el Plan 30 avisará
   return window.IDEAS_365||[];
 }
 function usadasKey(){
   const n=getNicho();
   if(n==='personal') return 'ideas_usadas_personal';
   if(n==='productividad') return 'ideas_usadas_productividad';
+  if(n==='fiscalidad') return 'ideas_usadas_fiscalidad';
   return 'ideas_usadas';
 }
 
@@ -4738,7 +5161,7 @@ function usarIdeaBanco(dia){
   const fmt=(idea.formato||'').toLowerCase();
 
   // Respetar el formato de la idea (Reel / Post / Carrusel)
-  const numSlides=parseInt(document.getElementById('cNumSlidesTop')?.value||document.getElementById('cNumSlides')?.value)||7;
+  const numSlides=parseInt(document.getElementById('cNumSlidesTop')?.value)||7;
   let slides;
   if(fmt.includes('reel')){
     setModo('reel'); slides=buildReel(angulo,null);
@@ -4866,7 +5289,7 @@ async function expPPTX(){
 
     // Layouts visuales/complejos: exportar el slide como IMAGEN fiel (los de
     // texto simple siguen siendo elementos editables en Canva).
-    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','ba','bafoto','foto','fototxt','autoridad','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
+    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','manomovil','insignia','icononum','relato3','fotominimal','ba','bafoto','foto','fototxt','autoridad','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
     if(IMG_ONLY_PPTX.includes(d.tipo)){
       let ok=false;
       try{ const cv=await capture(i); slide.addImage({ data:cv.toDataURL('image/png'), x:0,y:0,w:10.8,h:13.5 }); ok=true; }catch(e){}
@@ -4904,7 +5327,7 @@ async function expPPTX(){
 
     // Headline
     if(d.head){
-      const headTxt = d.head.replace(/\*\*(.+?)\*\*/g,'$1').replace(/\*(.+?)\*/g,'$1');
+      const headTxt = quitarMarcas(d.head);
       slide.addText(headTxt, {
         x:sc(90), y:sc(200), w:sc(900), h:sc(700),
         fontSize:Math.round(T.head*0.72), color:txtC,
@@ -4927,7 +5350,7 @@ async function expPPTX(){
       const itemY = 820;
       const itemH = Math.floor(900/d.items.length);
       d.items.forEach((it,j)=>{
-        const txt = it.replace(/\*\*(.+?)\*\*/g,'$1').replace(/\*(.+?)\*/g,'$1');
+        const txt = quitarMarcas(it);
         slide.addText(`${String(j+1).padStart(2,'0')}  ${txt}`, {
           x:sc(90), y:sc(itemY+(j*itemH)), w:sc(900), h:sc(itemH-10),
           fontSize:Math.round(T.items*0.65), color:txtC,
@@ -5393,7 +5816,7 @@ async function renderFavoritos(){
     return;
   }
   cont.innerHTML=all.map(f=>{
-    const badge=f.nicho==='personal'?'👤 Personal':f.nicho==='productividad'?'🗂 Productividad':'🏗 Reformas';
+    const badge=f.nicho==='personal'?'👤 Personal':f.nicho==='productividad'?'🗂 Productividad':f.nicho==='fiscalidad'?'📊 Fiscalidad':'🏗 Reformas';
     const nSl=(f.slides||[]).length;
     const fecha=f.fecha?new Date(f.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short'}):'';
     const thumb=f.thumb

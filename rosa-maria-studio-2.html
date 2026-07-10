@@ -427,6 +427,47 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 /* En slides de lista mantenemos el matiz editorial cursivo */
 .ltxt .kw{font-family:var(--F-SER);font-style:italic;font-weight:600}
 
+/* Negrita extra (más peso que <strong>) y cursiva */
+.xb{font-weight:900}
+.itx{font-style:italic}
+
+/* Fuente elegible para una palabra suelta */
+.f-ser{font-family:var(--F-SER)!important}
+.f-san{font-family:var(--F-SAN)!important}
+
+/* 11 estilos de subrayado/resaltado (marcadores de texto __ ~~ ## ^^ :: !! >>< @@ %% == ``) */
+.ul{text-decoration:underline;text-decoration-thickness:.06em;text-underline-offset:.12em}
+.ulm{background:linear-gradient(180deg,transparent 58%,rgba(56,182,255,.35) 58%);padding:0 .04em}
+.ulbox{border:2px solid currentColor;border-radius:4px;padding:.02em .16em}
+.uldbl{text-decoration:underline;text-decoration-style:double;text-decoration-thickness:.05em;text-underline-offset:.16em}
+.ulwavy{text-decoration:underline;text-decoration-style:wavy;text-decoration-thickness:.05em;text-underline-offset:.12em}
+.ulthick{text-decoration:underline;text-decoration-thickness:.14em;text-underline-offset:.04em;text-decoration-color:#38B6FF}
+.SB .ulthick{text-decoration-color:#1A1A1A}
+.uldot{text-decoration:underline;text-decoration-style:dotted;text-decoration-thickness:.09em;text-underline-offset:.14em}
+.ulcirc{border:2px solid currentColor;border-radius:50em;padding:.02em .3em}
+.ulstrike{text-decoration:line-through;text-decoration-thickness:.08em}
+.ulinv{background:#1A1A1A;color:#F5F1EA;font-weight:700;padding:.05em .22em;border-radius:6px}
+.ulchipl{background:#F5F1EA;color:#1A1A1A;font-weight:700;padding:.05em .22em;border-radius:6px}
+/* Trazo de rotulador a mano alzada (no es text-decoration, es un SVG que se estira con el texto) */
+.ulbrush{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cpath d='M3,14 C40,6 70,20 100,10 C130,2 165,18 197,11' stroke='%2338B6FF' stroke-width='9' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left bottom;background-size:100% .5em;padding-bottom:.18em}
+.SB .ulbrush{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cpath d='M3,14 C40,6 70,20 100,10 C130,2 165,18 197,11' stroke='%231A1A1A' stroke-width='9' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")}
+
+/* Mockup viral: mano sosteniendo iPhone, tu foto dentro de la pantalla.
+   Rect de pantalla medido sobre mockup-iphone-mano.png (800×800): 28.6%/15.5%/30.8%/64.1% */
+.mm-wrap{position:relative;width:56%;aspect-ratio:1/1;margin:0 auto;flex-shrink:0}
+.mm-screen{position:absolute;left:28.6%;top:15.5%;width:30.8%;height:64.1%;overflow:hidden;border-radius:9%/6%;background:#000}
+.mm-frame{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:2}
+
+.menu-est{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
+  background:transparent;border:none;border-radius:4px;padding:6px 8px;cursor:pointer;
+  color:var(--UI-T);font-family:'Montserrat',sans-serif;font-size:11px;text-align:left}
+.menu-est:hover{background:rgba(255,255,255,.08)}
+.menu-est span:first-child{font-family:var(--F-SAN,inherit);font-size:12px}
+.menu-est span:last-child{font-size:9px;color:var(--UI-M);white-space:nowrap}
+
 .HL{height:2px;width:100%}
 /* Línea de acento con tinte azul para reforzar marca */
 .HLa{height:3px;width:64px;background:#38B6FF;border-radius:2px;flex-shrink:0}
@@ -470,11 +511,13 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .SD .ltxt{color:rgba(245,241,234,.68)} .SD .ltxt strong{color:#F5F1EA}
 .SL .ltxt{color:rgba(26,26,26,.72)}    .SL .ltxt strong{color:#1A1A1A}
 
-.sStats .sgrid{display:grid;grid-template-columns:1fr 1fr;flex:1;margin-top:28px}
-.scell{padding:44px 38px;display:flex;flex-direction:column;gap:8px}
-.scell:nth-child(1),.scell:nth-child(2){border-bottom:1px solid rgba(26,26,26,.1)}
-.scell:nth-child(1),.scell:nth-child(3){border-right:1px solid rgba(26,26,26,.1)}
-.SD .scell{border-color:rgba(245,241,234,.08)!important}
+/* Divisores vía gap+fondo: funcionan igual con 1, 2, 3 o 4 celdas, sin depender
+   de nth-child fijo (que solo encajaba con una rejilla 2x2 de 4 elementos). */
+.sStats .sgrid{display:grid;flex:1;margin-top:28px;gap:1px;background:rgba(26,26,26,.1);border-radius:2px;overflow:hidden}
+.SD .sStats .sgrid{background:rgba(245,241,234,.08)}
+.scell{padding:44px 38px;display:flex;flex-direction:column;gap:8px;background:#F5F1EA}
+.SD .scell{background:#1A1A1A}
+.SB .scell{background:#38B6FF}
 .snum{font-family:var(--F-SER);line-height:1;color:#38B6FF;font-weight:400;letter-spacing:-.02em}
 .slbl{font-family:var(--F-SAN);letter-spacing:.12em;text-transform:uppercase;color:rgba(26,26,26,.4);font-weight:500;line-height:1.3}
 .SD .slbl{color:rgba(245,241,234,.35)}
@@ -991,6 +1034,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         <option value="reformas">🏗 Reformas</option>
         <option value="personal">👤 Marca Personal</option>
         <option value="productividad">🗂 Productividad</option>
+        <option value="fiscalidad">📊 Fiscalidad</option>
       </select>
     </div>
     <div style="display:flex;flex-direction:column;gap:2px;margin-left:4px;flex-shrink:0">
@@ -1486,6 +1530,10 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
               <option value="tweet">Tweet (tarjeta X)</option>
               <option value="checklist">Checklist (✓/✗)</option>
               <option value="factura">Factura / recibo</option>
+              <option value="manomovil">Móvil en mano (tu foto en la pantalla)</option>
+              <option value="icononum">Numerado + icono lineal</option>
+              <option value="relato3">Micro-relato en 3 tiempos</option>
+              <option value="fotominimal">Foto-silueta minimalista</option>
             </optgroup>
             <optgroup label="── WOW / especiales ──">
               <option value="neon">Neón (brilla)</option>
@@ -1494,6 +1542,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
               <option value="dashboard">Dashboard (métricas)</option>
               <option value="brutal">Brutalista (tipo gigante)</option>
               <option value="terminal">Terminal (consola)</option>
+              <option value="insignia">Insignia de premios (laurel)</option>
             </optgroup>
           </select>
         </div>
@@ -1600,6 +1649,16 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
             <option value="bottom">Abajo</option>
           </select>
         </div>
+        <div class="crow" id="rowIcono" style="display:none">
+          <label>Icono</label>
+          <select id="cIcono" onchange="ed('icono',this.value)">
+            <option value="flecha">↑ Flecha</option>
+            <option value="check">✓ Check</option>
+            <option value="grafico">📊 Gráfico</option>
+            <option value="calendario">📅 Calendario</option>
+            <option value="reloj">🕐 Reloj</option>
+          </select>
+        </div>
         <div class="crow">
           <label>Eyebrow</label>
           <input type="text" id="cEye" oninput="ed('eye',this.value)">
@@ -1618,7 +1677,50 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
             <button onclick="marcarAzul()" onmousedown="event.preventDefault()"
               title="Selecciona una palabra en Headline, Cuerpo o Items y ponla en azul de marca (vuelve a pulsar para quitarla)"
               style="border:1px solid var(--UI-A);background:rgba(56,182,255,.12);color:var(--UI-A);border-radius:4px;padding:7px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif">🔵 Poner palabra en azul</button>
-            <div style="font-size:8px;color:var(--UI-M);line-height:1.4">Selecciona la palabra en el texto de arriba y pulsa el botón.</div>
+            <button onclick="marcarNegrita()" onmousedown="event.preventDefault()"
+              title="Selecciona una palabra en Headline, Cuerpo o Items y ponla en negrita (vuelve a pulsar para quitarla)"
+              style="border:1px solid var(--UI-B2);background:rgba(255,255,255,.06);color:var(--UI-T);border-radius:4px;padding:7px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif">𝗕 Poner palabra en negrita</button>
+            <button onclick="marcarNegritaExtra()" onmousedown="event.preventDefault()"
+              title="Selecciona una palabra en Headline, Cuerpo o Items y ponla en negrita extra (más peso, vuelve a pulsar para quitarla)"
+              style="border:1px solid var(--UI-B2);background:rgba(255,255,255,.06);color:var(--UI-T);border-radius:4px;padding:7px;font-size:10px;font-weight:900;cursor:pointer;font-family:'Montserrat',sans-serif">𝗕 Poner palabra en negrita extra</button>
+            <button onclick="marcarCursiva()" onmousedown="event.preventDefault()"
+              title="Selecciona una palabra en Headline, Cuerpo o Items y ponla en cursiva (vuelve a pulsar para quitarla)"
+              style="border:1px solid var(--UI-B2);background:rgba(255,255,255,.06);color:var(--UI-T);border-radius:4px;padding:7px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif;font-style:italic">I Poner palabra en cursiva</button>
+            <div style="position:relative;display:flex;gap:4px">
+              <button onclick="marcarEstiloSubrayado(0)" onmousedown="event.preventDefault()"
+                title="Selecciona una palabra en Headline, Cuerpo o Items y subráyala (vuelve a pulsar para quitarla)"
+                style="flex:1;border:1px solid var(--UI-B2);background:rgba(255,255,255,.06);color:var(--UI-T);border-radius:4px;padding:7px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif;text-decoration:underline">U Poner palabra con subrayado</button>
+              <button id="btnMenuSubrayado" onclick="toggleMenuSubrayado(event)" onmousedown="event.preventDefault()"
+                title="Elegir otro estilo de subrayado"
+                style="border:1px solid var(--UI-B2);background:rgba(255,255,255,.06);color:var(--UI-T);border-radius:4px;padding:7px 10px;font-size:10px;cursor:pointer;font-family:'Montserrat',sans-serif">▾</button>
+              <div id="menuSubrayado" style="display:none;position:absolute;top:100%;right:0;margin-top:4px;z-index:60;background:#1c1c1c;border:1px solid var(--UI-B2);border-radius:6px;padding:6px;flex-direction:column;gap:2px;min-width:210px;box-shadow:0 8px 24px rgba(0,0,0,.45)">
+                <button onclick="marcarEstiloSubrayado(0)" onmousedown="event.preventDefault()" class="menu-est"><span class="ul">Palabra</span><span>Simple</span></button>
+                <button onclick="marcarEstiloSubrayado(1)" onmousedown="event.preventDefault()" class="menu-est"><span class="ulm">Palabra</span><span>Marcador</span></button>
+                <button onclick="marcarEstiloSubrayado(2)" onmousedown="event.preventDefault()" class="menu-est"><span class="ulbox">Palabra</span><span>Marco</span></button>
+                <button onclick="marcarEstiloSubrayado(3)" onmousedown="event.preventDefault()" class="menu-est"><span class="uldbl">Palabra</span><span>Doble</span></button>
+                <button onclick="marcarEstiloSubrayado(4)" onmousedown="event.preventDefault()" class="menu-est"><span class="ulwavy">Palabra</span><span>Ondulado</span></button>
+                <button onclick="marcarEstiloSubrayado(5)" onmousedown="event.preventDefault()" class="menu-est"><span class="ulthick">Palabra</span><span>Grueso azul</span></button>
+                <button onclick="marcarEstiloSubrayado(6)" onmousedown="event.preventDefault()" class="menu-est"><span class="uldot">Palabra</span><span>Punteado</span></button>
+                <button onclick="marcarEstiloSubrayado(7)" onmousedown="event.preventDefault()" class="menu-est"><span class="ulcirc">Palabra</span><span>Círculo</span></button>
+                <button onclick="marcarEstiloSubrayado(8)" onmousedown="event.preventDefault()" class="menu-est"><span class="ulstrike">Palabra</span><span>Tachado</span></button>
+                <button onclick="marcarEstiloSubrayado(9)" onmousedown="event.preventDefault()" class="menu-est"><span class="ulinv">Palabra</span><span>Caja negra</span></button>
+                <button onclick="marcarEstiloSubrayado(10)" onmousedown="event.preventDefault()" class="menu-est"><span class="ulchipl">Palabra</span><span>Caja clara</span></button>
+                <button onclick="marcarEstiloSubrayado(11)" onmousedown="event.preventDefault()" class="menu-est"><span class="ulbrush">Palabra</span><span>Trazo rotulador</span></button>
+              </div>
+            </div>
+            <div style="position:relative;display:flex;gap:4px">
+              <button onclick="marcarFuente(0)" onmousedown="event.preventDefault()"
+                title="Selecciona una palabra y ponla en Playfair Display (vuelve a pulsar para quitarla)"
+                style="flex:1;border:1px solid var(--UI-B2);background:rgba(255,255,255,.06);color:var(--UI-T);border-radius:4px;padding:7px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif">Aa Cambiar tipografía</button>
+              <button id="btnMenuFuente" onclick="toggleMenuFuente(event)" onmousedown="event.preventDefault()"
+                title="Elegir tipografía: Playfair Display o Montserrat"
+                style="border:1px solid var(--UI-B2);background:rgba(255,255,255,.06);color:var(--UI-T);border-radius:4px;padding:7px 10px;font-size:10px;cursor:pointer;font-family:'Montserrat',sans-serif">▾</button>
+              <div id="menuFuente" style="display:none;position:absolute;top:100%;right:0;margin-top:4px;z-index:60;background:#1c1c1c;border:1px solid var(--UI-B2);border-radius:6px;padding:6px;flex-direction:column;gap:2px;min-width:210px;box-shadow:0 8px 24px rgba(0,0,0,.45)">
+                <button onclick="marcarFuente(0)" onmousedown="event.preventDefault()" class="menu-est"><span class="f-ser">Palabra</span><span>Playfair Display</span></button>
+                <button onclick="marcarFuente(1)" onmousedown="event.preventDefault()" class="menu-est"><span class="f-san">Palabra</span><span>Montserrat</span></button>
+              </div>
+            </div>
+            <div style="font-size:8px;color:var(--UI-M);line-height:1.4">Selecciona la palabra en el texto de arriba y pulsa el botón. Usa ▾ para elegir el estilo de subrayado o la tipografía.</div>
           </div>
         </div>
         <div class="crow" id="rowItems">
@@ -1765,13 +1867,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <label>Ángulo específico</label>
           <select id="cAngulo"></select>
         </div>
-        <div class="crow">
-          <label>Número de slides</label>
-          <select id="cNumSlides">
-            <option value="5">5 slides</option>
-            <option value="6">6 slides</option>
-            <option value="7" selected>7 slides</option>
-          </select>
+        <div class="crow" style="font-size:9px;color:var(--UI-M)">
+          El número de slides se elige arriba, junto a "Carrusel" ↑
         </div>
       </div>
       <div style="font-size:9px;color:var(--UI-M);line-height:1.8">
@@ -1882,6 +1979,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=73"></script>
+<script src="app.js?v=85"></script>
 </body>
 </html>
