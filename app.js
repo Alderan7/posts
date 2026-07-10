@@ -292,9 +292,178 @@ const NICHO = {
           hashtags:"#fiscalidad #autonomos #asesoriafiscal #irpf #hacienda #pymes #impuestos"},
       },
     },
-  }
+  },
+  ia: {
+    nombre:'IA y Automatización',
+    eye:'Automatización · IA para tu negocio',
+    hashtags:'#inteligenciaartificial #automatizacion #ia #chatgpt #claudeai #productividad #pymes #autonomos',
+    persona:'consultora de automatización e IA aplicada a negocios: ayudas a autónomos y pymes a implementar IA (ChatGPT, Claude, agentes, automatizaciones) para ahorrar horas de trabajo manual y escalar sin contratar más gente',
+    lector:'un autónomo o dueño de pyme que ha oído hablar de IA, ChatGPT o Claude pero no sabe por dónde empezar, hace tareas repetitivas a mano cada semana, y tiene miedo de quedarse atrás o de que la IA sea "demasiado técnica" para él',
+    tono:'claro, práctico y sin palabras de relleno tipo "la IA lo cambia todo". Traduce SIEMPRE lo técnico (prompt, agente, automatización, flujo) a lenguaje llano la primera vez que aparece. Habla de horas ahorradas y tareas concretas que ya no tienes que hacer tú, nunca de futurismo abstracto',
+    ctaEj:'AUTOMATIZA, IA, AHORRA TIEMPO',
+    pills:['ChatGPT y Claude','Automatización de tareas','Agentes de IA','Ahorro de horas reales'],
+    p2head:'Tú te centras en tu negocio.\nYo me centro en que la IA te ahorre horas de verdad.',
+    p2sub:'Automatización real, sin humo, para autónomos y pymes.',
+    usaBanco:false,
+    angulos:{
+      claude:'por qué Claude (o cualquier IA) no sirve de nada si no sabes qué pedirle, y cómo cambia eso',
+      tareasrepetitivas:'las tareas repetitivas que ya podrías automatizar hoy mismo y sigues haciendo a mano',
+      miedoia:'el miedo a quedarte atrás con la IA, y por qué empezar ya no es tan difícil como parece',
+      agentes:'qué es un agente de IA de verdad (sin humo) y para qué sirve en un negocio pequeño',
+      prompts:'por qué la mayoría no sabe pedirle bien las cosas a la IA, y eso le cuesta horas',
+      horasahorradas:'cuántas horas reales se pueden ahorrar automatizando tareas con IA cada semana',
+    },
+    labels:{
+      claude:'Claude bien usado',
+      tareasrepetitivas:'Automatiza lo repetitivo',
+      miedoia:'No te quedes atrás',
+      agentes:'Agentes de IA sin humo',
+      prompts:'Pedir bien a la IA',
+      horasahorradas:'Las horas que te ahorras',
+    },
+    pilares:{
+      dolor:['tareasrepetitivas','miedoia','horasahorradas'],
+      educativo:['prompts','agentes','claude'],
+      autoridad:['agentes','claude','prompts'],
+      conversion:['horasahorradas','tareasrepetitivas','agentes'],
+      reframe:['miedoia','claude','prompts'],
+      servicio:['agentes','tareasrepetitivas','horasahorradas'],
+      objecion:['miedoia','prompts','tareasrepetitivas'],
+    },
+    quienEs:'tu negocio',
+    p5head:'Tu negocio, en el móvil\nde quien ya automatizó lo repetitivo.',
+    p5body:'IA y automatización sin humo · Respuesta en 24h',
+    porQueYo:[
+      'Especializada en llevar la IA a negocios reales, no en vender humo de "transformación digital".',
+      'Empiezo siempre por UNA tarea concreta que te ahorre tiempo ya, no por rehacer tu negocio entero.',
+      'Te explico cada paso en lenguaje llano, nunca en jerga técnica que no necesitas.',
+      'Tú te centras en tu negocio. Yo me centro en que la IA te ahorre horas de verdad.'],
+    paraQuienEs:[
+      'Eres autónomo o tienes una pyme y haces tareas repetitivas cada semana a mano.',
+      'Has oído hablar de IA, Claude o ChatGPT pero no sabes por dónde empezar.',
+      'Te da un poco de miedo o crees que "eso es para gente de tecnología".',
+      'Quieres automatizar aunque sea una sola tarea y notar la diferencia ya.'],
+    testimonios:[
+      {q:'Automatizamos las respuestas a clientes nuevos y recuperé casi 6 horas a la semana.', n:'Cliente', r:'Autónoma · Servicios · Barcelona'},
+      {q:'Pensaba que necesitaba saber programar. En un mes tenía mi primer agente funcionando.', n:'Cliente', r:'Pyme · Comercio · Madrid'},
+      {q:'Lo que más me sorprendió no fue la IA. Fue lo simple que era una vez que alguien me lo explicó bien.', n:'Cliente', r:'Autónomo · Consultoría · Valencia'},
+    ],
+    banco:{
+      hooks:{
+        claude:[
+          "Tienes Claude o ChatGPT abiertos en una pestaña.\n\nY los usas para lo mismo que un buscador.",
+          "No es que la IA no sirva para tu negocio.\n\nEs que nadie te enseñó a pedirle las cosas bien.",
+          "Claude puede escribir tu contenido, tus respuestas y tus procesos.\n\nSi sabes qué pedirle.",
+          "La diferencia entre un autónomo que ahorra 5 horas a la semana y otro que no,\n\nno es la IA. Es cómo la usa.",
+        ],
+        tareasrepetitivas:[
+          "Cada semana hay 3 tareas que haces igual, a mano, desde hace meses.\n\nEso ya se puede automatizar.",
+          "Copiar y pegar el mismo mensaje a cada cliente nuevo\n\nes trabajo que ya no deberías hacer tú.",
+          "Si una tarea la repites más de 3 veces igual,\n\nno es trabajo. Es una automatización pendiente.",
+          "¿Cuántas horas a la semana pasas haciendo algo que un flujo automatizado haría por ti?",
+        ],
+        miedoia:[
+          "«Yo no soy de tecnología» es la frase que más frena a los negocios que más lo necesitan.",
+          "No hace falta saber programar para automatizar tu negocio.\n\nHace falta empezar por una sola tarea.",
+          "El 47% de los autónomos en España ya ve la IA como su mayor oportunidad este año.\n\n¿Y tú?",
+          "No te vas a quedar atrás por no saber de IA.\n\nTe vas a quedar atrás por no empezar.",
+        ],
+        agentes:[
+          "Un agente de IA no es un chatbot que responde.\n\nEs un sistema que hace el trabajo completo, solo.",
+          "Automatizar es que la máquina ejecute una orden.\n\nUn agente es que decida los siguientes pasos solo.",
+          "Un agente de IA puede leer un email, decidir qué responder y agendarlo.\n\nSin que tú lo toques.",
+          "El salto de 2026 no es tener más IA.\n\nEs pasar de herramientas sueltas a agentes que trabajan solos.",
+        ],
+        prompts:[
+          "Le pides algo a la IA, y el resultado es genérico.\n\nEl problema no es la IA. Es la pregunta.",
+          "Un prompt mal escrito te da una respuesta de manual.\n\nUno bien escrito te da un resultado que puedes usar ya.",
+          "La mayoría no tiene un problema de herramientas.\n\nTiene un problema de cómo pedir las cosas.",
+          "Cambia cómo le pides las cosas a la IA,\n\ny cambia el tiempo que te ahorra.",
+        ],
+        horasahorradas:[
+          "5 horas a la semana. Eso es lo que recupera de media un negocio que automatiza bien 3 tareas.",
+          "No se trata de trabajar con IA por moda.\n\nSe trata de las horas que dejas de perder.",
+          "Cada tarea automatizada es una hora que no vuelves a perder, semana tras semana.",
+          "¿Cuánto vale tu hora? Multiplícalo por las que pierdes haciendo tareas que ya podrían hacerse solas.",
+        ],
+      },
+      frases:[
+        "La IA no te sustituye.\nTe libera de lo repetitivo.",
+        "No hace falta saber programar.\nHace falta saber qué pedir.",
+        "Automatizar no es magia.\nEs dejar de repetir lo mismo cada semana.",
+        "Un agente de IA no responde.\nResuelve.",
+        "El miedo a la IA cuesta más\nque aprender a usarla.",
+        "No es tecnología.\nEs tiempo que recuperas.",
+        "La pregunta correcta\nvale más que la herramienta cara.",
+        "Automatizar una tarea\nes automatizarla para siempre.",
+        "Quien entiende de IA hoy,\nno compite con quien no.",
+        "El futuro no es la IA.\nEs quién sabe usarla bien.",
+      ],
+      subtitulos:[
+        "Esto es lo que aplico con negocios reales, no teoría de vídeo de YouTube.",
+        "Sin jerga técnica. Sin código. Sin humo.",
+        "Lo que cambia cuando dejas de hacerlo todo a mano.",
+        "Cuatro pasos, cero conocimientos técnicos previos.",
+        "Lo que distingue a quien ahorra horas de quien solo prueba la IA una vez.",
+        "Desliza para ver por dónde empezar de verdad.",
+        "Aplicado a negocios como el tuyo, no a startups tecnológicas.",
+        "Lo que reviso con cada cliente antes de automatizar nada.",
+      ],
+      ctas:[
+        "Escríbeme AUTOMATIZA","Escríbeme IA","Escríbeme AGENTE","Escríbeme CLAUDE",
+        "Escríbeme AHORRA","Escríbeme PROMPT","Escríbeme TIEMPO","Escríbeme FLUJO",
+        "Escríbeme EMPEZAR","Escríbeme SISTEMA",
+      ],
+      listas:{
+        claude:[["*Dale contexto real*: quién eres, para quién escribes, qué tono usas — no una orden suelta.","*Pide un formato concreto*: no «ayúdame con esto», sino la estructura exacta que necesitas.","*Itera*: la primera respuesta casi nunca es la definitiva, perfecciona con 2-3 vueltas.","*Guarda lo que funciona*: un buen prompt reutilizable ahorra más que uno perfecto una vez."]],
+        tareasrepetitivas:[["*Responder los mismos mensajes* a clientes nuevos, una y otra vez.","*Pasar datos de un sitio a otro* a mano cada semana.","*Redactar el mismo tipo de contenido* desde cero cada vez.","*Organizar y clasificar información* que ya sigue siempre el mismo patrón."]],
+        miedoia:[["*No hace falta saber programar*: hoy se automatiza con herramientas visuales.","*Empiezas por UNA tarea*, no por rehacer todo tu negocio de golpe.","*El error más caro* es seguir haciéndolo todo a mano por miedo a probar.","*Cada mes que esperas*, alguien de tu sector ya está automatizando."]],
+        agentes:[["*Investiga* antes de actuar: revisa datos, historial, contexto.","*Decide* el siguiente paso sin que tú se lo digas cada vez.","*Ejecuta* la tarea completa, no solo un fragmento.","*Escala a ti* solo cuando de verdad hace falta tu criterio."]],
+        prompts:[["*Contexto*: quién eres y para qué lo necesitas.","*Formato*: cómo quieres el resultado exactamente.","*Ejemplos*: enséñale el estilo que buscas.","*Límites*: qué NO quieres que haga o incluya."]],
+        horasahorradas:[["*Mensajes repetidos*: minutos que se convierten en horas al mes.","*Organización de información*: lo que antes tardaba un día, ahora tarda minutos.","*Contenido recurrente*: primeras versiones listas en segundos, no horas.","*Seguimiento de tareas*: nada se olvida porque el sistema no se cansa."]],
+        default:[["*Menos tareas repetitivas*: lo que se puede automatizar, se automatiza.","*Más tiempo real*: para lo que de verdad mueve tu negocio.","*Decisiones con datos*, no con intuición o memoria.","*Un sistema* que no depende de que tú te acuerdes de todo."]],
+      },
+      debates:[
+        ["¿Mejor *ChatGPT* o *Claude* para tu negocio?","Claude. Mejor para textos largos y coherencia en tareas complejas.","ChatGPT. Más extendido y con más integraciones ya listas."],
+        ["¿Empezar por *automatizar* o por *aprender a usar la IA* primero?","Aprender primero. Sin entender qué pedir, automatizar sale mal.","Automatizar ya. Se aprende sobre la marcha, con la tarea real."],
+        ["¿Un agente de IA *sustituye* a una persona o *libera* su tiempo?","Libera tiempo. Hace lo repetitivo para que la persona decida y cree.","Sustituye. A la larga, muchas tareas dejarán de necesitar a alguien."],
+      ],
+      stats:[
+        ["+5h::Ahorradas de media a la semana","3::Tareas automatizadas el primer mes","0::Conocimientos técnicos necesarios","48h::Para tener el primer flujo listo"],
+        ["-30%::Tiempo en tareas repetitivas","+25%::Eficiencia media tras automatizar","22%::Pymes españolas con IA ya implementada","65%::Adopción de IA prevista en pymes para 2028"],
+      ],
+      procesos:[
+        ["Diagnóstico:Identifico las tareas que más tiempo te roban cada semana.","Diseño:Elijo la herramienta y el flujo adecuado para tu caso, sin complicarlo.","Implementación:Configuro el sistema y lo pruebo contigo antes de dejarlo funcionando solo.","Ajuste:Reviso y afino el flujo con datos reales de las primeras semanas."],
+        ["Auditoría:Reviso qué haces a mano que ya podría automatizarse.","Prioridad:Elegimos la tarea que más horas te devuelve primero.","Puesta en marcha:Implemento el agente o automatización paso a paso.","Acompañamiento:Te enseño a mantenerlo y ampliarlo tú misma."],
+      ],
+      servicios:[
+        ["Automatización de tareas repetitivas con IA","Implementación de agentes de IA para tu negocio","Formación práctica en prompts y uso de Claude/ChatGPT","Auditoría de procesos para saber qué automatizar primero","Acompañamiento y mantenimiento del sistema"],
+        ["Configuración de flujos con IA (sin programar)","Integración de IA en atención al cliente","Automatización de contenido y comunicaciones","Sistemas a medida para autónomos y pymes","Soporte continuo tras la implementación"],
+      ],
+      eyebrows:[
+        "Automatización · IA para tu negocio","IA aplicada · Sin humo, sin código",
+        "Agentes de IA · Autónomos y Pymes","Menos tareas repetitivas, más tiempo real",
+      ],
+      instagramCopy:{
+        claude:{caption:"¿Tienes Claude o ChatGPT abiertos y los usas como un buscador?\n\nAhí se pierde el 90% del potencial.\n\n¿Para qué lo usas tú ahora mismo? 👇",
+          hashtags:"#claudeai #chatgpt #inteligenciaartificial #ia #automatizacion #pymes #autonomos #productividad"},
+        tareasrepetitivas:{caption:"¿Cuántas tareas repites igual cada semana sin darte cuenta?\n\nEso es justo lo primero que se puede automatizar.\n\nCuéntame una y te digo si se puede automatizar 👇",
+          hashtags:"#automatizacion #ia #productividad #autonomos #pymes #ahorradetiempo #tareasrepetitivas #negociosdigitales"},
+        miedoia:{caption:"«Yo no soy de tecnología» es la frase que más frena a los negocios que más lo necesitan.\n\nNo hace falta saber programar para empezar.\n\n¿Qué es lo que más miedo te da de la IA? 👇",
+          hashtags:"#inteligenciaartificial #ia #miedoalcambio #automatizacion #pymes #autonomos #digitalizacion #2026"},
+        agentes:{caption:"Un agente de IA no responde preguntas: resuelve tareas completas, solo.\n\nEse es el salto real de este año.\n\n¿Ya usas alguno en tu negocio? 👇",
+          hashtags:"#agentesia #inteligenciaartificial #automatizacion #ia #pymes #autonomos #tecnologia #negocios"},
+        prompts:{caption:"Le pides algo a la IA y el resultado es genérico.\n\nEl problema no es la IA. Es cómo se lo pides.\n\n¿Quieres que te enseñe cómo pedirlo bien? 👇",
+          hashtags:"#promptengineering #ia #claudeai #chatgpt #inteligenciaartificial #productividad #autonomos #pymes"},
+        horasahorradas:{caption:"5 horas a la semana. Eso es lo que recupera de media un negocio que automatiza bien solo 3 tareas.\n\n¿Cuántas horas perdiste esta semana en tareas repetitivas? 👇",
+          hashtags:"#ahorradetiempo #automatizacion #ia #productividad #autonomos #pymes #eficiencia #negociosdigitales"},
+        default:{caption:"¿Ya usas la IA en tu negocio o todavía te da respeto?\n\nCuéntame en comentarios 👇",
+          hashtags:"#inteligenciaartificial #ia #automatizacion #pymes #autonomos #productividad"},
+      },
+    },
+  },
 };
-const NICHOS_VALIDOS = ['reformas','personal','productividad','fiscalidad'];
+const NICHOS_VALIDOS = ['reformas','personal','productividad','fiscalidad','ia'];
 let _nicho = NICHOS_VALIDOS.includes(localStorage.getItem('rm_nicho')) ? localStorage.getItem('rm_nicho') : 'reformas';
 function getNicho(){ return _nicho; }
 function N(){ return NICHO[_nicho] || NICHO.reformas; }
@@ -5187,6 +5356,7 @@ function bancoIdeas(){
   if(n==='personal') return window.IDEAS_PERSONAL||[];
   if(n==='productividad') return window.IDEAS_PRODUCTIVIDAD||[];
   if(n==='fiscalidad') return window.IDEAS_FISCALIDAD||[];   // aún sin banco de 30 días: el Plan 30 avisará
+  if(n==='ia') return window.IDEAS_IA||[];                   // aún sin banco de 30 días: el Plan 30 avisará
   return window.IDEAS_365||[];
 }
 function usadasKey(){
@@ -5194,6 +5364,7 @@ function usadasKey(){
   if(n==='personal') return 'ideas_usadas_personal';
   if(n==='productividad') return 'ideas_usadas_productividad';
   if(n==='fiscalidad') return 'ideas_usadas_fiscalidad';
+  if(n==='ia') return 'ideas_usadas_ia';
   return 'ideas_usadas';
 }
 
@@ -5989,7 +6160,7 @@ async function renderFavoritos(){
     return;
   }
   cont.innerHTML=all.map(f=>{
-    const badge=f.nicho==='personal'?'👤 Personal':f.nicho==='productividad'?'🗂 Productividad':f.nicho==='fiscalidad'?'📊 Fiscalidad':'🏗 Reformas';
+    const badge=f.nicho==='personal'?'👤 Personal':f.nicho==='productividad'?'🗂 Productividad':f.nicho==='fiscalidad'?'📊 Fiscalidad':f.nicho==='ia'?'🤖 IA':'🏗 Reformas';
     const nSl=(f.slides||[]).length;
     const fecha=f.fecha?new Date(f.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short'}):'';
     const thumb=f.thumb
