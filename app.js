@@ -1991,10 +1991,14 @@ function rLibre(d,n){
   const els=(d.elementos||[]).map(e=>{
     const x=Math.max(0,Math.min(100,+e.x||0)), y=Math.max(0,Math.min(100,+e.y||0));
     const w=Math.max(1,Math.min(100,+e.w||30)), h=(+e.h||0);
-    const base=`position:absolute;left:${x}%;top:${y}%;width:${w}%;`;
+    const rot=Math.max(-15,Math.min(15,+e.rot||0));
+    const base=`position:absolute;left:${x}%;top:${y}%;width:${w}%;${rot?`transform:rotate(${rot}deg);`:''}`;
     if(e.t==='rect') return `<div style="${base}height:${h||10}%;background:${e.bg||'#38B6FF'};border-radius:${e.r||0}px"></div>`;
     if(e.t==='img'){ const u=getImgUrl(e.img)|| (e.img&&/^https?:|^data:/.test(e.img)?e.img:null);
       return u?`<div style="${base}height:${h||30}%;overflow:hidden;border-radius:${e.r||0}px"><img src="${u}" style="width:100%;height:100%;object-fit:cover"></div>`:''; }
+    if(e.t==='sticker'){
+      return `<div style="${base}border:3px solid ${e.color||'#38B6FF'};border-radius:${e.r??999}px;padding:.4em 1em;font-family:var(--F-SAN);color:${e.color||'#38B6FF'};font-size:${e.size||24}px;font-weight:${e.weight||700};text-align:center;box-sizing:border-box">${p(e.texto||'')}</div>`;
+    }
     // texto
     const fam = e.font==='serif' ? 'var(--F-SER)' : 'var(--F-SAN)';
     const st  = e.font==='serif' ? 'font-style:italic;' : '';
@@ -2512,6 +2516,60 @@ function togglePmFoto(){
   if(on) setTimeout(()=>document.getElementById('pmFotoKw')?.focus(), 50);
 }
 
+/* ── "Diseñar con IA": buscar foto por palabras clave VS subir tu propia foto ──
+   Si subes tu foto, la IA elige el tipo de slide (fondo completo, mitad/mitad,
+   retrato...) y esa foto se coloca ahí directamente, sin buscar en Pexels. */
+let _pmFotoMediaId = null;
+function setPmFuenteFoto(modo, btn){
+  ['pmFsBuscar','pmFsSubir'].forEach(id=>document.getElementById(id)?.classList.remove('on'));
+  btn.classList.add('on');
+  const buscar = document.getElementById('pmFotoBuscarWrap');
+  const subir  = document.getElementById('pmFotoSubirWrap');
+  if(buscar) buscar.style.display = modo==='buscar' ? 'block' : 'none';
+  if(subir)  subir.style.display  = modo==='subir'  ? 'block' : 'none';
+}
+function onPmFotoFile(files){
+  const file = files && files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const id = ++mediaIdCounter;
+    MEDIA.push({id, url:e.target.result, name:file.name});
+    _pmFotoMediaId = id;
+    const prev = document.getElementById('pmFotoPreview');
+    const wrap = document.getElementById('pmFotoPreviewWrap');
+    const nameEl = document.getElementById('pmFotoPreviewName');
+    if(prev) prev.src = e.target.result;
+    if(nameEl) nameEl.textContent = file.name;
+    if(wrap) wrap.style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+function quitarPmFoto(){
+  _pmFotoMediaId = null;
+  const wrap = document.getElementById('pmFotoPreviewWrap');
+  if(wrap) wrap.style.display = 'none';
+  const input = document.getElementById('pmFotoFile');
+  if(input) input.value = '';
+}
+// Drag & drop sobre la zona (delegado: el dropzone se pinta siempre, aunque
+// esté oculto tras el toggle de "buscar/subir", por eso comprobamos display).
+document.addEventListener('DOMContentLoaded', ()=>{
+  const dz = document.getElementById('pmDropzone');
+  if(!dz) return;
+  ['dragover','dragenter'].forEach(ev=>dz.addEventListener(ev, e=>{
+    e.preventDefault(); dz.style.borderColor='var(--UI-A)'; dz.style.background='rgba(56,182,255,.08)';
+  }));
+  ['dragleave','dragend'].forEach(ev=>dz.addEventListener(ev, e=>{
+    dz.style.borderColor='var(--UI-B2)'; dz.style.background='transparent';
+  }));
+  dz.addEventListener('drop', e=>{
+    e.preventDefault();
+    dz.style.borderColor='var(--UI-B2)'; dz.style.background='transparent';
+    onPmFotoFile(e.dataTransfer.files);
+  });
+});
+
 // Tipos de slide que la IA puede usar (foto/fototxt/autoridad/revista llevan imagen)
 const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice','citafoto','numero','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
 const TIPOS_IA_FOTO=['foto','fototxt','autoridad','revista','citafoto'];
@@ -2795,18 +2853,24 @@ async function pedirDisenoIA(prompt, fmt, n, cfg, onStatus, opcFoto){
     const slide={ tipo, fondo, eye:String(s.eye||'').slice(0,60), head:String(s.head||'').slice(0,180),
       body:String(s.body||'').slice(0,240), items, cta:String(s.cta||'').slice(0,60) };
     if(TIPOS_IA_FOTO.includes(tipo)){
-      slide.img = (opcFoto && opcFoto.usar && opcFoto.kw) ? opcFoto.kw : String(s.img||s.head||'').slice(0,50);
+      // Prioridad: tu foto subida > palabra clave fija (si la escribiste) > la
+      // que sugiere la propia IA para ESTE slide (así cada foto es distinta).
+      if(opcFoto && opcFoto.usar && opcFoto.mediaId) slide.imgFondo = opcFoto.mediaId;
+      else slide.img = (opcFoto && opcFoto.usar && opcFoto.kw) ? opcFoto.kw : String(s.img||s.head||'').slice(0,50);
       slide.overlay='dark'; slide.imgLayout='bg-full'; slide.txtPos='bottom'; slide.ovOpacity=68;
     }
     return saneaTipoSinItems(slide);
   }).filter(s=>s.head||s.items.length);
   if(!arr.length) throw new Error('la IA no devolvió slides');
   // El usuario pidió foto pero la IA no puso ningún slide de tipo foto → forzamos el primero.
-  if(opcFoto && opcFoto.usar && opcFoto.kw && !arr.some(s=>TIPOS_IA_FOTO.includes(s.tipo))){
+  if(opcFoto && opcFoto.usar && (opcFoto.kw||opcFoto.mediaId) && !arr.some(s=>TIPOS_IA_FOTO.includes(s.tipo))){
     const s0=arr[0];
-    s0.tipo='foto'; s0.img=opcFoto.kw; s0.overlay='dark'; s0.imgLayout='bg-full'; s0.txtPos='bottom'; s0.ovOpacity=68;
+    s0.tipo='foto'; s0.overlay='dark'; s0.imgLayout='bg-full'; s0.txtPos='bottom'; s0.ovOpacity=68;
+    if(opcFoto.mediaId) s0.imgFondo=opcFoto.mediaId; else s0.img=opcFoto.kw;
   }
-  const conFoto=arr.filter(s=>TIPOS_IA_FOTO.includes(s.tipo)&&s.img);
+  // Buscar en Pexels/Pixabay solo los slides que aún necesitan foto (los que ya
+  // tienen tu foto subida vía imgFondo se saltan la búsqueda).
+  const conFoto=arr.filter(s=>TIPOS_IA_FOTO.includes(s.tipo)&&s.img&&!s.imgFondo);
   if(conFoto.length){
     if(onStatus) onStatus(`Buscando ${conFoto.length} imagen(es)…`);
     await Promise.all(conFoto.map(async s=>{ const id=await fetchFotoConFallback(s.img); if(id) s.imgFondo=id; else s.tipo='hook'; }));
@@ -2841,9 +2905,12 @@ async function generarDesdePrompt(){
   const libre=document.getElementById('pmLibre')?.checked;
   const conFoto=document.getElementById('pmFoto')?.checked;
   const fotoKw=(document.getElementById('pmFotoKw')?.value||'').trim();
-  if(conFoto && !fotoKw){ if(status){status.style.color='#ff9f43';status.textContent='Pon las palabras clave de la foto.';} return; }
-  const opcFoto={ usar: !!conFoto, kw: fotoKw };
-  if(libre){ return generarLibre(prompt, fmt, n, cfg, status, btn); }   // modo experimental
+  const subiendoFoto = document.getElementById('pmFotoSubirWrap')?.style.display !== 'none';
+  // Palabras clave y "subir foto" son un REFINAMIENTO opcional. Si marcas "con
+  // foto" y no rellenas ninguno de los dos, se sigue buscando automáticamente
+  // en Pexels/Pixabay una foto distinta y adecuada para cada slide (como antes).
+  const opcFoto={ usar: !!conFoto, kw: (conFoto && !subiendoFoto) ? fotoKw : '', mediaId: (conFoto && subiendoFoto) ? _pmFotoMediaId : null };
+  if(libre){ return generarLibre(prompt, fmt, n, cfg, status, btn, opcFoto); }   // modo experimental
 
   if(btn) btn.classList.add('loading');
   if(status){ status.style.color='#38B6FF'; status.textContent='Diseñando con IA…'; }
@@ -2896,22 +2963,24 @@ items según tipo: lista/claves=frases; stats=3-4 "NÚMERO::etiqueta"; proceso=i
 }
 
 // EXPERIMENTAL — la IA compone por coordenadas (elementos absolutos)
-async function generarLibre(prompt, fmt, n, cfg, status, btn){
+async function generarLibre(prompt, fmt, n, cfg, status, btn, opcFoto){
   const cnt = fmt==='carrusel' ? n : 1;
   const contrato=`Eres Rosa María, ${cfg.persona}. Diseña un ${fmt} de Instagram (lienzo 1080x1350) para: "${prompt}".
-Componlo LIBREMENTE como un diseñador editorial (estilo revista): bloques de color, foto, titulares grandes, números. Paleta de marca: negro #1A1A1A, crema #F5F1EA, azul #38B6FF (usa solo estos + blanco).
+Componlo LIBREMENTE como un diseñador editorial ACTUAL (lo que se lleva ahora en Instagram/TikTok, no un anuncio clásico): tipografía enorme y expresiva, alguna palabra o número en diagonal (rotación sutil), foto con recorte tipo collage, un "sticker"/badge circular o con borde para un dato o palabra suelta, mezcla de serif editorial + sans directo. Paleta de marca: negro #1A1A1A, crema #F5F1EA, azul #38B6FF (usa solo estos + blanco).
 
 Devuelve SOLO JSON: { "caption":"...", "hashtags":"#...", "slides":[ { "bg":"#hex de fondo", "elementos":[ ELEMENTO, ... ] } ] } con ${cnt} slide(s).
 ELEMENTO = {
- "t": "text" | "rect" | "img",
+ "t": "text" | "rect" | "img" | "sticker",
  "x": 0-100, "y": 0-100, "w": 0-100,   // posición y ancho en % del lienzo
  "h": 0-100,                            // alto en % (para rect/img)
- "texto": "solo si t=text",
+ "rot": -15 a 15,                       // rotación en grados (opcional, úsala en 1-2 elementos máx. para dar aire editorial/collage, no en todos)
+ "texto": "solo si t=text o t=sticker",
  "img": "solo si t=img: 2-3 palabras EN INGLÉS para buscar la foto",
- "size": px de fuente (text), "weight": 300-800, "color":"#hex", "align":"left|center|right",
+ "size": px de fuente (text/sticker), "weight": 300-800, "color":"#hex", "align":"left|center|right",
  "font": "sans" | "serif",              // serif = elegante (numeros, citas)
- "bg": "#hex (rect)", "r": radio de esquina px
+ "bg": "#hex (rect)", "r": radio de esquina px (rect/img) o del borde (sticker; usa un nº grande tipo 999 para un badge redondo/píldora)
 }
+"sticker" = una palabra o dato corto con borde de color alrededor (como un sello o badge) — úsalo con moderación, 1 por slide como máximo, para resaltar UNA palabra o cifra.
 REGLAS: no solapes texto ilegible; deja márgenes (~6%); 1 titular grande por slide; usa 1-2 rect de color o 1 img como fondo/bloque; máximo 6 elementos por slide. Coordenadas coherentes (que quepa dentro de 0-100).`;
   if(btn) btn.classList.add('loading');
   if(status){ status.style.color='#38B6FF'; status.textContent='Componiendo (modo libre)…'; }
@@ -2920,8 +2989,15 @@ REGLAS: no solapes texto ilegible; deja márgenes (~6%); 1 titular grande por sl
       onStatus:(m)=>{ if(status) status.textContent=m; } });
     let arr=Array.isArray(out.slides)?out.slides:[];
     if(!arr.length) throw new Error('sin slides');
-    // descargar imágenes de los elementos img
-    for(const s of arr){ for(const e of (s.elementos||[])){ if(e.t==='img' && e.img && !/^https?:|^data:/.test(e.img)){ const id=await fetchFotoConFallback(e.img); if(id) e.img=id; } } }
+    // Imágenes: si subiste tu propia foto, se usa en TODOS los elementos "img"
+    // (sin buscar en Pexels); si no, cada elemento busca su propia foto sugerida.
+    for(const s of arr){
+      for(const e of (s.elementos||[])){
+        if(e.t!=='img') continue;
+        if(opcFoto && opcFoto.usar && opcFoto.mediaId){ e.img = opcFoto.mediaId; continue; }
+        if(e.img && !/^https?:|^data:/.test(e.img)){ const id=await fetchFotoConFallback(e.img); if(id) e.img=id; }
+      }
+    }
     const slides=arr.slice(0,cnt).map(s=>({tipo:'libre', fondo:'dark', bg:s.bg, elementos:(s.elementos||[]).slice(0,8)}));
     SLIDES.length=0; slides.forEach(s=>SLIDES.push(s));
     setModo(fmt==='carrusel'?'carrusel':fmt==='reel'?'reel':'post');

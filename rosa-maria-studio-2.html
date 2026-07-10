@@ -1126,9 +1126,28 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         <button class="btn btn-gen" id="pmGen" onclick="generarDesdePrompt()" style="margin-left:auto"><span class="spinner"></span><span id="pmGenTxt">⚡ Diseñar</span></button>
       </div>
       <div id="pmFotoKwWrap" style="display:none">
-        <input type="text" id="pmFotoKw" placeholder="Palabras clave para buscar la foto (en cualquier idioma). Ej: cocina reformada, oficina moderna..."
-          style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:9px 11px;border-radius:6px;font-size:12px;font-family:'Montserrat',sans-serif">
-        <div style="font-size:9px;color:var(--UI-M);margin-top:4px;line-height:1.5">Se busca en Pexels y, si no encuentra nada, en Pixabay.</div>
+        <div style="display:flex;gap:4px;margin-bottom:8px" class="mode-row">
+          <button class="mode-btn on" id="pmFsBuscar" onclick="setPmFuenteFoto('buscar',this)">🔎 Buscar foto</button>
+          <button class="mode-btn" id="pmFsSubir" onclick="setPmFuenteFoto('subir',this)">📤 Subir mi foto</button>
+        </div>
+        <div id="pmFotoBuscarWrap">
+          <input type="text" id="pmFotoKw" placeholder="Palabras clave para buscar la foto (en cualquier idioma). Ej: cocina reformada, oficina moderna..."
+            style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:9px 11px;border-radius:6px;font-size:12px;font-family:'Montserrat',sans-serif">
+          <div style="font-size:9px;color:var(--UI-M);margin-top:4px;line-height:1.5">Se busca en Pexels y, si no encuentra nada, en Pixabay.</div>
+        </div>
+        <div id="pmFotoSubirWrap" style="display:none">
+          <div id="pmDropzone" onclick="document.getElementById('pmFotoFile').click()"
+            style="border:2px dashed var(--UI-B2);border-radius:8px;padding:18px;text-align:center;cursor:pointer;font-size:12px;color:var(--UI-M);transition:border-color .15s,background .15s">
+            📤 Arrastra una foto aquí o haz clic para elegirla
+          </div>
+          <input type="file" id="pmFotoFile" accept="image/*" style="display:none" onchange="onPmFotoFile(this.files)">
+          <div id="pmFotoPreviewWrap" style="display:none;margin-top:8px;display:flex;align-items:center;gap:10px">
+            <img id="pmFotoPreview" style="width:56px;height:56px;object-fit:cover;border-radius:6px">
+            <span id="pmFotoPreviewName" style="font-size:11px;color:var(--UI-T);flex:1"></span>
+            <button class="btn btn-gh" style="padding:3px 8px;font-size:10px" onclick="quitarPmFoto()">Quitar</button>
+          </div>
+          <div style="font-size:9px;color:var(--UI-M);margin-top:4px;line-height:1.5">La IA decide en qué slide(s) y con qué estilo (fondo completo, mitad/mitad, retrato...) queda mejor tu foto.</div>
+        </div>
       </div>
       <div id="promptStatus" style="font-size:11px;color:var(--UI-M);line-height:1.5">La IA (Groq) diseña el contenido entero según tu descripción. Necesitas tu key de Groq activa.</div>
     </div>
@@ -2001,6 +2020,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=90"></script>
+<script src="app.js?v=91"></script>
 </body>
 </html>
