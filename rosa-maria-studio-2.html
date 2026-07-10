@@ -16,6 +16,7 @@
 <script src="datos-ideas-productividad.js" onerror="/* opcional: sin banco de productividad, el nicho avisa */"></script>
 <script src="datos-calendario.js" onerror="/* opcional: sin calendario, el botón avisa */"></script>
 <script src="datos-plantillas.js" onerror="/* opcional: sin plantillas, el botón avisa */"></script>
+<script src="datos-prompt-ideas.js" onerror="/* opcional: sin ideas de prompt, el botón avisa */"></script>
 <style>
 /* ═══════════════════════════════════════════════════
    MANUAL DE BRANDING — PALETA EXACTA
@@ -1120,6 +1121,15 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       </div>
       <textarea id="promptTxt" rows="5" placeholder="Ej: Un carrusel sobre los 3 errores de fiscalidad que cometen los autónomos y cómo evitarlos. Tono cercano y directo. Que termine invitando a escribirme."
         style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:12px;border-radius:8px;font-size:13px;font-family:'Montserrat',sans-serif;line-height:1.5;resize:vertical"></textarea>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn btn-gh" id="pmIdeasBtn" onclick="togglePmIdeas()" style="padding:6px 10px;font-size:10px">💡 200 ideas</button>
+        <span style="font-size:9px;color:var(--UI-M)">40 por nicho, listas para editar y usar como prompt</span>
+      </div>
+      <div id="pmIdeasWrap" style="display:none">
+        <input type="text" id="pmIdeasFiltro" placeholder="Buscar entre las 40 ideas de este nicho..." oninput="renderPmIdeas()"
+          style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:8px 10px;border-radius:6px;font-size:11px;font-family:'Montserrat',sans-serif;margin-bottom:8px">
+        <div id="pmIdeasGrid" class="cal-grid" style="max-height:260px;overflow-y:auto"></div>
+      </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <div style="display:flex;gap:4px" class="mode-row">
           <button class="mode-btn on" id="pmPost" onclick="setPromptFmt('post',this)">📄 Post</button>
@@ -2046,6 +2056,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=106"></script>
+<script src="app.js?v=107"></script>
 </body>
 </html>

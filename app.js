@@ -479,6 +479,7 @@ function setNicho(v){
   if(typeof actualizarAngulos==='function') actualizarAngulos();
   _filtroPilarNicho='';   // forzar repoblar el filtro de pilares del banco
   if(typeof renderBanco==='function') renderBanco();
+  if(typeof _pmIdeasOpen!=='undefined' && _pmIdeasOpen && typeof renderPmIdeas==='function') renderPmIdeas();
 }
 
 const BANCO_BASE = {
@@ -2796,6 +2797,43 @@ function setPromptFmt(f,btn){
   ['pmPost','pmCarr','pmReel'].forEach(id=>document.getElementById(id)?.classList.remove('on'));
   btn.classList.add('on');
   const w=document.getElementById('pmSlidesWrap'); if(w) w.style.display = (f==='carrusel')?'flex':'none';
+}
+
+// Banco de 200 ideas de prompt (40 por nicho, datos-prompt-ideas.js) — para
+// quien no quiere escribir el prompt desde cero: elige una y la edita/usa tal cual.
+let _pmIdeasOpen = false;
+function togglePmIdeas(){
+  _pmIdeasOpen = !_pmIdeasOpen;
+  const wrap = document.getElementById('pmIdeasWrap');
+  const btn  = document.getElementById('pmIdeasBtn');
+  if(!wrap) return;
+  wrap.style.display = _pmIdeasOpen ? 'block' : 'none';
+  if(btn) btn.classList.toggle('on', _pmIdeasOpen);
+  if(_pmIdeasOpen) renderPmIdeas();
+}
+function renderPmIdeas(){
+  const cont = document.getElementById('pmIdeasGrid');
+  if(!cont) return;
+  const ideas = (window.PROMPT_IDEAS || {})[getNicho()] || [];
+  if(!ideas.length){
+    cont.innerHTML = '<div style="grid-column:1/-1;color:var(--UI-M);font-size:11px;text-align:center;padding:20px;line-height:1.6">No se pudieron cargar las ideas.<br>Falta <b>datos-prompt-ideas.js</b> (ábrelo con iniciar.py).</div>';
+    return;
+  }
+  const filtro = (document.getElementById('pmIdeasFiltro')?.value || '').trim().toLowerCase();
+  const filtradas = filtro
+    ? ideas.map((idea,i)=>({idea,i})).filter(x=>x.idea.toLowerCase().includes(filtro))
+    : ideas.map((idea,i)=>({idea,i}));
+  cont.innerHTML = filtradas.map(({idea,i})=>
+    `<div class="cal-card" onclick="usarIdeaPrompt(${i})" title="Usar esta idea en el prompt"><div class="cal-gancho">${favEsc(idea)}</div></div>`
+  ).join('') || '<div style="grid-column:1/-1;color:var(--UI-M);font-size:11px;text-align:center;padding:20px">Sin resultados para esa búsqueda.</div>';
+}
+function usarIdeaPrompt(i){
+  const idea = ((window.PROMPT_IDEAS || {})[getNicho()] || [])[i];
+  if(!idea) return;
+  const ta = document.getElementById('promptTxt');
+  if(ta){ ta.value = idea; ta.focus(); }
+  togglePmIdeas();
+  toast2('✓ Idea cargada — edítala o pulsa ⚡ Diseñar');
 }
 
 // Muestra/oculta el campo de palabras clave según el tic "con foto"
