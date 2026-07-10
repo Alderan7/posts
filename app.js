@@ -1041,7 +1041,7 @@ function usarMedia(id){
   const d = SLIDES[cur];
   if(!d) return;
 
-  const tiposFoto = ['foto','fototxt','autoridad','bafoto','manomovil','fotominimal'];
+  const tiposFoto = ['foto','fototxt','autoridad','bafoto','manomovil','fotominimal','geofoto'];
 
   if(tiposFoto.includes(d.tipo)){
     // Slide ya es de tipo foto — asignar al destino correcto
@@ -1192,7 +1192,7 @@ function sugerirLayoutIA(){
 }
 
 function sincronizarPanelImg(d){
-  const tiposConFoto   = ['foto','fototxt','autoridad','manomovil','fotominimal'];
+  const tiposConFoto   = ['foto','fototxt','autoridad','manomovil','fotominimal','geofoto'];
   const tiposConFondo  = tiposConFoto;
   const tiposConBA     = ['bafoto'];
   // 'manomovil' tiene layout fijo (foto dentro de la pantalla del móvil): sin tinte/overlay ni duo/posición de texto
@@ -2039,6 +2039,34 @@ function rCitaFoto(d,n){
   </div>`;
 }
 
+// Foto en B/N + líneas geométricas diagonales + cita alineada a la derecha
+// (estilo editorial "arquitectónico": triángulo de sombra + líneas finas).
+function rGeoFoto(d,n){
+  const url=getImgUrl(d.imgFondo);
+  const bg = url
+    ? `<img src="${url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;filter:grayscale(1) contrast(1.1)" alt="">`
+    : `<div style="position:absolute;inset:0;background:#1A1A1A;z-index:0"></div>`;
+  const lineas = `<svg viewBox="0 0 1080 1350" style="position:absolute;inset:0;z-index:2;width:100%;height:100%;pointer-events:none" preserveAspectRatio="none">
+    <polygon points="0,0 520,0 0,780" fill="#1A1A1A" opacity=".55"/>
+    <line x1="0" y1="0" x2="1080" y2="920" stroke="#F5F1EA" stroke-width="1.5" opacity=".3"/>
+    <line x1="1080" y1="160" x2="260" y2="1350" stroke="#F5F1EA" stroke-width="1" opacity=".2"/>
+    <line x1="640" y1="0" x2="1080" y2="480" stroke="#38B6FF" stroke-width="2" opacity=".4"/>
+  </svg>`;
+  return`<div class="slide ${slideH()} ${spClass()}" style="position:relative;overflow:hidden;background:#1A1A1A">
+    ${bg}
+    <div style="position:absolute;inset:0;z-index:1;background:linear-gradient(120deg,rgba(26,26,26,.7) 0%,rgba(26,26,26,.12) 45%,rgba(26,26,26,.55) 100%)"></div>
+    ${lineas}
+    <div style="position:relative;z-index:5;display:flex;flex-direction:column;height:100%">
+      <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye" style="font-size:${T.eye}px;color:#F5F1EA">${p(d.eye||'')}</span></div>${logoHTML('dark')}</div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;text-align:right;gap:20px;padding-right:12px">
+        <h1 class="accent-ser" style="font-size:${Math.min(T.head+2,72)}px;color:#F5F1EA;line-height:1.3;max-width:640px;text-shadow:0 2px 12px rgba(0,0,0,.55)">"${pK(d.head)}"</h1>
+        ${d.body?`<p class="TCap" style="font-size:${T.cta+2}px;color:rgba(245,241,234,.85)">${p(d.body)}</p>`:''}
+      </div>
+      <div class="SF"><span class="TCap" style="font-size:${T.cta}px;color:rgba(245,241,234,.5)">${HANDLE}</span><span class="TCap" style="font-size:${T.cta}px;color:#38B6FF">${p(d.cta||'')}</span></div>
+    </div>
+  </div>`;
+}
+
 // Tamaño de fuente del número gigante (.snum) según su longitud, para que
 // nunca se salga del slide (antes era fijo a 300px y "30.000€" se cortaba).
 function fitFontNumero(str, max=300, anchoDisponible=900){
@@ -2524,6 +2552,7 @@ function renderTipo(d,n){
     case'icononum':         return rIconoNum(d,n);
     case'relato3':          return rRelato3(d,n);
     case'fotominimal':      return rFotoMinimal(d,n);
+    case'geofoto':          return rGeoFoto(d,n);
     case'revista':          return rRevista(d,n);
     case'indice':           return rIndice(d,n);
     case'citafoto':         return rCitaFoto(d,n);
@@ -3156,6 +3185,8 @@ async function generarLibre(prompt, fmt, n, cfg, status, btn, opcFoto){
   const contrato=`Eres Rosa María, ${cfg.persona}. Diseña un ${fmt} de Instagram (lienzo 1080x1350) para: "${prompt}".
 Componlo LIBREMENTE como un diseñador editorial ACTUAL (lo que se lleva ahora en Instagram/TikTok, no un anuncio clásico): tipografía enorme y expresiva, alguna palabra o número en diagonal (rotación sutil), foto con recorte tipo collage, un "sticker"/badge circular o con borde para un dato o palabra suelta, mezcla de serif editorial + sans directo. Paleta de marca: negro #1A1A1A, crema #F5F1EA, azul #38B6FF (usa solo estos + blanco).
 
+TEXTO — MUY IMPORTANTE: cada slide necesita VARIOS textos, no solo un titular suelto. Como mínimo: 1 titular grande y de gancho + 1 frase de apoyo/contexto (más pequeña) + opcionalmente 1 sticker con un dato/palabra. Nunca dejes un slide con un solo texto corto de 2-3 palabras y nada más — eso se ve vacío. El copy debe tener chispa y ser ESPECÍFICO del tema (nunca genérico tipo "Descubre más" o relleno).
+
 Devuelve SOLO JSON: { "caption":"...", "hashtags":"#...", "slides":[ { "bg":"#hex de fondo", "elementos":[ ELEMENTO, ... ] } ] } con ${cnt} slide(s).
 ELEMENTO = {
  "t": "text" | "rect" | "img" | "sticker",
@@ -3169,7 +3200,7 @@ ELEMENTO = {
  "bg": "#hex (rect)", "r": radio de esquina px (rect/img) o del borde (sticker; usa un nº grande tipo 999 para un badge redondo/píldora)
 }
 "sticker" = una palabra o dato corto con borde de color alrededor (como un sello o badge) — úsalo con moderación, 1 por slide como máximo, para resaltar UNA palabra o cifra.
-REGLAS: no solapes texto ilegible; deja márgenes (~6%); 1 titular grande por slide; usa 1-2 rect de color o 1 img como fondo/bloque; máximo 6 elementos por slide. Coordenadas coherentes (que quepa dentro de 0-100).`;
+REGLAS: no solapes texto ilegible; deja márgenes (~6%); 1 titular grande + al menos 1 texto de apoyo por slide (nunca un slide con un único texto suelto); usa 1-2 rect de color o 1 img como fondo/bloque; entre 4 y 8 elementos por slide. Coordenadas coherentes (que quepa dentro de 0-100).`;
   if(btn) btn.classList.add('loading');
   if(status){ status.style.color='#38B6FF'; status.textContent='Componiendo (modo libre)…'; }
   try{
@@ -5031,7 +5062,8 @@ const TIPO_L={hook:'Hook',frase:'Frase',ba:'BA Texto',lista:'Lista',
   encuesta:'Encuesta',busqueda:'Búsqueda',tweet:'Tweet',checklist:'Checklist',factura:'Factura',
   neon:'Neón',glitch:'Glitch',wrapped:'Wrapped',dashboard:'Dashboard',brutal:'Brutalista',terminal:'Terminal',
   manomovil:'Móvil en mano', insignia:'Insignia',
-  icononum:'Numerado+Icono', relato3:'Micro-relato', fotominimal:'Foto minimalista'};
+  icononum:'Numerado+Icono', relato3:'Micro-relato', fotominimal:'Foto minimalista',
+  geofoto:'Foto geométrica'};
 
 function buildThumbs(){
   const panel=document.getElementById('sideL');
@@ -5644,7 +5676,7 @@ async function expPPTX(){
 
     // Layouts visuales/complejos: exportar el slide como IMAGEN fiel (los de
     // texto simple siguen siendo elementos editables en Canva).
-    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','manomovil','insignia','icononum','relato3','fotominimal','ba','bafoto','foto','fototxt','autoridad','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
+    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','manomovil','insignia','icononum','relato3','fotominimal','geofoto','ba','bafoto','foto','fototxt','autoridad','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
     if(IMG_ONLY_PPTX.includes(d.tipo)){
       let ok=false;
       try{ const cv=await capture(i); slide.addImage({ data:cv.toDataURL('image/png'), x:0,y:0,w:10.8,h:13.5 }); ok=true; }catch(e){}
