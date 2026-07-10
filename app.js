@@ -2141,6 +2141,85 @@ function rPostit(d,n){
   </div>`;
 }
 
+// Cuadrante: diagrama 2x2 tipo infografía educativa (4 cuadrantes que se
+// encuentran en un círculo central con la palabra clave del tema).
+function rCuadrante(d,n){
+  const its=(d.items||[]).slice(0,4);
+  while(its.length<4) its.push('Etiqueta::Descripción');
+  const cuad=its.map((it,i)=>{
+    const [lbl,desc]=String(it).split('::');
+    const dark=i%2===0;
+    const bg=dark?'#1A1A1A':'#38B6FF';
+    return `<div style="background:${bg};padding:20px 18px;display:flex;flex-direction:column;justify-content:center;gap:6px">
+      <div style="font-family:var(--F-SAN);font-weight:800;font-size:${Math.min((T.items||26)+2,20)}px;letter-spacing:.03em;text-transform:uppercase;color:#F5F1EA">${p(lbl||'')}</div>
+      <div style="font-family:var(--F-SAN);font-size:${Math.max(12,(T.items||26)-8)}px;line-height:1.35;color:${dark?'rgba(245,241,234,.7)':'rgba(26,26,26,.72)'}">${p(desc||'')}</div>
+    </div>`;
+  }).join('');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'')}</span></div>${logoHTML(d.fondo)}</div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px">
+      <h1 class="TDsm Ct" style="font-size:${Math.min(T.head,60)}px;text-align:center">${pK(d.head)}</h1>
+      <div style="position:relative;border-radius:16px;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;aspect-ratio:1/1;max-width:600px;margin:0 auto;width:100%">
+        ${cuad}
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:92px;height:92px;border-radius:50%;background:#F5F1EA;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,.35);padding:8px;text-align:center">
+          <span style="font-family:var(--F-SER);font-style:italic;font-size:14px;color:#1A1A1A;line-height:1.1">${p(d.body||'')}</span>
+        </div>
+      </div>
+    </div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// Glosario / cheat sheet: filas con una etiqueta en forma de cinta (flag) +
+// su definición al lado. items = "ETIQUETA::definición".
+function rGlosario(d,n){
+  const its=(d.items||[]).filter(Boolean);
+  const filas=its.map((it,i)=>{
+    const [lbl,desc]=String(it).split('::');
+    const col=i%2===0?'#38B6FF':'#1A1A1A';
+    return `<div style="display:flex;align-items:stretch">
+      <div style="background:${col};color:#F5F1EA;font-family:var(--F-SAN);font-weight:800;font-size:${Math.max(12,(T.items||26)-6)}px;letter-spacing:.03em;text-transform:uppercase;padding:10px 20px 10px 14px;display:flex;align-items:center;white-space:nowrap;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 50%,100% 100%,0 100%)">${p(lbl||'')}</div>
+      <div class="Cb" style="flex:1;display:flex;align-items:center;padding:10px 16px;font-family:var(--F-SAN);font-size:${T.items||26}px;line-height:1.35">${p(desc||'')}</div>
+    </div>`;
+  }).join('');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'')}</span></div>${logoHTML(d.fondo)}</div>
+    <h1 class="TDsm Ct" style="margin-top:20px;font-size:${Math.min(T.head,72)}px">${pK(d.head)}</h1>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:10px;margin-top:16px">${filas}</div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
+// Comparativa DO/DON'T: 2 columnas con listas de viñetas (no una sola frase
+// como "versus"). Reutiliza el prefijo "no:" ya conocido de checklist.
+function rComparativa(d,n){
+  const fondo=d.fondo||'dark';
+  const doBg=fondo==='blue'?'#1A1A1A':'#38B6FF', doColor=fondo==='blue'?'#F5F1EA':'#1A1A1A';
+  const its=(d.items||[]).filter(Boolean);
+  const malos=its.filter(x=>/^no:/i.test(x)).map(x=>String(x).replace(/^no:\s*/i,''));
+  const buenos=its.filter(x=>!/^no:/i.test(x));
+  const col=(items,esBueno)=>items.map(it=>`
+    <div style="display:flex;gap:9px;align-items:flex-start">
+      <span class="Ct" style="font-weight:800;font-size:${T.items||26}px;flex-shrink:0">${esBueno?'✓':'✗'}</span>
+      <span class="Cb" style="font-family:var(--F-SAN);font-size:${T.items||26}px;line-height:1.35">${p(it)}</span>
+    </div>`).join('');
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Ca" style="font-size:${T.eye}px">${p(d.eye||'')}</span></div>${logoHTML(d.fondo)}</div>
+    <h1 class="TDsm Ct" style="margin-top:20px;font-size:${Math.min(T.head,72)}px">${pK(d.head)}</h1>
+    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="Cl Ct" style="font-family:var(--F-SAN);font-weight:800;font-size:20px;letter-spacing:.04em;padding:6px 14px;border-radius:999px;align-self:flex-start">DON'T</div>
+        ${col(malos,false)}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="font-family:var(--F-SAN);font-weight:800;font-size:20px;letter-spacing:.04em;color:${doColor};background:${doBg};padding:6px 14px;border-radius:999px;align-self:flex-start">DO</div>
+        ${col(buenos,true)}
+      </div>
+    </div>
+    <div class="SF"><span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span><span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span></div>
+  </div>`;
+}
+
 // Tamaño de fuente del número gigante (.snum) según su longitud, para que
 // nunca se salga del slide (antes era fijo a 300px y "30.000€" se cortaba).
 function fitFontNumero(str, max=300, anchoDisponible=900){
@@ -2629,6 +2708,9 @@ function renderTipo(d,n){
     case'geofoto':          return rGeoFoto(d,n);
     case'bloques':          return rBloques(d,n);
     case'postit':           return rPostit(d,n);
+    case'cuadrante':        return rCuadrante(d,n);
+    case'glosario':         return rGlosario(d,n);
+    case'comparativa':      return rComparativa(d,n);
     case'revista':          return rRevista(d,n);
     case'indice':           return rIndice(d,n);
     case'citafoto':         return rCitaFoto(d,n);
@@ -2899,12 +2981,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 
 // Tipos de slide que la IA puede usar (foto/fototxt/autoridad/revista llevan imagen)
-const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice','citafoto','numero','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal','bloques','postit'];
+const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice','citafoto','numero','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal','bloques','postit','cuadrante','glosario','comparativa'];
 const TIPOS_IA_FOTO=['foto','fototxt','autoridad','revista','citafoto','postit'];
 // Tipos que SOLO se ven bien con items rellenos (si la IA los deja vacíos,
 // el slide sale casi en blanco: solo eyebrow + titular). Red de seguridad:
 // si llegan sin items, se convierten a 'hook' (siempre se ve bien con solo texto).
-const TIPOS_NECESITAN_ITEMS=['lista','stats','proceso','servicio','claves','pills','debate','indice','chat','versus','checklist','wrapped','dashboard'];
+const TIPOS_NECESITAN_ITEMS=['lista','stats','proceso','servicio','claves','pills','debate','indice','chat','versus','checklist','wrapped','dashboard','cuadrante','glosario','comparativa'];
 function saneaTipoSinItems(slide){
   if(TIPOS_NECESITAN_ITEMS.includes(slide.tipo) && !(slide.items&&slide.items.length)) slide.tipo='hook';
   return slide;
@@ -2930,7 +3012,7 @@ Devuelve SOLO JSON válido, sin markdown:
   "guion": "solo si es reel: guion de 20-25s (gancho/desarrollo/cierre)",
   "slides": [
     {
-      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt | revista | indice | citafoto | numero | chat | nota | versus | bloques | postit",
+      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt | revista | indice | citafoto | numero | chat | nota | versus | bloques | postit | cuadrante | glosario | comparativa",
       "fondo": "dark | light | blue",
       "eye": "eyebrow corto (kicker en mayúsculas conceptual)",
       "head": "titular del slide (puedes usar \\n)",
@@ -2942,7 +3024,7 @@ Devuelve SOLO JSON válido, sin markdown:
   ]
 }
 
-items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚMERO::etiqueta"; proceso=3-4 items "NombreDelPaso:explicación breve" — NombreDelPaso es una palabra o frase corta REAL y DISTINTA en cada item (ej. "Diagnóstico:Reviso tu situación actual.", "Plan:Diseño la estrategia."); NUNCA escribas literalmente la palabra "Título" o "Descripción", son solo el nombre del campo, no el contenido; servicio=3-5 frases; debate=exactamente 2 opciones; claves=3 frases; pills=3-4 etiquetas; postit=1-3 notas muy cortas; hook/frase/cta/foto/fototxt/citafoto/bloques=[] vacío.
+items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚMERO::etiqueta"; proceso=3-4 items "NombreDelPaso:explicación breve" — NombreDelPaso es una palabra o frase corta REAL y DISTINTA en cada item (ej. "Diagnóstico:Reviso tu situación actual.", "Plan:Diseño la estrategia."); NUNCA escribas literalmente la palabra "Título" o "Descripción", son solo el nombre del campo, no el contenido; servicio=3-5 frases; debate=exactamente 2 opciones; claves=3 frases; pills=3-4 etiquetas; postit=1-3 notas muy cortas; cuadrante=EXACTAMENTE 4 "Etiqueta::descripción corta" (head=tema general, body=UNA palabra para el círculo central); glosario=3-5 "ETIQUETA::definición corta" (términos que el lector necesita conocer); comparativa=4-8 frases cortas, prefija "no:" las que van en la columna DON'T (el resto va en DO); hook/frase/cta/foto/fototxt/citafoto/bloques=[] vacío.
 TIPOS CON FOTO (hazlo VISUAL): "foto", "fototxt", "revista" (portada) o "citafoto" (cita sobre foto) — SIEMPRE con "img" en inglés.
 "indice"=índice "Contenido" (items=temas). "numero"=un dato enorme (head=número, body=qué significa).
 TIPOS VIRALES (parecen contenido real, no anuncio — úsalos para enganchar):
@@ -2962,6 +3044,9 @@ TIPOS VIRALES (parecen contenido real, no anuncio — úsalos para enganchar):
 · "terminal"=consola de hacker. head=un "comando" (ej "sistema --activar"); items=líneas de salida (prefija "ok:" las verdes); body=línea final.
 · "bloques"=cita editorial con anotación manuscrita al margen (como apuntada a boli). head=la cita/idea con fuerza; body=el comentario personal corto en 1ª persona que la remata (ej "esto se lo digo a cada cliente"). Sin items.
 · "postit"=tu foto real con notas adhesivas pegadas encima (estilo "detrás de cámaras"). head=titular directo y personal; items=1-3 notas MUY cortas (máx 8 palabras) que señalan detalles con complicidad; eye=etiqueta tipo "Detrás de cámaras"; SIEMPRE con "img" en inglés (retrato/persona trabajando).
+· "cuadrante"=diagrama educativo 2x2 (infografía tipo carrusel de diseño). head=el tema general; body=UNA palabra para el círculo central; items=EXACTAMENTE 4 "Etiqueta::descripción corta" (los 4 pilares/partes del tema). Úsalo para explicar un concepto con 4 partes claras.
+· "glosario"=ficha tipo "cheat sheet" con términos explicados. head=título (ej "Lo que necesitas saber de X"); items=3-5 "TÉRMINO::definición corta en una frase". Úsalo cuando el tema tenga jerga o conceptos que traducir.
+· "comparativa"=2 columnas DON'T/DO con varias viñetas cada una (no una sola frase como "versus"). head=el tema; items=4-8 frases cortas, prefija "no:" las que van en DON'T (errores/lo que NO hacer), el resto en DO (lo correcto).
 REGLAS: 1er slide engancha (un "chat", "nota", "busqueda", "encuesta" o "hook" potente va MUY bien de portada). Último = CTA con una palabra de acción. Alterna fondos. "stats"/"numero"/"factura" solo si el tema pide cifras. Sin tecnicismos vacíos.`;
 }
 
@@ -5288,7 +5373,8 @@ const TIPO_L={hook:'Hook',frase:'Frase',ba:'BA Texto',lista:'Lista',
   neon:'Neón',glitch:'Glitch',wrapped:'Wrapped',dashboard:'Dashboard',brutal:'Brutalista',terminal:'Terminal',
   manomovil:'Móvil en mano', insignia:'Insignia',
   icononum:'Numerado+Icono', relato3:'Micro-relato', fotominimal:'Foto minimalista',
-  geofoto:'Foto geométrica', bloques:'Bloque + anotación', postit:'Notas adhesivas'};
+  geofoto:'Foto geométrica', bloques:'Bloque + anotación', postit:'Notas adhesivas',
+  cuadrante:'Cuadrante', glosario:'Glosario / cheat sheet', comparativa:'Comparativa DO/DON\'T'};
 
 function buildThumbs(){
   const panel=document.getElementById('sideL');
@@ -5943,7 +6029,7 @@ async function expPPTX(){
 
     // Layouts visuales/complejos: exportar el slide como IMAGEN fiel (los de
     // texto simple siguen siendo elementos editables en Canva).
-    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','manomovil','insignia','icononum','relato3','fotominimal','geofoto','bloques','postit','ba','bafoto','foto','fototxt','autoridad','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
+    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','manomovil','insignia','icononum','relato3','fotominimal','geofoto','bloques','postit','cuadrante','glosario','comparativa','ba','bafoto','foto','fototxt','autoridad','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
     if(IMG_ONLY_PPTX.includes(d.tipo)){
       let ok=false;
       try{ const cv=await capture(i); slide.addImage({ data:cv.toDataURL('image/png'), x:0,y:0,w:10.8,h:13.5 }); ok=true; }catch(e){}
