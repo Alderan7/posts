@@ -2120,7 +2120,7 @@ function rPostit(d,n){
     const posStyle = st.side==='right' ? `right:${st.x}` : `left:${st.x}`;
     return `<div style="position:absolute;top:${st.top};${posStyle};max-width:230px;background:${st.bg};padding:16px 18px 14px;border-radius:3px;box-shadow:0 8px 24px rgba(0,0,0,.35);transform:rotate(${st.rot}deg);z-index:4">
       <div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-2deg);width:52px;height:16px;background:rgba(56,182,255,.4);border:1px solid rgba(56,182,255,.55)"></div>
-      <p class="accent-hand" style="font-weight:700;font-size:22px;line-height:1.22;color:#1A1A1A;margin:0">${p(t)}</p>
+      <p class="accent-hand" style="font-weight:700;font-size:${T.items}px;line-height:1.22;color:#1A1A1A;margin:0">${p(t)}</p>
     </div>`;
   }).join('');
   return`<div class="slide ${slideH()} ${spClass()}" style="position:relative;overflow:hidden;background:#111">
