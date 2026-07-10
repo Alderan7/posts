@@ -1026,4 +1026,121 @@ window.RM_PLANTILLAS = [
  {tema:"General", titulo:"Glitch: intuición vs datos", slide:{
    tipo:"glitch", eye:"SEÑAL CONFUSA", head:"Decides por intuición.\nCreces por datos.",
    body:"Cuando cambias una por otra, todo se ve distinto.", cta:"Guárdalo"}},
+
+ /* ───────────── LOTE ANOTACIÓN A MANO + NOTAS ADHESIVAS (25) ─────────────
+    Los 'postit' se vuelcan sin foto a propósito: asigna la tuya al usarlos. */
+ {tema:"Marketing", nicho:"personal", titulo:"Anotación: tu cliente no te ignora", slide:{
+   tipo:"bloques", fondo:"dark", eye:"VISIBILIDAD",
+   head:"Tu cliente ideal no te está ignorando.\nEs que no sabe que existes.",
+   body:"esto lo repito en cada primera reunión", cta:"Guárdalo"}},
+ {tema:"Marketing", nicho:"personal", titulo:"Anotación: publicar no es comunicar", slide:{
+   tipo:"bloques", fondo:"light", eye:"MARKETING",
+   head:"Publicar no es comunicar.\nComunicar es que el otro entienda por qué tú.",
+   body:"lo apunté después de revisar 30 perfiles", cta:"¿Te pasa?"}},
+ {tema:"Marketing", nicho:"personal", titulo:"Anotación: el que mejor se explica", slide:{
+   tipo:"bloques", fondo:"blue", eye:"POSICIONAMIENTO",
+   head:"El mercado no premia al mejor.\nPremia al que mejor se explica.",
+   body:"duro de aceptar, fácil de aprovechar", cta:"Guárdalo"}},
+ {tema:"Marketing", nicho:"personal", titulo:"Post-it: así preparo una estrategia · añade tu foto", slide:{
+   tipo:"postit", fondo:"dark", eye:"DETRÁS DE CÁMARAS",
+   head:"Así preparo la estrategia de un cliente nuevo.",
+   items:["primero números, luego ideas","sin plantillas copiadas","café obligatorio ☕"],
+   cta:"¿Quieres la tuya?"}},
+ {tema:"Marketing", nicho:"personal", titulo:"Post-it: lo que no se ve · añade tu foto", slide:{
+   tipo:"postit", fondo:"dark", eye:"SIN FILTROS",
+   head:"Lo que no se ve de un negocio que crece.",
+   items:["decisiones aburridas y constantes","menos redes, más sistema"],
+   cta:"Escríbeme CRECER"}},
+
+ {tema:"IA", nicho:"ia", titulo:"Anotación: la IA no te quita el trabajo", slide:{
+   tipo:"bloques", fondo:"dark", eye:"IA SIN HUMO",
+   head:"La IA no te quita el trabajo.\nTe quita lo que odias del trabajo.",
+   body:"se lo digo a cada cliente que llega con miedo", cta:"Escríbeme IA"}},
+ {tema:"IA", nicho:"ia", titulo:"Anotación: qué te roba tiempo", slide:{
+   tipo:"bloques", fondo:"light", eye:"AUTOMATIZACIÓN",
+   head:"No necesitas saber de tecnología.\nNecesitas saber qué te roba tiempo.",
+   body:"por aquí empieza todo", cta:"Guárdalo"}},
+ {tema:"IA", nicho:"ia", titulo:"Anotación: tiempo que vuelve", slide:{
+   tipo:"bloques", fondo:"blue", eye:"AUTOMATIZACIÓN",
+   head:"Una tarea automatizada\nes tiempo que vuelve cada semana.",
+   body:"mi definición favorita de rentabilidad", cta:"Escríbeme AUTOMATIZA"}},
+ {tema:"IA", nicho:"ia", titulo:"Post-it: mi día con IA · añade tu foto", slide:{
+   tipo:"postit", fondo:"dark", eye:"DETRÁS DE CÁMARAS",
+   head:"Mi día con IA no es futurista. Es esto.",
+   items:["los emails se contestan solos","yo reviso, no redacto","2 horas libres cada tarde"],
+   cta:"¿Empezamos?"}},
+ {tema:"IA", nicho:"ia", titulo:"Post-it: no me sustituyó · añade tu foto", slide:{
+   tipo:"postit", fondo:"dark", eye:"SIN FILTROS",
+   head:"No, la IA no me sustituyó.",
+   items:["hace lo repetitivo","yo decido lo importante"],
+   cta:"Escríbeme IA"}},
+
+ {tema:"Fiscalidad", nicho:"fiscalidad", titulo:"Anotación: una sanción casi nunca es fraude", slide:{
+   tipo:"bloques", fondo:"dark", eye:"PLAZOS",
+   head:"Una sanción casi nunca es fraude.\nEs un plazo que nadie te avisó.",
+   body:"lo veo cada trimestre, y siempre era evitable", cta:"Escríbeme PLAZOS"}},
+ {tema:"Fiscalidad", nicho:"fiscalidad", titulo:"Anotación: lo que no te deduces", slide:{
+   tipo:"bloques", fondo:"light", eye:"DEDUCCIONES",
+   head:"Lo que no te deduces\ntambién es dinero que pagas.",
+   body:"revísalo antes de que acabe el trimestre", cta:"Escríbeme AHORRO"}},
+ {tema:"Fiscalidad", nicho:"fiscalidad", titulo:"Anotación: pagar lo justo", slide:{
+   tipo:"bloques", fondo:"blue", eye:"FISCALIDAD",
+   head:"Pagar lo justo no es un truco.\nEs conocer la norma.",
+   body:"la diferencia entre miedo y control", cta:"Guárdalo"}},
+ {tema:"Fiscalidad", nicho:"fiscalidad", titulo:"Post-it: tu Renta sin sustos · añade tu foto", slide:{
+   tipo:"postit", fondo:"dark", eye:"DETRÁS DE CÁMARAS",
+   head:"Así preparo tu Renta sin sustos.",
+   items:["reviso el año entero, no abril","deducciones con justificante","cero jerga, te lo explico"],
+   cta:"Escríbeme RENTA"}},
+ {tema:"Fiscalidad", nicho:"fiscalidad", titulo:"Post-it: antes de cada plazo · añade tu foto", slide:{
+   tipo:"postit", fondo:"dark", eye:"MI MÉTODO",
+   head:"Lo que miro antes de cada plazo.",
+   items:["tu tramo de cuota real","gastos deducibles nuevos","el calendario del trimestre"],
+   cta:"Escríbeme FISCAL"}},
+
+ {tema:"Productividad", nicho:"productividad", titulo:"Anotación: agenda llena no es éxito", slide:{
+   tipo:"bloques", fondo:"dark", eye:"AGENDA",
+   head:"Tu agenda llena no es éxito.\nEs solo una agenda llena.",
+   body:"me lo dijo un cliente al soltar 3 reuniones fijas", cta:"¿Te suena?"}},
+ {tema:"Productividad", nicho:"productividad", titulo:"Anotación: no te falta tiempo", slide:{
+   tipo:"bloques", fondo:"light", eye:"PRIORIDADES",
+   head:"No te falta tiempo.\nTe sobra todo lo que no importa.",
+   body:"apúntalo donde lo veas cada mañana", cta:"Guárdalo"}},
+ {tema:"Productividad", nicho:"productividad", titulo:"Anotación: delegar no es perder control", slide:{
+   tipo:"bloques", fondo:"blue", eye:"DELEGAR",
+   head:"Delegar no es perder control.\nEs recuperar criterio.",
+   body:"la frase que más cuesta creer, hasta que se prueba", cta:"Escríbeme ORGANIZA"}},
+ {tema:"Productividad", nicho:"productividad", titulo:"Post-it: mi sistema en una hoja · añade tu foto", slide:{
+   tipo:"postit", fondo:"dark", eye:"MI MÉTODO",
+   head:"Mi sistema cabe en una hoja.",
+   items:["3 prioridades, no 30","bloques de foco sin móvil","revisión de 10 min al cierre"],
+   cta:"¿Quieres verlo?"}},
+ {tema:"Productividad", nicho:"productividad", titulo:"Post-it: lo que dejé de hacer · añade tu foto", slide:{
+   tipo:"postit", fondo:"dark", eye:"SIN FILTROS",
+   head:"Lo que dejé de hacer para rendir más.",
+   items:["reuniones sin hora de fin","responder al instante a todo"],
+   cta:"Escríbeme FOCO"}},
+
+ {tema:"General", nicho:"personal", titulo:"Anotación: el crecimiento no es suerte", slide:{
+   tipo:"bloques", fondo:"dark", eye:"TRABAJA CONMIGO",
+   head:"El crecimiento no es suerte.\nEs estrategia.",
+   body:"la frase que resume mi trabajo", cta:"Guárdalo"}},
+ {tema:"General", nicho:"personal", titulo:"Anotación: hacerlo todo tú", slide:{
+   tipo:"bloques", fondo:"light", eye:"MENTALIDAD",
+   head:"Hacerlo todo tú no es compromiso.\nEs el techo de tu negocio.",
+   body:"tardé años en aceptarlo", cta:"¿Te pasa?"}},
+ {tema:"General", nicho:"personal", titulo:"Anotación: un negocio sano se nota", slide:{
+   tipo:"bloques", fondo:"blue", eye:"MENTALIDAD",
+   head:"Un negocio sano se nota\nen cómo duermes.",
+   body:"el KPI que nadie mide", cta:"Guárdalo"}},
+ {tema:"General", nicho:"personal", titulo:"Post-it: detrás de un negocio que crece · añade tu foto", slide:{
+   tipo:"postit", fondo:"dark", eye:"SIN FILTROS",
+   head:"Detrás de cada negocio que crece hay esto.",
+   items:["números mirados de frente","decisiones incómodas a tiempo","alguien que no se rinde"],
+   cta:"¿Hablamos?"}},
+ {tema:"General", nicho:"personal", titulo:"Post-it: mi oficina real · añade tu foto", slide:{
+   tipo:"postit", fondo:"dark", eye:"DETRÁS DE CÁMARAS",
+   head:"Mi oficina real, sin filtros.",
+   items:["café frío desde las 10","la libreta manda","llamadas que acaban en risas"],
+   cta:"Cuéntame la tuya"}},
 ];

@@ -2899,8 +2899,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 
 // Tipos de slide que la IA puede usar (foto/fototxt/autoridad/revista llevan imagen)
-const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice','citafoto','numero','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
-const TIPOS_IA_FOTO=['foto','fototxt','autoridad','revista','citafoto'];
+const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice','citafoto','numero','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal','bloques','postit'];
+const TIPOS_IA_FOTO=['foto','fototxt','autoridad','revista','citafoto','postit'];
 // Tipos que SOLO se ven bien con items rellenos (si la IA los deja vacíos,
 // el slide sale casi en blanco: solo eyebrow + titular). Red de seguridad:
 // si llegan sin items, se convierten a 'hook' (siempre se ve bien con solo texto).
@@ -2930,7 +2930,7 @@ Devuelve SOLO JSON válido, sin markdown:
   "guion": "solo si es reel: guion de 20-25s (gancho/desarrollo/cierre)",
   "slides": [
     {
-      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt | revista | indice | citafoto | numero | chat | nota | versus",
+      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt | revista | indice | citafoto | numero | chat | nota | versus | bloques | postit",
       "fondo": "dark | light | blue",
       "eye": "eyebrow corto (kicker en mayúsculas conceptual)",
       "head": "titular del slide (puedes usar \\n)",
@@ -2942,7 +2942,7 @@ Devuelve SOLO JSON válido, sin markdown:
   ]
 }
 
-items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚMERO::etiqueta"; proceso=3-4 items "NombreDelPaso:explicación breve" — NombreDelPaso es una palabra o frase corta REAL y DISTINTA en cada item (ej. "Diagnóstico:Reviso tu situación actual.", "Plan:Diseño la estrategia."); NUNCA escribas literalmente la palabra "Título" o "Descripción", son solo el nombre del campo, no el contenido; servicio=3-5 frases; debate=exactamente 2 opciones; claves=3 frases; pills=3-4 etiquetas; hook/frase/cta/foto/fototxt/citafoto=[] vacío.
+items SEGÚN tipo: lista=3-4 frases (marca *palabra* en cursiva); stats=3-4 "NÚMERO::etiqueta"; proceso=3-4 items "NombreDelPaso:explicación breve" — NombreDelPaso es una palabra o frase corta REAL y DISTINTA en cada item (ej. "Diagnóstico:Reviso tu situación actual.", "Plan:Diseño la estrategia."); NUNCA escribas literalmente la palabra "Título" o "Descripción", son solo el nombre del campo, no el contenido; servicio=3-5 frases; debate=exactamente 2 opciones; claves=3 frases; pills=3-4 etiquetas; postit=1-3 notas muy cortas; hook/frase/cta/foto/fototxt/citafoto/bloques=[] vacío.
 TIPOS CON FOTO (hazlo VISUAL): "foto", "fototxt", "revista" (portada) o "citafoto" (cita sobre foto) — SIEMPRE con "img" en inglés.
 "indice"=índice "Contenido" (items=temas). "numero"=un dato enorme (head=número, body=qué significa).
 TIPOS VIRALES (parecen contenido real, no anuncio — úsalos para enganchar):
@@ -2960,6 +2960,8 @@ TIPOS VIRALES (parecen contenido real, no anuncio — úsalos para enganchar):
 · "dashboard"=panel de resultados. head=título; body=un número grande (ej "+240%"); items=3-5 "Etiqueta::valor" (barras que suben). Solo con cifras reales.
 · "brutal"=tipografía gigante brutalista. head=2-4 líneas MUY cortas (usa \\n); las pares salen en caja invertida.
 · "terminal"=consola de hacker. head=un "comando" (ej "sistema --activar"); items=líneas de salida (prefija "ok:" las verdes); body=línea final.
+· "bloques"=cita editorial con anotación manuscrita al margen (como apuntada a boli). head=la cita/idea con fuerza; body=el comentario personal corto en 1ª persona que la remata (ej "esto se lo digo a cada cliente"). Sin items.
+· "postit"=tu foto real con notas adhesivas pegadas encima (estilo "detrás de cámaras"). head=titular directo y personal; items=1-3 notas MUY cortas (máx 8 palabras) que señalan detalles con complicidad; eye=etiqueta tipo "Detrás de cámaras"; SIEMPRE con "img" en inglés (retrato/persona trabajando).
 REGLAS: 1er slide engancha (un "chat", "nota", "busqueda", "encuesta" o "hook" potente va MUY bien de portada). Último = CTA con una palabra de acción. Alterna fondos. "stats"/"numero"/"factura" solo si el tema pide cifras. Sin tecnicismos vacíos.`;
 }
 
@@ -3309,9 +3311,9 @@ ${contexto}
 Vas a AÑADIR un slide NUEVO justo DESPUÉS del slide marcado ">> DESPUÉS DE ESTE" (posición ${cur+1}).
 El slide nuevo debe CONTINUAR la historia desde ahí: retoma el hilo del slide anterior y avánzalo UN paso más, aportando la SIGUIENTE idea del argumento. NO repitas lo que ya dicen los demás slides.
 El titular del slide anterior es literalmente: «${headAnterior}». PROHIBIDO usar ese titular o una variación mínima: el nuevo "head" debe ser CLARAMENTE distinto (otras palabras, otra idea).
-Elige TÚ el mejor tipo para ese momento (varía respecto al anterior si queda mejor): un dato → "stats" o "numero"; enumerar → "lista" o "claves"; una idea con fuerza → "frase" o "hook"; comparar → "versus" o "debate"; rematar → "cta".
+Elige TÚ el mejor tipo para ese momento (varía respecto al anterior si queda mejor): un dato → "stats" o "numero"; enumerar → "lista" o "claves"; una idea con fuerza → "frase", "hook" o "bloques" (cita con anotación a mano: body=comentario personal corto en 1ª persona); comparar → "versus" o "debate"; rematar → "cta".
 ${esUltimo?'Estás al FINAL del carrusel: este slide debe ser el CIERRE, un "cta" que invita a actuar (DM/guardar/comentar).':''}
-Tipos válidos: hook, frase, lista, stats, numero, proceso, servicio, debate, claves, pills, indice, versus, checklist, cta.
+Tipos válidos: hook, frase, bloques, lista, stats, numero, proceso, servicio, debate, claves, pills, indice, versus, checklist, cta.
 Devuelve SOLO JSON de UN slide (rellena los valores con contenido REAL, nunca con estas descripciones): {"tipo":"...","fondo":"dark|light|blue","eye":"...","head":"...","body":"...","items":[], "cta":"..."}
 items según tipo: lista/claves=frases; stats=3-4 "NÚMERO::etiqueta"; proceso=items "NombreDelPaso:explicación breve" con un nombre de paso REAL y distinto en cada uno (nunca literalmente la palabra "Título" o "Descripción"); debate/versus=2 opciones; checklist=frases (prefija "no:" para las negativas); pills=etiquetas; indice=temas; hook/frase/numero/cta=[].`;
   // Textos de ejemplo del prompt que el modelo a veces copia tal cual → los vaciamos
@@ -5568,6 +5570,48 @@ function bancoIdeas(){
   if(n==='ia') return window.IDEAS_IA||[];                   // aún sin banco de 30 días: el Plan 30 avisará
   return window.IDEAS_365||[];
 }
+/* ═══════════════════════════════════════════
+   🧩 FEED 9 — mosaico coordinado para el grid del perfil
+   9 posts que funcionan sueltos y, juntos, forman un tablero en el
+   perfil: esquinas oscuras (citas), aspas azules (ganchos cortos) y
+   centro claro con la tarjeta de marca. Funciona SIN IA (banco local).
+   ═══════════════════════════════════════════ */
+function _feed9Textos(){
+  const n=getNicho();
+  const baraja=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(p=>p[1]);
+  // Personal/Productividad no tienen banco propio en BANCO (el Proxy caería a
+  // la voz de Reformas): sus hooks viven en los bancos de 365 días.
+  if(n==='personal'||n==='productividad'){
+    return baraja((bancoIdeas()||[]).map(i=>i&&i.hook).filter(x=>x&&x.length<=150));
+  }
+  const frases=(BANCO.frases||[]).slice();
+  const hooks=Object.values(BANCO.hooks||{}).flat().filter(h=>h&&h.length<=150);
+  return baraja(frases.concat(hooks));
+}
+function generarFeed9(){
+  const txts=_feed9Textos();
+  if(txts.length<8){ toast2('Este nicho no tiene banco local suficiente para el mosaico'); return; }
+  const cfg=N();
+  const nuevos=[];
+  // Posiciones del grid 3x3 tal y como se ven en el perfil (1=arriba-izda):
+  // esquinas=cita oscura · lados=gancho azul · centro=tarjeta de marca clara.
+  const roles=['cita','gancho','cita','gancho','centro','gancho','cita','gancho','cita'];
+  let t=0;
+  roles.forEach(rol=>{
+    if(rol==='centro'){
+      nuevos.push({tipo:'cta',fondo:'light',eye:cfg.eye,head:cfg.p2head||'Trabaja conmigo',
+        body:cfg.p2sub||'',items:[],cta:'Escríbeme '+String(cfg.ctaEj||'HOLA').split(',')[0].trim()});
+    }else{
+      nuevos.push({tipo:rol==='cita'?'frase':'hook',fondo:rol==='cita'?'dark':'blue',
+        eye:cfg.eye,head:txts[t++],body:'',items:[],cta:''});
+    }
+  });
+  SLIDES.length=0; nuevos.forEach(x=>SLIDES.push(x));
+  cur=0; setModo('carrusel');
+  buildThumbs(); show(0);
+  toast2('🧩 Feed 9 listo · publícalos EN ORDEN INVERSO (del 9 al 1) para que el mosaico quede bien en tu perfil');
+}
+
 function usadasKey(){
   const n=getNicho();
   if(n==='personal') return 'ideas_usadas_personal';
