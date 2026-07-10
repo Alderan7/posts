@@ -2096,7 +2096,7 @@ function rBloques(d,n){
       ${DOODLE.subrayado(220,doodleColor)}
       ${d.body?`<div style="display:flex;align-items:flex-start;gap:10px;margin-top:8px;max-width:520px">
         ${DOODLE.flecha(56,40,doodleColor)}
-        <p class="accent-hand" style="font-weight:600;font-size:26px;line-height:1.25;color:${doodleColor};transform:rotate(-2deg);margin:6px 0 0">${p(d.body)}</p>
+        <p class="accent-hand" style="font-weight:600;font-size:${T.body}px;line-height:1.25;color:${doodleColor};transform:rotate(-2deg);margin:6px 0 0">${p(d.body)}</p>
       </div>`:''}
     </div>
     <div class="SF">
