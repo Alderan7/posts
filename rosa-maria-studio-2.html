@@ -1531,7 +1531,10 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       <div class="csec">
         <div class="csec-h">
           <span>Slide activo</span>
-          <button class="btn btn-gh" id="btnRegen" onclick="regenerarSlide()" title="Rehacer SOLO este slide con IA (mantiene el resto)" style="padding:3px 8px;font-size:9px">🔄 Regenerar</button>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-gh" id="btnSiguiente" onclick="siguienteSlide()" title="Crear el SIGUIENTE slide con IA, que continúa la historia desde este" style="padding:3px 8px;font-size:9px">➕ Siguiente (IA)</button>
+            <button class="btn btn-gh" id="btnRegen" onclick="regenerarSlide()" title="Rehacer SOLO este slide con IA (mantiene el resto)" style="padding:3px 8px;font-size:9px">🔄 Regenerar</button>
+          </div>
         </div>
         <div class="crow">
           <label>Tipo</label>
@@ -2038,6 +2041,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=97"></script>
+<script src="app.js?v=102"></script>
 </body>
 </html>

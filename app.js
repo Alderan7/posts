@@ -2059,8 +2059,11 @@ function rGeoFoto(d,n){
     <div style="position:relative;z-index:5;display:flex;flex-direction:column;height:100%">
       <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye" style="font-size:${T.eye}px;color:#F5F1EA">${p(d.eye||'')}</span></div>${logoHTML('dark')}</div>
       <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;text-align:right;gap:20px;padding-right:12px">
-        <h1 class="accent-ser" style="font-size:${Math.min(T.head+2,72)}px;color:#F5F1EA;line-height:1.3;max-width:640px;text-shadow:0 2px 12px rgba(0,0,0,.55)">"${pK(d.head)}"</h1>
-        ${d.body?`<p class="TCap" style="font-size:${T.cta+2}px;color:rgba(245,241,234,.85)">${p(d.body)}</p>`:''}
+        <div style="position:relative;max-width:660px;padding:26px 30px">
+          <div style="position:absolute;inset:0;background:rgba(26,26,26,.5);backdrop-filter:blur(3px);border-radius:6px;z-index:-1"></div>
+          <h1 class="accent-ser" style="font-size:${Math.min(T.head+2,72)}px;color:#F5F1EA;line-height:1.3;text-shadow:0 2px 12px rgba(0,0,0,.55)">"${pK(d.head)}"</h1>
+          ${d.body?`<p class="TCap" style="font-size:${T.cta+2}px;color:rgba(245,241,234,.85);margin-top:20px">${p(d.body)}</p>`:''}
+        </div>
       </div>
       <div class="SF"><span class="TCap" style="font-size:${T.cta}px;color:rgba(245,241,234,.5)">${HANDLE}</span><span class="TCap" style="font-size:${T.cta}px;color:#38B6FF">${p(d.cta||'')}</span></div>
     </div>
@@ -3177,6 +3180,59 @@ items según tipo: lista/claves=frases; stats=3-4 "NÚMERO::etiqueta"; proceso=i
     toast2('✓ Slide regenerado');
   }catch(e){ toast2('No se pudo regenerar: '+e.message); }
   finally{ if(btn){ btn.disabled=false; btn.textContent='🔄 Regenerar'; } }
+}
+
+// AÑADIR el siguiente slide con IA: crea un slide NUEVO que continúa la historia
+// desde el slide actual (no lo reemplaza) y lo inserta justo detrás.
+async function siguienteSlide(){
+  if(!SLIDES.length){ toast2('Genera algo primero'); return; }
+  if(modo!=='carrusel'){ toast2('Esto es para carruseles (en Post/Reel usa Generar)'); return; }
+  if(!hayIA()){ toast2('Sin IA ahora. Añade un slide a mano o usa 🗓 Plan 30'); return; }
+  const btn=document.getElementById('btnSiguiente');
+  const d=SLIDES[cur], cfg=N();
+  const esUltimo = cur===SLIDES.length-1;
+  const headAnterior = String(d.head||'').trim();
+  const contexto=SLIDES.map((s,i)=>`${i===cur?'>> DESPUÉS DE ESTE':'  '} [${i+1}] ${s.tipo}: ${(s.head||s.items?.[0]||'').slice(0,60)}`).join('\n');
+  const contrato=`Eres Rosa María, ${cfg.persona}. Tono: ${cfg.tono}. 2ª persona (tú).
+Este carrusel tiene estos slides (en orden):
+${contexto}
+Vas a AÑADIR un slide NUEVO justo DESPUÉS del slide marcado ">> DESPUÉS DE ESTE" (posición ${cur+1}).
+El slide nuevo debe CONTINUAR la historia desde ahí: retoma el hilo del slide anterior y avánzalo UN paso más, aportando la SIGUIENTE idea del argumento. NO repitas lo que ya dicen los demás slides.
+El titular del slide anterior es literalmente: «${headAnterior}». PROHIBIDO usar ese titular o una variación mínima: el nuevo "head" debe ser CLARAMENTE distinto (otras palabras, otra idea).
+Elige TÚ el mejor tipo para ese momento (varía respecto al anterior si queda mejor): un dato → "stats" o "numero"; enumerar → "lista" o "claves"; una idea con fuerza → "frase" o "hook"; comparar → "versus" o "debate"; rematar → "cta".
+${esUltimo?'Estás al FINAL del carrusel: este slide debe ser el CIERRE, un "cta" que invita a actuar (DM/guardar/comentar).':''}
+Tipos válidos: hook, frase, lista, stats, numero, proceso, servicio, debate, claves, pills, indice, versus, checklist, cta.
+Devuelve SOLO JSON de UN slide (rellena los valores con contenido REAL, nunca con estas descripciones): {"tipo":"...","fondo":"dark|light|blue","eye":"...","head":"...","body":"...","items":[], "cta":"..."}
+items según tipo: lista/claves=frases; stats=3-4 "NÚMERO::etiqueta"; proceso=items "NombreDelPaso:explicación breve" con un nombre de paso REAL y distinto en cada uno (nunca literalmente la palabra "Título" o "Descripción"); debate/versus=2 opciones; checklist=frases (prefija "no:" para las negativas); pills=etiquetas; indice=temas; hook/frase/numero/cta=[].`;
+  // Textos de ejemplo del prompt que el modelo a veces copia tal cual → los vaciamos
+  const PLACEHOLDERS=['kicker corto','titular','subtítulo opcional','pie corto','...','eyebrow','kicker'];
+  const limpiaLit=(v)=>{ const t=String(v||'').trim(); return PLACEHOLDERS.includes(t.toLowerCase())?'':t; };
+  // Eyebrow: vacía etiquetas técnicas que a veces cuela el modelo ("frase-1", "slide 2"…)
+  const limpiaEye=(v)=>{ const t=limpiaLit(v); return /^(frase|slide|hook|item|texto|eye|kicker|tipo)[\s\-_]*\d*$/i.test(t)?'':t; };
+  const norm=(v)=>String(v||'').trim().toLowerCase().replace(/\s+/g,' ');
+  const pedir=async()=>{
+    const s = await iaJSON(contrato, { maxTokens:900, temperature:0.95 });
+    const tipo=TIPOS_IA.includes(s.tipo)?s.tipo:'hook';
+    const fondo=['dark','light','blue'].includes(s.fondo)?s.fondo:(d.fondo||'dark');
+    const items=Array.isArray(s.items)?s.items.filter(x=>x!=null&&String(x).trim()):[];
+    const nuevo={ tipo, fondo, eye:limpiaEye(s.eye).slice(0,60), head:limpiaLit(s.head).slice(0,180),
+      body:limpiaLit(s.body).slice(0,240), items, cta:(limpiaLit(s.cta)||d.cta||'').slice(0,60) };
+    saneaTipoSinItems(nuevo);
+    return nuevo;
+  };
+  if(btn){ btn.disabled=true; btn.textContent='➕ …'; }
+  try{
+    let nuevo = await pedir();
+    // Si el titular sale idéntico al del slide anterior, reintenta UNA vez
+    if(headAnterior && norm(nuevo.head)===norm(headAnterior)){
+      try{ const otro = await pedir(); if(norm(otro.head)!==norm(headAnterior)) nuevo=otro; }catch(_){}
+    }
+    SLIDES.splice(cur+1, 0, nuevo);
+    buildThumbs();
+    show(cur+1);
+    toast2(`✓ Slide ${cur+1} añadido · ${SLIDES.length} en total`);
+  }catch(e){ toast2('No se pudo crear el siguiente: '+e.message); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='➕ Siguiente (IA)'; } }
 }
 
 // EXPERIMENTAL — la IA compone por coordenadas (elementos absolutos)
