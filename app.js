@@ -6876,8 +6876,25 @@ function abrirReelModal(){
   cambiarModoVoz();
   pintarClipsReel();
   contarPalabrasGuion();
+  pintarTextosReel();
   setTimeout(()=>document.getElementById('reelPrompt')?.focus(), 100);
   _pedirPermisoMic();
+}
+
+// Rellena Hook/Sub/CTA con lo que ya haya (de una generación anterior de IA,
+// o si no, de la portada del slide actual) para que siempre haya algo editable.
+function pintarTextosReel(){
+  const d = SLIDES[0] || {};
+  const hEl=document.getElementById('reelHook'), sEl=document.getElementById('reelSub'), cEl=document.getElementById('reelCtaTxt');
+  if(hEl) hEl.value = _reelIA.hook || String(d.head||'').replace(/\n/g,' ').trim();
+  if(sEl) sEl.value = _reelIA.sub  || String(d.body||'').trim();
+  if(cEl) cEl.value = _reelIA.cta  || String(d.cta||'').replace(/\s*[→↓]\s*$/,'').trim();
+}
+// Si el usuario edita los campos a mano, esa versión manda sobre la de la IA.
+function guardarTextosReel(){
+  _reelIA.hook = (document.getElementById('reelHook')?.value||'').trim();
+  _reelIA.sub  = (document.getElementById('reelSub')?.value||'').trim();
+  _reelIA.cta  = (document.getElementById('reelCtaTxt')?.value||'').trim();
 }
 
 // Pide el permiso del micrófono al abrir "Crear reel" (una vez aceptado, el
@@ -6929,7 +6946,7 @@ Devuelve SOLO JSON válido, sin markdown:
 {
  "hook": "titular potente para la pantalla, máx 45 caracteres",
  "sub": "subtítulo corto, máx 70 caracteres",
- "cta": "llamada a la acción de 2-3 palabras (ej: Guarda esto)",
+ "cta": "llamada a la acción, puede ser una frase corta con más gancho que solo 2-3 palabras (ej: 'Escríbeme AGENDA y te cuento cómo', máx 40 caracteres)",
  "guion": "texto locutado de ${lo}-${hi} palabras, con 2-4 *palabras clave* marcadas con asteriscos",
  "keywords": ["3-4 búsquedas EN INGLÉS de vídeo de stock, 2-3 palabras cada una, coherentes con el tema y visualmente distintas entre sí"]
 }`;
@@ -6960,13 +6977,14 @@ Devuelve el JSON completo (hook, sub, cta, keywords y el guion ampliado).`);
     _reelIA = {
       hook: String(out.hook||'').slice(0,60),
       sub:  String(out.sub||'').slice(0,90),
-      cta:  String(out.cta||'Guarda esto').slice(0,22),
+      cta:  String(out.cta||'Guarda esto').slice(0,40),
       keywords: (Array.isArray(out.keywords)?out.keywords:[]).map(k=>String(k).trim()).filter(Boolean).slice(0,4)
     };
     const guion = limpiarGuionParaVoz(String(out.guion||''));
     const ta = document.getElementById('reelGuion');
     if(ta) ta.value = guion;
     contarPalabrasGuion();
+    pintarTextosReel();   // vuelca hook/sub/cta a los campos editables
     const n = nPalabras(guion);
     const corto = n < Math.round(objetivo * 0.85);
     reelSt(corto ? '#ff9f43' : '#38B6FF',

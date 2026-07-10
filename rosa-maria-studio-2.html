@@ -668,11 +668,12 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
   font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--UI-A);
   font-weight:700;margin-bottom:6px;
 }
-#reelModal textarea,#reelModal select{
+#reelModal textarea,#reelModal select,#reelModal input[type=text]{
   width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);
   padding:9px;border-radius:6px;font-size:12px;font-family:'Montserrat',sans-serif;
   line-height:1.55;resize:vertical;
 }
+#reelModal input[type=text]:focus{outline:none;border-color:var(--UI-A)}
 #reelModal select{cursor:pointer;padding:8px}
 #reelModal textarea:focus,#reelModal select:focus{outline:none;border-color:var(--UI-A)}
 .reel-btn-sec{
@@ -1267,6 +1268,11 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
             </select>
           </div>
           <button id="reelGuionBtn" onclick="generarGuionReel()" class="reel-btn-sec" title="La IA escribe el guion y elige los vídeos de fondo">✨ Escribir guion con IA</button>
+
+          <div class="reel-paso" style="margin-top:14px">Textos en pantalla <span style="text-transform:none;letter-spacing:0;color:var(--UI-M)">— los rellena la IA, edítalos si quieres</span></div>
+          <input type="text" id="reelHook" maxlength="60" placeholder="Titular (gancho) en pantalla" oninput="guardarTextosReel()">
+          <input type="text" id="reelSub" maxlength="90" placeholder="Subtítulo corto" oninput="guardarTextosReel()" style="margin-top:6px">
+          <input type="text" id="reelCtaTxt" maxlength="40" placeholder="Llamada a la acción (ej: Escríbeme AGENDA)" oninput="guardarTextosReel()" style="margin-top:6px">
 
           <div class="reel-paso" style="margin-top:14px">2 · Guion <span style="text-transform:none;letter-spacing:0;color:var(--UI-M)">— si lo dejas vacío, lo escribe la IA</span></div>
           <textarea id="reelGuion" rows="7" oninput="contarPalabrasGuion()" placeholder="Escribe aquí lo que quieres que se diga en el reel…"></textarea>
@@ -2057,6 +2063,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=112"></script>
+<script src="app.js?v=113"></script>
 </body>
 </html>
