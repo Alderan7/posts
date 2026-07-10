@@ -2358,6 +2358,7 @@ function renderTipo(d,n){
 
 function render(d,i){
   const n=String(i+1).padStart(2,'0');
+  const baseT = {...T};   // valores originales, antes de cualquier escalado de este slide
 
   // ── Escala de texto POR CAMPO (eyebrow/headline/cuerpo/items) ──
   // Truco: escalamos T temporalmente para que TODOS los renderers respeten
@@ -2371,13 +2372,12 @@ function render(d,i){
   const sItems = legado * ((d.itemsScale?? 100)/100);
   let html;
   if(sEye!==1 || sHead!==1 || sBody!==1 || sItems!==1){
-    const bak = {...T};
-    T.eye=Math.round(bak.eye*sEye); T.head=Math.round(bak.head*sHead);
-    T.body=Math.round(bak.body*sBody); T.items=Math.round(bak.items*sItems);
-    T.cta=Math.round(bak.cta*sBody); T.stat=Math.round(bak.stat*sHead);
+    T.eye=Math.round(baseT.eye*sEye); T.head=Math.round(baseT.head*sHead);
+    T.body=Math.round(baseT.body*sBody); T.items=Math.round(baseT.items*sItems);
+    T.cta=Math.round(baseT.cta*sBody); T.stat=Math.round(baseT.stat*sHead);
     html = renderTipo(d,n);
-    T.eye=bak.eye; T.head=bak.head; T.body=bak.body;
-    T.items=bak.items; T.cta=bak.cta; T.stat=bak.stat;
+    T.eye=baseT.eye; T.head=baseT.head; T.body=baseT.body;
+    T.items=baseT.items; T.cta=baseT.cta; T.stat=baseT.stat;
   } else {
     html = renderTipo(d,n);
   }
@@ -2390,7 +2390,7 @@ function render(d,i){
   const eyeDX = d.eyeDX || 0, eyeDY = d.eyeDY || 0;     // mover SOLO el eyebrow
   const headDX= d.headDX|| 0, headDY= d.headDY|| 0;     // mover SOLO el headline
   const tsh   = Math.max(0, Math.min(100, +d.txtShadow || 0));   // sombra oscura tras el texto
-  const needsWrap = align!=='left' || vpos || dx || dy || eyeDX || eyeDY || headDX || headDY || tsh>0;
+  const needsWrap = align!=='left' || vpos || dx || dy || eyeDX || eyeDY || headDX || headDY || tsh>0 || sHead!==1 || sEye!==1;
   if(needsWrap){
     // Inyectamos estilo scoped: marcamos el slide con un id único
     const uid = 'sl'+i;
@@ -2401,6 +2401,11 @@ function render(d,i){
     if(dx||dy)          css += `#${uid} .SP,#${uid} .SP108{transform:translate(${dx}px,${dy}px)}`;
     if(eyeDX||eyeDY)    css += `#${uid} .TEye{display:inline-block;transform:translate(${eyeDX}px,${eyeDY}px)}`;
     if(headDX||headDY)  css += `#${uid} h1{transform:translate(${headDX}px,${headDY}px)}`;
+    // Muchos tipos de slide traen un tope interno (Math.min(T.head, X)) pensado
+    // para titulares largos multilinea. Si el usuario mueve el slider a mano,
+    // forzamos el tamaño real por encima de ese tope — el slider manda siempre.
+    if(sHead!==1) css += `#${uid} h1{font-size:${Math.round(baseT.head*sHead)}px!important}`;
+    if(sEye!==1)  css += `#${uid} .TEye{font-size:${Math.round(baseT.eye*sEye)}px!important}`;
     // text-shadow se HEREDA → puesto en el slide, cubre TODOS los textos.
     if(tsh>0){ const a=(tsh/100).toFixed(2), b=(tsh/100*0.9).toFixed(2);
       css += `#${uid}{text-shadow:0 2px 12px rgba(0,0,0,${a}),0 1px 3px rgba(0,0,0,${b})}`; }
