@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Rosa María Studio — Generador de Contenido</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
@@ -34,6 +34,7 @@
 
   --F-SER: 'Playfair Display', Georgia, serif;
   --F-SAN: 'Montserrat', system-ui, sans-serif;
+  --F-HAND: 'Caveat', cursive;
 
   --UI:    #0E0E0E;
   --UI-P:  #141414;
@@ -388,6 +389,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 
 /* Acento Playfair Display — solo elementos editoriales puntuales */
 .accent-ser{font-family:var(--F-SER);font-style:italic}
+/* Acento Caveat (manuscrita) — notas adhesivas y anotaciones "a mano" */
+.accent-hand{font-family:var(--F-HAND)}
 
 .SP{padding:86px 90px 78px;display:flex;flex-direction:column;height:100%}
 .SP108{padding:80px 90px 72px;display:flex;flex-direction:column;height:100%}
@@ -1568,8 +1571,10 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
               <option value="relato3">Micro-relato en 3 tiempos</option>
               <option value="fotominimal">Foto-silueta minimalista</option>
               <option value="geofoto">Foto geométrica (líneas + cita)</option>
+              <option value="bloques">Cita con bloque y anotación a mano</option>
             </optgroup>
             <optgroup label="── WOW / especiales ──">
+              <option value="postit">Foto con notas adhesivas</option>
               <option value="tweet">Tweet (tarjeta X)</option>
               <option value="neon">Neón (brilla)</option>
               <option value="glitch">Glitch (RGB roto)</option>
@@ -2041,6 +2046,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=102"></script>
+<script src="app.js?v=104"></script>
 </body>
 </html>

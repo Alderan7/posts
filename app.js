@@ -1041,7 +1041,7 @@ function usarMedia(id){
   const d = SLIDES[cur];
   if(!d) return;
 
-  const tiposFoto = ['foto','fototxt','autoridad','bafoto','manomovil','fotominimal','geofoto'];
+  const tiposFoto = ['foto','fototxt','autoridad','bafoto','manomovil','fotominimal','geofoto','postit'];
 
   if(tiposFoto.includes(d.tipo)){
     // Slide ya es de tipo foto — asignar al destino correcto
@@ -1192,7 +1192,7 @@ function sugerirLayoutIA(){
 }
 
 function sincronizarPanelImg(d){
-  const tiposConFoto   = ['foto','fototxt','autoridad','manomovil','fotominimal','geofoto'];
+  const tiposConFoto   = ['foto','fototxt','autoridad','manomovil','fotominimal','geofoto','postit'];
   const tiposConFondo  = tiposConFoto;
   const tiposConBA     = ['bafoto'];
   // 'manomovil' tiene layout fijo (foto dentro de la pantalla del móvil): sin tinte/overlay ni duo/posición de texto
@@ -2070,6 +2070,76 @@ function rGeoFoto(d,n){
   </div>`;
 }
 
+// Mini librería de "doodles" (trazo a mano, tipo rotulador) para anotaciones:
+// flecha curva y subrayado ondulado. Se usan en 'bloques' y 'postit'.
+const DOODLE = {
+  flecha(w=90,h=60,color='#1A1A1A'){
+    return `<svg viewBox="0 0 90 60" style="width:${w}px;height:${h}px;flex-shrink:0" xmlns="http://www.w3.org/2000/svg"><path d="M4 10 C 26 6, 52 22, 76 40" stroke="${color}" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M58 33 L79 42 L68 22" stroke="${color}" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  },
+  subrayado(w=180,color='#1A1A1A'){
+    return `<svg viewBox="0 0 180 18" style="width:${w}px;height:18px;display:block" xmlns="http://www.w3.org/2000/svg"><path d="M4 12 Q 30 2 60 11 T 120 9 T 176 7" stroke="${color}" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`;
+  }
+};
+
+// Cita con bloque de color de marca + anotación "a mano" (Caveat) al margen:
+// quote editorial + subrayado ondulado + comentario manuscrito con flecha.
+function rBloques(d,n){
+  const fondo = d.fondo||'dark';
+  const doodleColor = fondo==='light' ? 'rgba(26,26,26,.75)' : fondo==='blue' ? 'rgba(26,26,26,.8)' : 'rgba(245,241,234,.8)';
+  const pillBg    = fondo==='blue' ? '#1A1A1A' : '#38B6FF';
+  const pillColor = fondo==='blue' ? '#F5F1EA' : '#1A1A1A';
+  return`<div class="slide ${fc(d.fondo)} ${slideH()} ${spClass()}" style="position:relative;overflow:hidden">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span class="TEye Cm" style="font-size:${T.eye}px">${p(d.eye||'')}</span></div>${logoHTML(d.fondo)}</div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px">
+      <div class="qm Cm" style="font-family:var(--F-SER);font-style:italic;font-size:110px;line-height:.6;opacity:.22">"</div>
+      <h1 class="accent-ser Ct" style="font-size:${Math.min(T.head+2,72)}px;line-height:1.28;max-width:820px">${pK(d.head)}</h1>
+      ${DOODLE.subrayado(220,doodleColor)}
+      ${d.body?`<div style="display:flex;align-items:flex-start;gap:10px;margin-top:8px;max-width:520px">
+        ${DOODLE.flecha(56,40,doodleColor)}
+        <p class="accent-hand" style="font-weight:600;font-size:26px;line-height:1.25;color:${doodleColor};transform:rotate(-2deg);margin:6px 0 0">${p(d.body)}</p>
+      </div>`:''}
+    </div>
+    <div class="SF">
+      <span class="TCap" style="font-size:${T.cta}px;padding:5px 12px;border-radius:999px;background:${pillBg};color:${pillColor};font-weight:700">${HANDLE}</span>
+      <span class="TCap Ca" style="font-size:${T.cta}px">${p(d.cta||'')}</span>
+    </div>
+  </div>`;
+}
+
+// Foto real + titular grande estilo UGC + notas adhesivas (Caveat) señalando
+// detalles, como "behind the scenes" de marca personal.
+function rPostit(d,n){
+  const notas=(d.items||[]).filter(x=>x&&String(x).trim()).slice(0,3);
+  const ESTILOS=[
+    {bg:'#F5F1EA', rot:-6, top:'17%',  side:'right', x:'7%'},
+    {bg:'#E4F4FF', rot:4,  top:'60%',  side:'left',  x:'7%'},
+    {bg:'#FFFFFF', rot:-4, top:'75%',  side:'right', x:'9%'},
+  ];
+  const notasHTML = notas.map((t,i)=>{
+    const st=ESTILOS[i%ESTILOS.length];
+    const posStyle = st.side==='right' ? `right:${st.x}` : `left:${st.x}`;
+    return `<div style="position:absolute;top:${st.top};${posStyle};max-width:230px;background:${st.bg};padding:16px 18px 14px;border-radius:3px;box-shadow:0 8px 24px rgba(0,0,0,.35);transform:rotate(${st.rot}deg);z-index:4">
+      <div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-2deg);width:52px;height:16px;background:rgba(56,182,255,.4);border:1px solid rgba(56,182,255,.55)"></div>
+      <p class="accent-hand" style="font-weight:700;font-size:22px;line-height:1.22;color:#1A1A1A;margin:0">${p(t)}</p>
+    </div>`;
+  }).join('');
+  return`<div class="slide ${slideH()} ${spClass()}" style="position:relative;overflow:hidden;background:#111">
+    ${bgImgTag(d.imgFondo,'',d)}
+    <div style="position:absolute;inset:0;z-index:1;background:linear-gradient(to top,rgba(26,26,26,.72) 0%,rgba(26,26,26,.05) 55%,rgba(26,26,26,.35) 100%)"></div>
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%">
+      <div class="SH">
+        ${d.eye?`<span class="TCap" style="background:#F5F1EA;color:#1A1A1A;padding:5px 12px;border-radius:3px;font-weight:700;font-size:${T.eye}px;text-transform:uppercase;letter-spacing:.06em">${p(d.eye)}</span>`:'<span></span>'}
+        ${logoHTML('dark')}
+      </div>
+      <div style="flex:1;display:flex;align-items:flex-end;padding-bottom:36px">
+        <h1 style="font-family:var(--F-SAN);font-weight:800;text-transform:uppercase;font-size:${Math.min(T.head+6,68)}px;line-height:1.05;color:#F5F1EA;letter-spacing:-.01em;max-width:760px;text-shadow:0 3px 18px rgba(0,0,0,.5)">${pK(d.head)}</h1>
+      </div>
+      <div class="SF"><span class="TCap" style="font-size:${T.cta}px;color:rgba(245,241,234,.65)">${HANDLE}</span><span class="TCap" style="font-size:${T.cta}px;color:#38B6FF">${p(d.cta||'')}</span></div>
+    </div>
+    ${notasHTML}
+  </div>`;
+}
+
 // Tamaño de fuente del número gigante (.snum) según su longitud, para que
 // nunca se salga del slide (antes era fijo a 300px y "30.000€" se cortaba).
 function fitFontNumero(str, max=300, anchoDisponible=900){
@@ -2556,6 +2626,8 @@ function renderTipo(d,n){
     case'relato3':          return rRelato3(d,n);
     case'fotominimal':      return rFotoMinimal(d,n);
     case'geofoto':          return rGeoFoto(d,n);
+    case'bloques':          return rBloques(d,n);
+    case'postit':           return rPostit(d,n);
     case'revista':          return rRevista(d,n);
     case'indice':           return rIndice(d,n);
     case'citafoto':         return rCitaFoto(d,n);
@@ -5119,7 +5191,7 @@ const TIPO_L={hook:'Hook',frase:'Frase',ba:'BA Texto',lista:'Lista',
   neon:'Neón',glitch:'Glitch',wrapped:'Wrapped',dashboard:'Dashboard',brutal:'Brutalista',terminal:'Terminal',
   manomovil:'Móvil en mano', insignia:'Insignia',
   icononum:'Numerado+Icono', relato3:'Micro-relato', fotominimal:'Foto minimalista',
-  geofoto:'Foto geométrica'};
+  geofoto:'Foto geométrica', bloques:'Bloque + anotación', postit:'Notas adhesivas'};
 
 function buildThumbs(){
   const panel=document.getElementById('sideL');
@@ -5732,7 +5804,7 @@ async function expPPTX(){
 
     // Layouts visuales/complejos: exportar el slide como IMAGEN fiel (los de
     // texto simple siguen siendo elementos editables en Canva).
-    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','manomovil','insignia','icononum','relato3','fotominimal','geofoto','ba','bafoto','foto','fototxt','autoridad','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
+    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','manomovil','insignia','icononum','relato3','fotominimal','geofoto','bloques','postit','ba','bafoto','foto','fototxt','autoridad','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
     if(IMG_ONLY_PPTX.includes(d.tipo)){
       let ok=false;
       try{ const cv=await capture(i); slide.addImage({ data:cv.toDataURL('image/png'), x:0,y:0,w:10.8,h:13.5 }); ok=true; }catch(e){}
