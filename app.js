@@ -1875,6 +1875,15 @@ function fitFontNumero(str, max=300, anchoDisponible=900){
   return Math.max(70, Math.min(max, Math.floor(anchoDisponible/(peso*0.62))));
 }
 
+// Tamaño de letra de un párrafo para que quepa en una caja de ancho/alto dados
+// (evita que un texto largo se salga verticalmente de su columna/zona, como
+// pasaba en "Versus" con explicaciones largas a tamaño fijo).
+function fitFontParrafo(texto, maxFont, boxW, boxH){
+  const len=Math.max(1,String(texto||'').length);
+  const f=Math.sqrt((boxH*boxW)/(0.65*len));
+  return Math.max(20, Math.min(maxFont, Math.floor(f)));
+}
+
 // Número gigante (hero editorial): un dato enorme + etiqueta + contexto
 function rNumero(d,n){
   const num=(d.head||d.items?.[0]||'+100%');
@@ -2064,16 +2073,20 @@ function rVersus(d,n){
   const cols = (d.items||[]).filter(Boolean).slice(0,2);
   const [la,ta] = (cols[0]||'Lo que crees::…').split('::');
   const [lb,tb] = (cols[1]||'La realidad::…').split('::');
+  const maxF=Math.round(T.head*.5);
+  const boxH = d.head ? 950 : 1050;   // menos alto disponible cuando hay titular arriba
+  const fa=fitFontParrafo(ta, maxF, 420, boxH);
+  const fb=fitFontParrafo(tb, maxF, 420, boxH);
   return`<div class="slide ${slideH()}" style="position:relative;overflow:hidden;padding:0;background:#1A1A1A">
     ${d.head?`<div style="position:absolute;top:0;left:0;right:0;z-index:6;padding:44px 56px 0;text-align:center"><h1 class="TDsm" style="font-size:${Math.min(T.head,64)}px;color:#F5F1EA;line-height:1.1">${pK(d.head)}</h1></div>`:''}
     <div style="display:flex;height:100%">
       <div style="flex:1;background:#242424;display:flex;flex-direction:column;justify-content:center;gap:22px;padding:${d.head?'220px':'64px'} 56px 64px">
         <span style="font-family:var(--F-SAN);font-weight:700;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(245,241,234,.4)">✕ ${p(la||'Mito')}</span>
-        <p style="font-family:var(--F-SAN);font-weight:300;font-size:${Math.round(T.head*.5)}px;line-height:1.25;color:rgba(245,241,234,.72)">${p(ta||'')}</p>
+        <p style="font-family:var(--F-SAN);font-weight:300;font-size:${fa}px;line-height:1.25;color:rgba(245,241,234,.72)">${p(ta||'')}</p>
       </div>
       <div style="flex:1;background:#38B6FF;display:flex;flex-direction:column;justify-content:center;gap:22px;padding:${d.head?'220px':'64px'} 56px 64px">
         <span style="font-family:var(--F-SAN);font-weight:700;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,26,26,.55)">✓ ${p(lb||'Realidad')}</span>
-        <p style="font-family:var(--F-SAN);font-weight:500;font-size:${Math.round(T.head*.5)}px;line-height:1.25;color:#1A1A1A">${p(tb||'')}</p>
+        <p style="font-family:var(--F-SAN);font-weight:500;font-size:${fb}px;line-height:1.25;color:#1A1A1A">${p(tb||'')}</p>
       </div>
     </div>
     <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:7;width:88px;height:88px;border-radius:50%;background:#1A1A1A;border:3px solid #F5F1EA;display:flex;align-items:center;justify-content:center;font-family:var(--F-SER);font-style:italic;font-size:34px;color:#F5F1EA">VS</div>
