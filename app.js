@@ -3347,28 +3347,85 @@ items según tipo: lista/claves=frases; stats=3-4 "NÚMERO::etiqueta"; proceso=i
   finally{ if(btn){ btn.disabled=false; btn.textContent='➕ Siguiente (IA)'; } }
 }
 
+// Estima el alto (en % del lienzo 1350) que ocupará un texto del modo libre,
+// para poder detectar cuándo se saldría por abajo o cuánto espacio ocupa.
+function _altoTextoLibre(e){
+  const size=+e.size||36, w=Math.max(10,+e.w||30);
+  const txt=String(e.texto||'');
+  const porLinea=Math.max(4,Math.floor((w/100*1080)/(size*0.55)));
+  const lineas=Math.max(1,Math.ceil((txt.length||1)/porLinea))+(txt.match(/\n/g)||[]).length;
+  return lineas*size*1.2/1350*100;
+}
+// Saneador del modo libre: corrige las composiciones rotas que a veces
+// devuelve la IA (foto sello diminuta, texto que se corta por abajo,
+// titular sin presencia, medio lienzo vacío). Si la composición no tiene
+// arreglo puntual, la re-compone entera en una pila editorial fija.
+function sanearLibre(els){
+  els=(els||[]).filter(e=>e&&e.t&&((e.t!=='text'&&e.t!=='sticker')||String(e.texto||'').trim()));
+  const texts=els.filter(e=>e.t==='text');
+  // 1) márgenes y medidas dentro del lienzo
+  els.forEach(e=>{
+    e.x=Math.max(4,Math.min(92,Math.round(+e.x||0)));
+    e.y=Math.max(4,Math.min(88,Math.round(+e.y||0)));
+    e.w=Math.max(10,Math.min(96-e.x,Math.round(+e.w||30)));
+    if(e.t==='img') e.h=Math.max(6,Math.min(92-e.y,Math.round(+e.h||30)));
+    if(e.t==='rect') e.h=Math.max(1,Math.min(92-e.y,Math.round((+e.h||10)*10)/10));   // los rect finos (franjas h1.5) se respetan
+  });
+  // 2) el texto más grande es el titular: que tenga presencia; el resto, legible
+  const tit=texts.length?texts.reduce((a,b)=>((+b.size||0)>(+a.size||0)?b:a)):null;
+  if(tit&&(+tit.size||0)<64) tit.size=80;
+  texts.forEach(t=>{ if(t!==tit&&(+t.size||0)<24) t.size=28; });
+  // 3) foto sello → foto con presencia (si no cabe a lo ancho, se corre a la izquierda)
+  els.forEach(e=>{ if(e.t==='img'){ if(e.w<40){ e.x=Math.min(e.x,52); e.w=Math.min(60,96-e.x); } if((e.h||0)<24) e.h=Math.min(34,92-e.y); } });
+  // 4) que ningún texto se salga por abajo, y nada rotado cerca del borde (se corta)
+  els.forEach(e=>{
+    if(e.t==='text'||e.t==='sticker'){
+      const alto=_altoTextoLibre(e);
+      if(e.y+alto>88) e.y=Math.max(6,Math.round(88-alto));
+      if(e.rot&&e.y+alto>74) e.rot=0;
+    }
+  });
+  // 5) ¿composición rota igualmente? (poco lienzo ocupado o sin titular) → pila editorial
+  const ocupado=els.reduce((a,e)=>a+e.w*((e.t==='text'||e.t==='sticker')?_altoTextoLibre(e):(e.h||0))/100,0);
+  if(ocupado<30||!texts.some(t=>(+t.size||0)>=64)){
+    let y=8;
+    if(tit){ tit.x=6; tit.y=y; tit.w=88; tit.size=Math.max(84,+tit.size||0); tit.rot=0; y+=_altoTextoLibre(tit)+4; }
+    texts.filter(t=>t!==tit).forEach(t=>{ t.x=6; t.y=y; t.w=72; t.rot=0; y+=_altoTextoLibre(t)+3; });
+    const img=els.find(e=>e.t==='img');
+    if(img){ img.x=6; img.w=88; img.y=Math.max(y+2,50); img.h=Math.max(24,Math.min(38,88-img.y)); }
+    const stk=els.find(e=>e.t==='sticker');
+    if(stk){ stk.x=58; stk.w=32; stk.y=img?Math.max(8,img.y-4):Math.min(76,y+4); stk.rot=-6;
+      const aStk=_altoTextoLibre(stk); if(stk.y+aStk>88) stk.y=Math.max(6,Math.round(88-aStk)); }
+  }
+  return els;
+}
+
 // EXPERIMENTAL — la IA compone por coordenadas (elementos absolutos)
 async function generarLibre(prompt, fmt, n, cfg, status, btn, opcFoto){
   const cnt = fmt==='carrusel' ? n : 1;
-  const contrato=`Eres Rosa María, ${cfg.persona}. Diseña un ${fmt} de Instagram (lienzo 1080x1350) para: "${prompt}".
-Componlo LIBREMENTE como un diseñador editorial ACTUAL (lo que se lleva ahora en Instagram/TikTok, no un anuncio clásico): tipografía enorme y expresiva, alguna palabra o número en diagonal (rotación sutil), foto con recorte tipo collage, un "sticker"/badge circular o con borde para un dato o palabra suelta, mezcla de serif editorial + sans directo. Paleta de marca: negro #1A1A1A, crema #F5F1EA, azul #38B6FF (usa solo estos + blanco).
+  const contrato=`Eres Rosa María, ${cfg.persona}. Diseña un ${fmt} de Instagram (lienzo 1080x1350, y=0 arriba) para: "${prompt}".
+Estilo: diseñador editorial ACTUAL (lo que se lleva en Instagram/TikTok, no un anuncio clásico). Paleta de marca: negro #1A1A1A, crema #F5F1EA, azul #38B6FF (solo estos + blanco). El texto debe CONTRASTAR con lo que tenga detrás.
 
-TEXTO — MUY IMPORTANTE: cada slide necesita VARIOS textos, no solo un titular suelto. Como mínimo: 1 titular grande y de gancho + 1 frase de apoyo/contexto (más pequeña) + opcionalmente 1 sticker con un dato/palabra. Nunca dejes un slide con un solo texto corto de 2-3 palabras y nada más — eso se ve vacío. El copy debe tener chispa y ser ESPECÍFICO del tema (nunca genérico tipo "Descubre más" o relleno).
+ELIGE UNA COMPOSICIÓN por slide (varíalas entre slides) y rellena sus huecos — puedes desviarte ±5 en cualquier número, pero respeta la estructura:
+A) EDITORIAL: titular enorme arriba (x6 y8 w88, size 90-115) + rect azul fino bajo él (x6 w26 h1.5) + texto de apoyo (x6 y42 w64, size 30) + foto grande abajo (x6 y56 w88 h32) + sticker rotado pisando la esquina de la foto (x62 y52 w30, rot -6).
+B) CARTEL: rect de color ocupando TODA la mitad izquierda (x0 y0 w46 h100) + titular grande encima del rect, en color que contraste (x5 y10 w38, size 76-90) + apoyo bajo el titular (x5 y64 w36, size 26) + foto a la derecha (x50 y8 w44 h54) + sticker con un dato bajo la foto (x54 y68 w32).
+C) COLLAGE: foto a sangre arriba (x0 y0 w100 h44) + titular gigante empezando sobre el borde inferior de la foto (x6 y36 w88, size 88-110, color que contraste) + apoyo (x6 y66 w70, size 28) + sticker rotado arriba-derecha (x64 y6 w30, rot 7).
+
+TEXTO: titular con gancho ESPECÍFICO del tema (nunca "Descubre más" ni relleno) + 1 frase de apoyo con chispa + sticker con UN dato/palabra corta. Serif itálica para citas/números elegantes, sans para lo directo.
 
 Devuelve SOLO JSON: { "caption":"...", "hashtags":"#...", "slides":[ { "bg":"#hex de fondo", "elementos":[ ELEMENTO, ... ] } ] } con ${cnt} slide(s).
 ELEMENTO = {
  "t": "text" | "rect" | "img" | "sticker",
  "x": 0-100, "y": 0-100, "w": 0-100,   // posición y ancho en % del lienzo
  "h": 0-100,                            // alto en % (para rect/img)
- "rot": -15 a 15,                       // rotación en grados (opcional, úsala en 1-2 elementos máx. para dar aire editorial/collage, no en todos)
+ "rot": -15 a 15,                       // rotación en grados (solo donde la receta lo dice)
  "texto": "solo si t=text o t=sticker",
  "img": "solo si t=img: 2-3 palabras EN INGLÉS para buscar la foto",
  "size": px de fuente (text/sticker), "weight": 300-800, "color":"#hex", "align":"left|center|right",
  "font": "sans" | "serif",              // serif = elegante (numeros, citas)
  "bg": "#hex (rect)", "r": radio de esquina px (rect/img) o del borde (sticker; usa un nº grande tipo 999 para un badge redondo/píldora)
 }
-"sticker" = una palabra o dato corto con borde de color alrededor (como un sello o badge) — úsalo con moderación, 1 por slide como máximo, para resaltar UNA palabra o cifra.
-REGLAS: no solapes texto ilegible; deja márgenes (~6%); 1 titular grande + al menos 1 texto de apoyo por slide (nunca un slide con un único texto suelto); usa 1-2 rect de color o 1 img como fondo/bloque; entre 4 y 8 elementos por slide. Coordenadas coherentes (que quepa dentro de 0-100).`;
+REGLAS DURAS: el titular SIEMPRE size>=76 y w>=60. La foto SIEMPRE w>=44. NADA con y>84 (la franja inferior es del pie de marca). Nada rotado por debajo de y=70. Entre 4 y 8 elementos por slide, repartidos por TODO el lienzo (arriba, centro y abajo): sin huecos muertos.`;
   if(btn) btn.classList.add('loading');
   if(status){ status.style.color='#38B6FF'; status.textContent='Componiendo (modo libre)…'; }
   try{
@@ -3385,7 +3442,7 @@ REGLAS: no solapes texto ilegible; deja márgenes (~6%); 1 titular grande + al m
         if(e.img && !/^https?:|^data:/.test(e.img)){ const id=await fetchFotoConFallback(e.img); if(id) e.img=id; }
       }
     }
-    const slides=arr.slice(0,cnt).map(s=>({tipo:'libre', fondo:'dark', bg:s.bg, elementos:(s.elementos||[]).slice(0,8)}));
+    const slides=arr.slice(0,cnt).map(s=>({tipo:'libre', fondo:'dark', bg:s.bg, elementos:sanearLibre((s.elementos||[]).slice(0,8))}));
     SLIDES.length=0; slides.forEach(s=>SLIDES.push(s));
     setModo(fmt==='carrusel'?'carrusel':fmt==='reel'?'reel':'post');
     cur=0; buildThumbs(); show(0); scaleStage();
