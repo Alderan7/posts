@@ -2359,19 +2359,25 @@ function renderTipo(d,n){
 function render(d,i){
   const n=String(i+1).padStart(2,'0');
 
-  // ── Escala de texto por slide (txtScale) ──
-  // Truco: escalamos T temporalmente para que TODOS los renderers
-  // respeten el tamaño de ESTE slide sin tocar cada función.
-  const scale = (d.txtScale ?? 100) / 100;
+  // ── Escala de texto POR CAMPO (eyebrow/headline/cuerpo/items) ──
+  // Truco: escalamos T temporalmente para que TODOS los renderers respeten
+  // el tamaño de ESTE slide sin tocar cada función. d.txtScale (legado, el
+  // slider "global" de versiones anteriores) se sigue aplicando como
+  // multiplicador extra sobre cada campo, para no romper diseños guardados.
+  const legado = (d.txtScale ?? 100) / 100;
+  const sEye   = legado * ((d.eyeScale  ?? 100)/100);
+  const sHead  = legado * ((d.headScale ?? 100)/100);
+  const sBody  = legado * ((d.bodyScale ?? 100)/100);
+  const sItems = legado * ((d.itemsScale?? 100)/100);
   let html;
-  if(scale !== 1){
+  if(sEye!==1 || sHead!==1 || sBody!==1 || sItems!==1){
     const bak = {...T};
-    T.head=Math.round(bak.head*scale); T.body=Math.round(bak.body*scale);
-    T.items=Math.round(bak.items*scale); T.eye=Math.round(bak.eye*scale);
-    T.cta=Math.round(bak.cta*scale); T.stat=Math.round(bak.stat*scale);
+    T.eye=Math.round(bak.eye*sEye); T.head=Math.round(bak.head*sHead);
+    T.body=Math.round(bak.body*sBody); T.items=Math.round(bak.items*sItems);
+    T.cta=Math.round(bak.cta*sBody); T.stat=Math.round(bak.stat*sHead);
     html = renderTipo(d,n);
-    T.head=bak.head; T.body=bak.body; T.items=bak.items;
-    T.eye=bak.eye; T.cta=bak.cta; T.stat=bak.stat;
+    T.eye=bak.eye; T.head=bak.head; T.body=bak.body;
+    T.items=bak.items; T.cta=bak.cta; T.stat=bak.stat;
   } else {
     html = renderTipo(d,n);
   }
@@ -2381,8 +2387,10 @@ function render(d,i){
   const vpos  = d.txtVPos || '';
   const dx    = d.txtDX || 0;
   const dy    = d.txtDY || 0;
+  const eyeDX = d.eyeDX || 0, eyeDY = d.eyeDY || 0;     // mover SOLO el eyebrow
+  const headDX= d.headDX|| 0, headDY= d.headDY|| 0;     // mover SOLO el headline
   const tsh   = Math.max(0, Math.min(100, +d.txtShadow || 0));   // sombra oscura tras el texto
-  const needsWrap = align!=='left' || vpos || dx || dy || tsh>0;
+  const needsWrap = align!=='left' || vpos || dx || dy || eyeDX || eyeDY || headDX || headDY || tsh>0;
   if(needsWrap){
     // Inyectamos estilo scoped: marcamos el slide con un id único
     const uid = 'sl'+i;
@@ -2391,6 +2399,8 @@ function render(d,i){
     if(vpos==='bottom') css += `#${uid} .zone,#${uid} .lzone,#${uid} [class*=zone]{justify-content:flex-end!important}`;
     if(vpos==='center') css += `#${uid} .zone,#${uid} .lzone,#${uid} [class*=zone]{justify-content:center!important}`;
     if(dx||dy)          css += `#${uid} .SP,#${uid} .SP108{transform:translate(${dx}px,${dy}px)}`;
+    if(eyeDX||eyeDY)    css += `#${uid} .TEye{display:inline-block;transform:translate(${eyeDX}px,${eyeDY}px)}`;
+    if(headDX||headDY)  css += `#${uid} h1{transform:translate(${headDX}px,${headDY}px)}`;
     // text-shadow se HEREDA → puesto en el slide, cubre TODOS los textos.
     if(tsh>0){ const a=(tsh/100).toFixed(2), b=(tsh/100*0.9).toFixed(2);
       css += `#${uid}{text-shadow:0 2px 12px rgba(0,0,0,${a}),0 1px 3px rgba(0,0,0,${b})}`; }
@@ -4486,6 +4496,14 @@ function ed(f,v){
   if(f==='txtShadow') d.txtShadow=parseInt(v);
   if(f==='txtDX')     d.txtDX=parseInt(v);
   if(f==='txtDY')     d.txtDY=parseInt(v);
+  if(f==='eyeScale')  d.eyeScale=parseInt(v);
+  if(f==='headScale') d.headScale=parseInt(v);
+  if(f==='bodyScale') d.bodyScale=parseInt(v);
+  if(f==='itemsScale')d.itemsScale=parseInt(v);
+  if(f==='eyeDX')     d.eyeDX=parseInt(v);
+  if(f==='eyeDY')     d.eyeDY=parseInt(v);
+  if(f==='headDX')    d.headDX=parseInt(v);
+  if(f==='headDY')    d.headDY=parseInt(v);
   if(f==='imgX2')     d.imgX2=parseInt(v);
   if(f==='imgY2')     d.imgY2=parseInt(v);
   if(f==='imgZoom2')  d.imgZoom2=parseInt(v);
@@ -4676,14 +4694,24 @@ function resetTextoSlide(){
   if(!SLIDES.length) return;
   const d=SLIDES[cur];
   d.txtScale=100; d.txtAlign='left'; d.txtVPos='center'; d.txtDX=0; d.txtDY=0; d.txtShadow=0;
+  d.eyeScale=100; d.headScale=100; d.bodyScale=100; d.itemsScale=100;
+  d.eyeDX=0; d.eyeDY=0; d.headDX=0; d.headDY=0;
   sincronizarTextoSlide(d);
   show(cur); refreshThumb(cur);
 }
 function sincronizarTextoSlide(d){
-  const sc=document.getElementById('rTxtScale'); if(sc){sc.value=d.txtScale??100; document.getElementById('vTxtScale').textContent=(d.txtScale??100)+'%'}
-  const ts=document.getElementById('rTxtShadow'); if(ts){ts.value=d.txtShadow??0; document.getElementById('vTxtShadow').textContent=(d.txtShadow??0)+'%'}
-  const dx=document.getElementById('rTxtDX'); if(dx){dx.value=d.txtDX??0; document.getElementById('vTxtDX').textContent=(d.txtDX??0)+'px'}
-  const dy=document.getElementById('rTxtDY'); if(dy){dy.value=d.txtDY??0; document.getElementById('vTxtDY').textContent=(d.txtDY??0)+'px'}
+  const campo=(id,val,suf)=>{ const el=document.getElementById(id); if(el){ el.value=val; const lbl=document.getElementById('v'+id.slice(1)); if(lbl) lbl.textContent=val+suf; } };
+  campo('rEyeScale',  d.eyeScale  ??100, '%');
+  campo('rHeadScale', d.headScale ??100, '%');
+  campo('rBodyScale', d.bodyScale ??100, '%');
+  campo('rItemsScale',d.itemsScale??100, '%');
+  campo('rTxtShadow', d.txtShadow ??0,   '%');
+  campo('rTxtDX', d.txtDX ??0, 'px');
+  campo('rTxtDY', d.txtDY ??0, 'px');
+  campo('rEyeDX', d.eyeDX ??0, 'px');
+  campo('rEyeDY', d.eyeDY ??0, 'px');
+  campo('rHeadDX',d.headDX??0, 'px');
+  campo('rHeadDY',d.headDY??0, 'px');
   const al=d.txtAlign||'left';
   ['L','C','R'].forEach(k=>document.getElementById('al'+k)?.classList.remove('on'));
   document.getElementById('al'+(al==='left'?'L':al==='center'?'C':'R'))?.classList.add('on');

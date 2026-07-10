@@ -1746,8 +1746,15 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <button class="btn btn-gh" style="padding:3px 8px" onclick="resetTextoSlide()">Reset</button>
         </div>
         <div class="crow">
-          <label>Tamaño del texto</label>
-          <div class="rrow"><input type="range" id="rTxtScale" min="70" max="130" value="100" oninput="ed('txtScale',this.value);document.getElementById('vTxtScale').textContent=this.value+'%'"><span class="rval" id="vTxtScale">100%</span></div>
+          <label style="font-size:9px;color:var(--UI-M);text-transform:uppercase;letter-spacing:.06em">Tamaño — cada texto por separado</label>
+          <label style="margin-top:4px">Eyebrow</label>
+          <div class="rrow"><input type="range" id="rEyeScale" min="60" max="180" value="100" oninput="ed('eyeScale',this.value);document.getElementById('vEyeScale').textContent=this.value+'%'"><span class="rval" id="vEyeScale">100%</span></div>
+          <label style="margin-top:5px">Headline</label>
+          <div class="rrow"><input type="range" id="rHeadScale" min="60" max="180" value="100" oninput="ed('headScale',this.value);document.getElementById('vHeadScale').textContent=this.value+'%'"><span class="rval" id="vHeadScale">100%</span></div>
+          <label style="margin-top:5px">Cuerpo</label>
+          <div class="rrow"><input type="range" id="rBodyScale" min="60" max="180" value="100" oninput="ed('bodyScale',this.value);document.getElementById('vBodyScale').textContent=this.value+'%'"><span class="rval" id="vBodyScale">100%</span></div>
+          <label style="margin-top:5px">Items</label>
+          <div class="rrow"><input type="range" id="rItemsScale" min="60" max="180" value="100" oninput="ed('itemsScale',this.value);document.getElementById('vItemsScale').textContent=this.value+'%'"><span class="rval" id="vItemsScale">100%</span></div>
         </div>
         <div class="crow">
           <label>Sombra tras el texto</label>
@@ -1770,10 +1777,25 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           </div>
         </div>
         <div class="crow">
-          <label>Mover texto horizontal</label>
+          <label style="font-size:9px;color:var(--UI-M);text-transform:uppercase;letter-spacing:.06em">Mover TODO el bloque de texto</label>
+          <label style="margin-top:4px">Horizontal</label>
           <div class="rrow"><input type="range" id="rTxtDX" min="-120" max="120" value="0" oninput="ed('txtDX',this.value);document.getElementById('vTxtDX').textContent=this.value+'px'"><span class="rval" id="vTxtDX">0px</span></div>
-          <label style="margin-top:5px">Mover texto vertical</label>
+          <label style="margin-top:5px">Vertical</label>
           <div class="rrow"><input type="range" id="rTxtDY" min="-150" max="150" value="0" oninput="ed('txtDY',this.value);document.getElementById('vTxtDY').textContent=this.value+'px'"><span class="rval" id="vTxtDY">0px</span></div>
+        </div>
+        <div class="crow">
+          <label style="font-size:9px;color:var(--UI-M);text-transform:uppercase;letter-spacing:.06em">Mover SOLO el Eyebrow</label>
+          <label style="margin-top:4px">Horizontal</label>
+          <div class="rrow"><input type="range" id="rEyeDX" min="-200" max="200" value="0" oninput="ed('eyeDX',this.value);document.getElementById('vEyeDX').textContent=this.value+'px'"><span class="rval" id="vEyeDX">0px</span></div>
+          <label style="margin-top:5px">Vertical</label>
+          <div class="rrow"><input type="range" id="rEyeDY" min="-200" max="200" value="0" oninput="ed('eyeDY',this.value);document.getElementById('vEyeDY').textContent=this.value+'px'"><span class="rval" id="vEyeDY">0px</span></div>
+        </div>
+        <div class="crow">
+          <label style="font-size:9px;color:var(--UI-M);text-transform:uppercase;letter-spacing:.06em">Mover SOLO el Headline</label>
+          <label style="margin-top:4px">Horizontal</label>
+          <div class="rrow"><input type="range" id="rHeadDX" min="-200" max="200" value="0" oninput="ed('headDX',this.value);document.getElementById('vHeadDX').textContent=this.value+'px'"><span class="rval" id="vHeadDX">0px</span></div>
+          <label style="margin-top:5px">Vertical</label>
+          <div class="rrow"><input type="range" id="rHeadDY" min="-300" max="300" value="0" oninput="ed('headDY',this.value);document.getElementById('vHeadDY').textContent=this.value+'px'"><span class="rval" id="vHeadDY">0px</span></div>
         </div>
       </div>
 
@@ -1979,6 +2001,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=86"></script>
+<script src="app.js?v=88"></script>
 </body>
 </html>
