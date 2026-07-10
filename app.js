@@ -3060,12 +3060,14 @@ function aplicarDisenoIA(arr,out,fmt,n){
   if(fmt==='reel'){
     const s0=arr[0]; SLIDES.length=0;
     SLIDES.push({tipo:'reel',fondo:'dark',eye:s0.eye||'Reel',head:s0.head,body:s0.body||'',items:[],cta:s0.cta||'Dale al play',ovOpacity:55});
-    ULTIMO_GUION = out.guion ? `🎬 GUION\n\n${out.guion}\n\n— CAPTION —\n${out.caption||''}\n\n${out.hashtags||''}` : ULTIMO_GUION;
+    ULTIMO_GUION = out.guion ? `🎬 GUION\n\n${out.guion}\n\n— CAPTION —\n${out.caption||''}\n\n${N().hashtags}` : ULTIMO_GUION;
     setModo('reel');
   }else if(fmt==='post'){ SLIDES.length=0; SLIDES.push(arr[0]); setModo('post'); }
   else{ SLIDES.length=0; arr.slice(0,n).forEach(s=>SLIDES.push(s)); setModo('carrusel'); }
   cur=0; buildThumbs(); show(0); scaleStage();
-  COPY_CTX={ angulo:'sistema', ai:{caption:out.caption,hook:SLIDES[0]?.head}, idea:(out.caption?{caption:out.caption,hashtags:out.hashtags,cta:SLIDES[SLIDES.length-1]?.cta}:null) };
+  // Los hashtags SIEMPRE son los del nicho activo (curados y en tema), nunca
+  // los que "invente" la IA — a veces mezclaba hashtags de otro nicho/negocio.
+  COPY_CTX={ angulo:'sistema', ai:{caption:out.caption,hook:SLIDES[0]?.head}, idea:(out.caption?{caption:out.caption,hashtags:N().hashtags,cta:SLIDES[SLIDES.length-1]?.cta}:null) };
   refrescarCopy();
 }
 
@@ -3179,7 +3181,7 @@ REGLAS: no solapes texto ilegible; deja márgenes (~6%); 1 titular grande por sl
     SLIDES.length=0; slides.forEach(s=>SLIDES.push(s));
     setModo(fmt==='carrusel'?'carrusel':fmt==='reel'?'reel':'post');
     cur=0; buildThumbs(); show(0); scaleStage();
-    COPY_CTX={angulo:'sistema',ai:null,idea:(out.caption?{caption:out.caption,hashtags:out.hashtags,cta:''}:null)};
+    COPY_CTX={angulo:'sistema',ai:null,idea:(out.caption?{caption:out.caption,hashtags:N().hashtags,cta:''}:null)};
     refrescarCopy();
     if(status){ status.style.color='#38B6FF'; status.textContent='✓ Diseño libre creado (experimental).'; }
     cerrarPromptModal(); abrirTabEditar();
