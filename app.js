@@ -303,6 +303,10 @@ function setNicho(v){
   _nicho = NICHOS_VALIDOS.includes(v) ? v : 'reformas';
   localStorage.setItem('rm_nicho', _nicho);
   const lbl = document.getElementById('nichoLbl'); if(lbl) lbl.textContent = N().nombre;
+  // Mantener sincronizados los DOS selectores de nicho (el de arriba y el del
+  // modal "Diseñar con IA"), se cambie desde cualquiera de los dos.
+  const selTop = document.getElementById('nichoSel'); if(selTop) selTop.value = _nicho;
+  const selPm  = document.getElementById('pmNicho');  if(selPm)  selPm.value  = _nicho;
   if(typeof actualizarAngulos==='function') actualizarAngulos();
   _filtroPilarNicho='';   // forzar repoblar el filtro de pilares del banco
   if(typeof renderBanco==='function') renderBanco();
@@ -2499,7 +2503,11 @@ async function generar(){
    DISEÑAR CON IA DESDE UN PROMPT MAESTRO (libertad total)
    ══════════════════════════════════════════════════════ */
 let _promptFmt='post';
-function abrirPromptModal(){ document.getElementById('promptModal').classList.add('on'); setTimeout(()=>document.getElementById('promptTxt')?.focus(),100); }
+function abrirPromptModal(){
+  document.getElementById('promptModal').classList.add('on');
+  const selPm=document.getElementById('pmNicho'); if(selPm) selPm.value=getNicho();
+  setTimeout(()=>document.getElementById('promptTxt')?.focus(),100);
+}
 function cerrarPromptModal(){ document.getElementById('promptModal').classList.remove('on'); }
 function setPromptFmt(f,btn){
   _promptFmt=f;
@@ -4540,8 +4548,39 @@ function show(i){
   document.getElementById('cBody').value=d.body||'';
   document.getElementById('cCta').value=d.cta||'';
   renderItemsList();
+  renderLibreTextosList();
   sincronizarPanelImg(d);
   sincronizarTextoSlide(d);
+}
+
+// El slide "libre" (modo experimental por coordenadas) no usa eye/head/body/
+// items/cta — usa d.elementos. Ocultamos los campos normales (no hacen nada
+// ahí) y mostramos en su lugar un textarea por cada texto/sticker suelto.
+function renderLibreTextosList(){
+  const d=SLIDES[cur];
+  const esLibre = d && d.tipo==='libre';
+  ['rowEyebrow','rowHeadline','rowCuerpo','rowResaltar','rowItems','rowCta'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display = esLibre ? 'none' : '';
+  });
+  const row=document.getElementById('rowLibreTextos');
+  if(row) row.style.display = esLibre ? '' : 'none';
+  const cont=document.getElementById('libreTextosList');
+  if(!cont) return;
+  if(!esLibre){ cont.innerHTML=''; return; }
+  const filas=(d.elementos||[]).map((e,i)=>({e,i})).filter(x=>x.e.t==='text'||x.e.t==='sticker');
+  cont.innerHTML = filas.map(({e,i},n)=>`
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <span style="font-size:8px;color:var(--UI-M)">${e.t==='sticker'?'🏷 Sticker':'📝 Texto'} ${n+1}</span>
+      <textarea rows="2" oninput="editLibreTexto(${i},this.value)" style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:6px 8px;border-radius:5px;font-size:11px;font-family:'Montserrat',sans-serif;resize:vertical">${e.texto||''}</textarea>
+    </div>`).join('') || '<div style="font-size:10px;color:var(--UI-M)">Este slide no tiene textos sueltos que editar.</div>';
+}
+function editLibreTexto(i,v){
+  if(!SLIDES.length) return;
+  const d=SLIDES[cur];
+  if(!d.elementos || !d.elementos[i]) return;
+  d.elementos[i].texto = v;
+  show(cur);
+  refreshThumb(cur);
 }
 function nav(dir){show(cur+dir)}
 

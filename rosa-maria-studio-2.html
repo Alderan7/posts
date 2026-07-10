@@ -1103,6 +1103,16 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       <button onclick="cerrarPromptModal()" class="resm-close">✕</button>
     </div>
     <div style="padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:10px;color:var(--UI-M);letter-spacing:.06em;text-transform:uppercase">Marca / nicho para este diseño</span>
+        <select id="pmNicho" onchange="setNicho(this.value)"
+          style="background:var(--UI-B);border:1px solid var(--UI-A);color:var(--UI-A);padding:4px 7px;border-radius:4px;font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer">
+          <option value="reformas">🏗 Reformas</option>
+          <option value="personal">👤 Marca Personal</option>
+          <option value="productividad">🗂 Productividad</option>
+          <option value="fiscalidad">📊 Fiscalidad</option>
+        </select>
+      </div>
       <textarea id="promptTxt" rows="5" placeholder="Ej: Un carrusel sobre los 3 errores de fiscalidad que cometen los autónomos y cómo evitarlos. Tono cercano y directo. Que termine invitando a escribirme."
         style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:12px;border-radius:8px;font-size:13px;font-family:'Montserrat',sans-serif;line-height:1.5;resize:vertical"></textarea>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -1678,19 +1688,19 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
             <option value="reloj">🕐 Reloj</option>
           </select>
         </div>
-        <div class="crow">
+        <div class="crow" id="rowEyebrow">
           <label>Eyebrow</label>
           <input type="text" id="cEye" oninput="ed('eye',this.value)">
         </div>
-        <div class="crow">
+        <div class="crow" id="rowHeadline">
           <label>Headline</label>
           <textarea id="cHead" rows="4" oninput="ed('head',this.value)"></textarea>
         </div>
-        <div class="crow">
+        <div class="crow" id="rowCuerpo">
           <label>Cuerpo</label>
           <textarea id="cBody" rows="3" oninput="ed('body',this.value)"></textarea>
         </div>
-        <div class="crow">
+        <div class="crow" id="rowResaltar">
           <label>Resaltar</label>
           <div style="display:flex;flex-direction:column;gap:4px">
             <button onclick="marcarAzul()" onmousedown="event.preventDefault()"
@@ -1752,9 +1762,14 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           </div>
           <div id="itemsList" style="display:flex;flex-direction:column;gap:4px"></div>
         </div>
-        <div class="crow">
+        <div class="crow" id="rowCta">
           <label>CTA</label>
           <input type="text" id="cCta" oninput="ed('cta',this.value)">
+        </div>
+        <div class="crow" id="rowLibreTextos" style="display:none">
+          <label>Textos (modo libre)</label>
+          <div style="font-size:8px;color:var(--UI-M);line-height:1.4;margin-bottom:6px">Este slide se compuso libremente por la IA. Edita aquí cada texto suelto — la posición y el tamaño de cada uno se ajustan luego con los controles de abajo.</div>
+          <div id="libreTextosList" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
       </div>
 
@@ -2020,6 +2035,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=91"></script>
+<script src="app.js?v=92"></script>
 </body>
 </html>
