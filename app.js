@@ -6463,7 +6463,7 @@ function renderCalendario(){
   if(!cal.length){ cont.innerHTML='<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:30px;line-height:1.6">No se pudo cargar el calendario.<br>Falta <b>datos-calendario.js</b> (ábrelo con iniciar.py).</div>'; return; }
   const TIPO_L2={nota:'📝 Nota',chat:'💬 Chat',versus:'⚔ Versus',frase:'❝ Frase',lista:'☰ Lista'};
   cont.innerHTML=cal.map((d,i)=>`
-    <div class="cal-card" onclick="usarDiaCalendario(${i})" title="Volcar este día al editor">
+    <div class="cal-card" data-i="${i}" onclick="usarDiaCalendario(${i})" onmouseenter="previewDia(${i})" title="Pasa el ratón para previsualizar · clic para usar">
       <div class="cal-top">
         <span class="cal-dia">DÍA ${d.n}</span>
         <div class="cal-badges"><span class="cal-b">${favEsc(d.formato)}</span><span class="cal-b">${TIPO_L2[d.slide&&d.slide.tipo]||favEsc((d.slide&&d.slide.tipo)||'')}</span></div>
@@ -6471,7 +6471,21 @@ function renderCalendario(){
       <div class="cal-gancho">${favEsc(((d.slide&&d.slide.head)||'').replace(/\n/g,' ')).slice(0,95)}</div>
       <div class="cal-pilar">${favEsc(d.pilar||'')}</div>
     </div>`).join('');
+  if(cal.length) previewDia(0);   // auto-previsualiza el primer día
 }
+let _calPrevIdx = -1;
+function previewDia(i){
+  const cal=window.RM_CALENDARIO||[];
+  const d=cal[i];
+  if(!d||!d.slide) return;
+  _calPrevIdx=i;
+  const esReel=(d.formato==='Reel'||d.formato==='Historia');
+  _previewEnBox(document.getElementById('calPrevBox'), d.slide, esReel?200:280, esReel);
+  const meta=document.getElementById('calPrevMeta');
+  if(meta) meta.innerHTML=`<b style="color:var(--UI-T)">Día ${d.n} · ${favEsc(d.formato)}</b><br>${favEsc(d.pilar||'')}${d.formato==='Carrusel'?' · carrusel completo':''}`;
+  document.querySelectorAll('#calGrid .cal-card').forEach(c=>c.classList.toggle('sel', +c.dataset.i===i));
+}
+function usarDiaSel(){ if(_calPrevIdx>=0) usarDiaCalendario(_calPrevIdx); else toast2('Pasa el ratón por un día primero'); }
 
 function usarDiaCalendario(i){
   const cal=window.RM_CALENDARIO||[];
@@ -6508,6 +6522,36 @@ const _PLN_TIPO={nota:'📝 Nota',chat:'💬 Chat',versus:'⚔ Versus',encuesta:
   busqueda:'🔍 Búsqueda',tweet:'🐦 Tweet',checklist:'✅ Checklist',factura:'🧾 Factura',
   frase:'❝ Frase',lista:'☰ Lista',numero:'# Número'};
 
+// Renderiza un slide (de plantilla o día del plan) escalado dentro de un box
+// de la anchura dada, para la vista previa a la derecha. No toca el editor:
+// guarda y restaura el `modo` global para que render() use la altura correcta.
+function _previewEnBox(box, slide, wPx=280, esReel=false){
+  if(!box || !slide) return;
+  const H = esReel ? 1920 : 1350;
+  const scale = wPx/1080;
+  const savedModo = modo;
+  modo = esReel ? 'reel' : 'carrusel';
+  let html='';
+  try{ html = render(JSON.parse(JSON.stringify(slide)), 0); }
+  catch(e){ html = '<div style="padding:40px;color:#999;font-family:sans-serif">No se pudo previsualizar</div>'; }
+  finally{ modo = savedModo; }
+  box.style.width  = wPx+'px';
+  box.style.height = Math.round(H*scale)+'px';
+  box.innerHTML = `<div style="position:absolute;top:0;left:0;width:1080px;height:${H}px;transform-origin:top left;transform:scale(${scale});pointer-events:none">${html}</div>`;
+}
+
+let _plnPrevIdx = -1;
+function previewPlantilla(i){
+  const pl=(window.RM_PLANTILLAS||[])[i];
+  if(!pl||!pl.slide) return;
+  _plnPrevIdx=i;
+  _previewEnBox(document.getElementById('plnPrevBox'), pl.slide, 280, false);
+  const meta=document.getElementById('plnPrevMeta');
+  if(meta) meta.innerHTML=`<b style="color:var(--UI-T)">${favEsc(pl.titulo||'')}</b><br>${favEsc(pl.tema==='General'?'Cualquier nicho':pl.tema)} · ${favEsc(TIPO_L[pl.slide.tipo]||pl.slide.tipo)}`;
+  document.querySelectorAll('#plnGrid .cal-card').forEach(c=>c.classList.toggle('sel', +c.dataset.i===i));
+}
+function usarPlantillaSel(){ if(_plnPrevIdx>=0) usarPlantilla(_plnPrevIdx); else toast2('Pasa el ratón por una plantilla primero'); }
+
 function abrirPlantillas(){ const m=document.getElementById('plnModal'); if(m){ m.classList.add('on'); renderPlantillas(); } }
 function cerrarPlantillas(){ document.getElementById('plnModal')?.classList.remove('on'); }
 function filtrarPlantillas(t){
@@ -6521,7 +6565,7 @@ function renderPlantillas(){
   if(!all.length){ cont.innerHTML='<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:30px;line-height:1.6">No se pudieron cargar las plantillas.<br>Falta <b>datos-plantillas.js</b> (ábrelo con iniciar.py).</div>'; return; }
   const items=all.map((p,i)=>({p,i})).filter(x=>_plnFiltro==='Todas' || x.p.tema===_plnFiltro);
   cont.innerHTML=items.map(({p,i})=>`
-    <div class="cal-card" onclick="usarPlantilla(${i})" title="Volcar esta plantilla al editor">
+    <div class="cal-card" data-i="${i}" onclick="usarPlantilla(${i})" onmouseenter="previewPlantilla(${i})" title="Pasa el ratón para previsualizar · clic para usar">
       <div class="cal-top">
         <span class="cal-dia">${favEsc(p.tema==='General'?'CUALQUIER NICHO':p.tema.toUpperCase())}</span>
         <div class="cal-badges"><span class="cal-b">${_PLN_TIPO[p.slide&&p.slide.tipo]||favEsc((p.slide&&p.slide.tipo)||'')}</span></div>
@@ -6529,6 +6573,7 @@ function renderPlantillas(){
       <div class="cal-gancho">${favEsc(((p.slide&&p.slide.head)||p.titulo||'').replace(/\n/g,' ')).slice(0,95)}</div>
       <div class="cal-pilar">${favEsc(p.titulo||'')}</div>
     </div>`).join('') || '<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:30px">Sin plantillas en esta temática.</div>';
+  if(items.length) previewPlantilla(items[0].i);   // auto-previsualiza la primera
 }
 function usarPlantilla(i){
   const pl=(window.RM_PLANTILLAS||[])[i];

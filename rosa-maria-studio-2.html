@@ -797,6 +797,15 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .cal-card .cal-b{font-size:8px;padding:2px 6px;border-radius:4px;background:var(--UI-B2);color:var(--UI-T);white-space:nowrap}
 .cal-card .cal-gancho{font-size:12px;color:var(--UI-T);font-weight:500;line-height:1.35}
 .cal-card .cal-pilar{font-size:8px;color:var(--UI-M);text-transform:uppercase;letter-spacing:.1em}
+.cal-card.sel{border-color:var(--UI-A);box-shadow:0 0 0 1px var(--UI-A)}
+/* Panel de vista previa a la derecha (Plantillas / Plan 30) */
+.prev-split{display:flex;gap:16px;align-items:flex-start}
+.prev-split .cal-grid{flex:1;min-width:0}
+.prev-aside{width:300px;flex-shrink:0;position:sticky;top:0;display:flex;flex-direction:column;gap:10px}
+.prev-aside .prev-head{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--UI-A);font-weight:700}
+.prev-frame{position:relative;overflow:hidden;border-radius:8px;border:1px solid var(--UI-B2);background:var(--UI-B);align-self:center}
+.prev-meta{font-size:10px;color:var(--UI-M);line-height:1.5;min-height:26px}
+@media(max-width:720px){ .prev-aside{display:none} }
 .fav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;align-content:start}
 .fav-card{border:1px solid var(--UI-B2);border-radius:9px;overflow:hidden;background:var(--UI-B);display:flex;flex-direction:column}
 .fav-thumb{cursor:pointer;position:relative;line-height:0}
@@ -1209,7 +1218,15 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       30 días de contenido ya redactado. <b style="color:var(--UI-A)">No necesita IA</b>: pulsa un día, se vuelca al editor listo para ajustar, descargar o guardar en ⭐ Diseños.
     </div>
     <div class="resm-body">
-      <div id="calGrid" class="cal-grid"></div>
+      <div class="prev-split">
+        <div id="calGrid" class="cal-grid"></div>
+        <aside class="prev-aside">
+          <div class="prev-head">Vista previa</div>
+          <div class="prev-frame" id="calPrevBox"></div>
+          <div class="prev-meta" id="calPrevMeta">Pasa el ratón por un día para verlo aquí.</div>
+          <button class="btn btn-out" style="width:100%" onclick="usarDiaSel()">Usar este día</button>
+        </aside>
+      </div>
     </div>
   </div>
 </div>
@@ -1231,7 +1248,15 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       <span style="margin-left:auto;font-size:9px;color:var(--UI-M)">Sin IA · se vuelca al editor</span>
     </div>
     <div class="resm-body">
-      <div id="plnGrid" class="cal-grid"></div>
+      <div class="prev-split">
+        <div id="plnGrid" class="cal-grid"></div>
+        <aside class="prev-aside">
+          <div class="prev-head">Vista previa</div>
+          <div class="prev-frame" id="plnPrevBox"></div>
+          <div class="prev-meta" id="plnPrevMeta">Pasa el ratón por una plantilla para verla aquí.</div>
+          <button class="btn btn-out" style="width:100%" onclick="usarPlantillaSel()">Usar esta plantilla</button>
+        </aside>
+      </div>
     </div>
   </div>
 </div>
@@ -2066,6 +2091,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=114"></script>
+<script src="app.js?v=115"></script>
 </body>
 </html>
