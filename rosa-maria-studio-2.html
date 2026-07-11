@@ -806,6 +806,21 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .prev-frame{position:relative;overflow:hidden;border-radius:8px;border:1px solid var(--UI-B2);background:var(--UI-B);align-self:center}
 .prev-meta{font-size:10px;color:var(--UI-M);line-height:1.5;min-height:26px}
 @media(max-width:720px){ .prev-aside{display:none} }
+/* Barra de "retomar trabajo sin guardar" (autoguardado) */
+#autosaveBar{
+  position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:3000;
+  display:flex;align-items:center;gap:12px;max-width:min(680px,94vw);
+  background:var(--UI-P);border:1px solid var(--UI-A);border-radius:10px;
+  padding:11px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);
+  font-family:'Montserrat',sans-serif;font-size:12px;color:var(--UI-T);line-height:1.4;
+}
+#autosaveBar button{
+  border:1px solid var(--UI-B2);background:transparent;color:var(--UI-T);
+  border-radius:6px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;
+  font-family:'Montserrat',sans-serif;white-space:nowrap;flex-shrink:0;
+}
+#autosaveBar #asRestore{background:var(--UI-A);border-color:var(--UI-A);color:#fff}
+#autosaveBar button:hover{filter:brightness(1.1)}
 .fav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;align-content:start}
 .fav-card{border:1px solid var(--UI-B2);border-radius:9px;overflow:hidden;background:var(--UI-B);display:flex;flex-direction:column}
 .fav-thumb{cursor:pointer;position:relative;line-height:0}
@@ -2091,6 +2106,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=115"></script>
+<script src="app.js?v=116"></script>
 </body>
 </html>

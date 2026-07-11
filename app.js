@@ -6126,6 +6126,63 @@ async function expPPTX(){
 /* ═══════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   AUTOGUARDADO del trabajo en curso (red de seguridad)
+   Si recargas o se cierra la pestaña, no pierdes el carrusel: al volver a
+   abrir te ofrece retomarlo. Solo guarda TEXTO/estructura (los ids de foto
+   pueden no resolver tras recargar; se re-asignan a mano si hace falta).
+   ═══════════════════════════════════════════ */
+const RM_AUTOSAVE_KEY='rm_autosave';
+let _autosaveBase='';   // firma del mazo de arranque: no guardamos si no lo tocas
+function _firmaTrabajo(){
+  try{ return JSON.stringify({modo, nicho:_nicho, slides:SLIDES}); }catch(e){ return ''; }
+}
+function autosaveGuardar(){
+  if(!SLIDES.length) return;
+  const firma=_firmaTrabajo();
+  if(firma===_autosaveBase) return;          // sigue siendo el mazo inicial: nada que guardar
+  try{ localStorage.setItem(RM_AUTOSAVE_KEY, JSON.stringify({ ts:Date.now(), modo, nicho:_nicho, cur, slides:SLIDES })); }
+  catch(e){ /* quota u otro: ignorar, es solo una red de seguridad */ }
+}
+function autosaveIniciar(){
+  _autosaveBase=_firmaTrabajo();
+  setInterval(autosaveGuardar, 2500);
+  window.addEventListener('beforeunload', autosaveGuardar);
+}
+function _haceCuanto(ts){
+  const s=Math.max(0,(Date.now()-ts)/1000);
+  if(s<90) return 'hace un momento';
+  if(s<3600) return 'hace '+Math.round(s/60)+' min';
+  if(s<86400) return 'hace '+Math.round(s/3600)+' h';
+  return 'hace '+Math.round(s/86400)+' días';
+}
+function autosaveRestaurar(st){
+  if(st.nicho && NICHOS_VALIDOS.includes(st.nicho)){ setNicho(st.nicho); const ns=document.getElementById('nichoSel'); if(ns) ns.value=st.nicho; }
+  SLIDES.length=0; st.slides.forEach(s=>SLIDES.push(s));
+  setModo(st.modo||'carrusel');
+  cur=Math.max(0, Math.min(st.cur||0, SLIDES.length-1));
+  buildThumbs(); show(cur); scaleStage();
+  if(typeof abrirTabEditar==='function') abrirTabEditar();
+  toast2('✓ Trabajo restaurado');
+}
+function autosaveOfrecerRestaurar(){
+  let raw; try{ raw=localStorage.getItem(RM_AUTOSAVE_KEY); }catch(e){ return; }
+  if(!raw) return;
+  let st; try{ st=JSON.parse(raw); }catch(e){ try{localStorage.removeItem(RM_AUTOSAVE_KEY);}catch(_){}; return; }
+  if(!st||!Array.isArray(st.slides)||!st.slides.length) return;
+  if(document.getElementById('autosaveBar')) return;
+  const n=st.slides.length;
+  const bar=document.createElement('div');
+  bar.id='autosaveBar';
+  bar.innerHTML=`<span>💾 Tenías un trabajo sin guardar (${n} slide${n>1?'s':''}, ${_haceCuanto(st.ts)}). ¿Retomarlo?</span>`;
+  const bR=document.createElement('button'); bR.id='asRestore'; bR.textContent='Retomar';
+  const bD=document.createElement('button'); bD.id='asDiscard'; bD.textContent='Empezar de cero';
+  bar.appendChild(bR); bar.appendChild(bD);
+  document.body.appendChild(bar);
+  bR.onclick=()=>{ autosaveRestaurar(st); bar.remove(); };
+  bD.onclick=()=>{ try{localStorage.removeItem(RM_AUTOSAVE_KEY);}catch(e){}; bar.remove(); };
+}
+
 document.addEventListener('DOMContentLoaded',async()=>{
   const ns=document.getElementById('nichoSel'); if(ns) ns.value=getNicho();
   actualizarAngulos();
@@ -6158,6 +6215,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
   actualizarTagsPexels(angulo);
   renderBanco();
   window.addEventListener('resize',scaleStage);
+  autosaveIniciar();            // línea base = mazo de arranque
+  autosaveOfrecerRestaurar();   // ¿había trabajo sin guardar de antes?
 
   // Pre-cargar foto de perfil profesional en la biblioteca
   precargarImagen('FOTO PERFIL PROFESIONAL.png', 'Rosa María — Foto perfil');
