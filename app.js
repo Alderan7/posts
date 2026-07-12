@@ -6450,7 +6450,7 @@ document.addEventListener('keydown',e=>{
   // o si hay una ventana abierta.
   const t = e.target;
   if(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on, #plnModal.on, #calModal.on')) return;
+  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on, #plnModal.on, #calModal.on, #fmtModal.on')) return;
   const k=(e.key||'').toLowerCase();
   if((e.ctrlKey||e.metaKey) && k==='z'){ e.preventDefault(); e.shiftKey?rehacer():deshacer(); return; }
   if((e.ctrlKey||e.metaKey) && k==='y'){ e.preventDefault(); rehacer(); return; }
@@ -6669,6 +6669,108 @@ function previewPlantilla(i){
   document.querySelectorAll('#plnGrid .cal-card').forEach(c=>c.classList.toggle('sel', +c.dataset.i===i));
 }
 function usarPlantillaSel(){ if(_plnPrevIdx>=0) usarPlantilla(_plnPrevIdx); else toast2('Pasa el ratón por una plantilla primero'); }
+
+/* ═══════════════════════════════════════════
+   🎨 GALERÍA DE FORMATOS — ver TODOS los tipos de slide de un vistazo
+   Cada tipo se pinta con un mini-ejemplo (reusa _previewEnBox); clic aplica ese
+   formato al slide actual. Los grupos se leen del propio desplegable #cTipo para
+   no duplicar la lista.
+   ═══════════════════════════════════════════ */
+function _ejemploDe(tipo){
+  const base={tipo, eye:'EJEMPLO', fondo:'dark', head:'Tu mensaje\ncon fuerza', body:'Un apoyo breve que da contexto.', cta:'Escríbeme', items:[]};
+  const M={
+    lista:{head:'3 claves que cambian todo',items:['Primera *clave* que aporta','Segunda que suma','Tercera que lo remata']},
+    claves:{head:'Lo esencial',items:['Idea uno','Idea dos','Idea tres']},
+    stats:{head:'Los números',items:['+240%::crecimiento','15::clientes','48h::respuesta']},
+    proceso:{head:'Cómo trabajo',items:['Diagnóstico:Miro tu caso a fondo.','Plan:Diseño la estrategia.','Acción:Lo ponemos en marcha.']},
+    servicio:{head:'Lo que incluye',items:['Estrategia a medida','Seguimiento real','Informes claros']},
+    debate:{head:'¿Qué prefieres?',items:['Rápido y directo','Más elaborado']},
+    versus:{head:'Mito vs realidad',items:['Lo que crees::Es complicado','La realidad::Es más simple de lo que parece']},
+    encuesta:{head:'¿Tú qué harías?',items:['Sí::68','No::32']},
+    busqueda:{head:'cómo hacer crecer mi negocio',items:['sin gastar de más','paso a paso','con poco tiempo']},
+    checklist:{head:'¿Cuántas cumples?',items:['Tienes un plan claro','no:Publicas sin estrategia','Mides tus resultados']},
+    factura:{head:'LO QUE CUESTA NO TENER SISTEMA',items:['Tiempo perdido::muchas horas','Oportunidades::varias'],body:'TOTAL::crecimiento frenado'},
+    chat:{head:'Mira este mensaje 👇',body:'Cliente',items:['cliente: ¿Me puedes ayudar?','yo: Claro, justo esto hago','cliente: ¡Perfecto!']},
+    nota:{head:'Lo que nadie te dice',body:'Llevo años viendo negocios por dentro.\n\nY esto marca la diferencia.'},
+    tweet:{body:'Rosa María::@rosamariamedia',head:'La mejor estrategia no sirve si nadie la ve.'},
+    indice:{head:'Lo que verás',items:['El problema','La causa real','La solución']},
+    numero:{head:'+240%',body:'de crecimiento en 6 meses',items:['+240%','Con estrategia, no suerte']},
+    pills:{head:'Trabajo contigo en',items:['Estrategia','Marketing','Datos','IA']},
+    wrapped:{head:'Tu año en números',items:['Clientes::+40','Horas ahorradas::120','Proyectos::15']},
+    dashboard:{head:'Resultados',body:'+240%',items:['Antes::100','Después::240']},
+    brutal:{head:'MENOS\nRUIDO\nMÁS\nFOCO'},
+    terminal:{head:'negocio --activar',items:['ok: estrategia lista','ok: agenda llena','generando resultados...'],body:'Todo en marcha.'},
+    neon:{head:'Brilla diferente',body:'Tu marca, imposible de ignorar.'},
+    glitch:{head:'Rompe el molde',body:'Lo de siempre ya no funciona.'},
+    insignia:{head:'7',body:'AÑOS',items:['Ayudando a crecer negocios reales']},
+    icononum:{head:'3',body:'pasos para empezar hoy',items:['Da el primer paso'],icono:'flecha'},
+    relato3:{head:'',items:['Antes ibas a ciegas.','Un día cambió algo.','Hoy tienes el control.']},
+    cuadrante:{head:'4 pilares',body:'CLAVE',items:['Uno::algo breve','Dos::algo breve','Tres::algo breve','Cuatro::algo breve']},
+    glosario:{head:'Términos clave',items:['ROI::lo que recuperas','KPI::lo que mides','LEAD::contacto interesado']},
+    comparativa:{head:'Sí y no',items:['Define tu paleta','Cuida el orden','no:Copiar plantillas','no:Cambiar de estilo']},
+    bloques:{head:'El crecimiento no es suerte.\nEs estrategia.',body:'esto se lo digo a cada cliente'},
+    ba:{head:'Antes y después',items:['Antes: caos y prisas','Después: orden y control']},
+    hook:{head:'¿Y si el problema\nno es lo que crees?'},
+    frase:{fondo:'blue',head:'Lo que no se ve,\nno se vende.',body:'Ser bueno es solo el mínimo.'},
+    cta:{fondo:'blue',head:'¿Hablamos?',body:'Te ayudo a dar el siguiente paso.'},
+    post:{head:'Una idea completa',body:'que se entiende sola, sin desliza.'},
+    foto:{head:'Tu mensaje sobre foto',img:'x'},
+    fototxt:{head:'Foto + texto',body:'mitad imagen, mitad mensaje',img:'x'},
+    autoridad:{head:'Tu autoridad',body:'quién eres y por qué tú',img:'x'},
+    citafoto:{head:'Una cita sobre foto',img:'x'},
+    revista:{eye:'PORTADA',head:'Titular de revista',img:'x'},
+    bafoto:{head:'Antes / después',items:['Antes','Después'],img:'x'},
+    manomovil:{head:'Míralo en el móvil',img:'x'},
+    fotominimal:{head:'Menos es más',img:'x'},
+    geofoto:{head:'La estrategia\nque se ve',img:'x'},
+    postit:{eye:'Detrás de cámaras',head:'Así trabajo de verdad',items:['sin postureo','café obligatorio ☕'],img:'x'},
+  };
+  return Object.assign(base, M[tipo]||{});
+}
+const _TIPOS_FOTO_GAL=['foto','fototxt','autoridad','citafoto','revista','bafoto','manomovil','fotominimal','geofoto','postit'];
+function abrirFormatos(){
+  const m=document.getElementById('fmtModal'); if(!m) return;
+  m.classList.add('on');
+  const cont=document.getElementById('fmtGrid'); const sel=document.getElementById('cTipo');
+  if(!cont||!sel) return;
+  const grupos=[];
+  const directos=[...sel.children].filter(x=>x.tagName==='OPTION');
+  if(directos.length) grupos.push({label:'Básicos', opts:directos});
+  [...sel.querySelectorAll('optgroup')].forEach(og=>grupos.push({label:(og.label||'').replace(/[─\s]+/g,' ').trim(), opts:[...og.querySelectorAll('option')]}));
+  cont.innerHTML=grupos.map(g=>`
+    <div class="fmt-group">
+      <div class="fmt-group-h">${favEsc(g.label)}</div>
+      <div class="fmt-cards">
+        ${g.opts.map(o=>`<div class="fmt-card" onclick="aplicarFormato('${o.value}')" title="Aplicar este formato">
+          <div class="fmt-prev" id="fmtP_${o.value}"></div>
+          <div class="fmt-name">${favEsc(o.textContent)}</div>
+        </div>`).join('')}
+      </div>
+    </div>`).join('');
+  // pintar cada mini-ejemplo (foto de perfil en los tipos con foto, si existe)
+  const preId=(MEDIA.find(x=>x.pre)||{}).id;
+  grupos.forEach(g=>g.opts.forEach(o=>{
+    const ej=_ejemploDe(o.value);
+    if(_TIPOS_FOTO_GAL.includes(o.value) && preId) ej.imgFondo=preId;
+    _previewEnBox(document.getElementById('fmtP_'+o.value), ej, 150, false);
+  }));
+}
+function cerrarFormatos(){ document.getElementById('fmtModal')?.classList.remove('on'); }
+function aplicarFormato(tipo){
+  if(!SLIDES.length){ toast2('Genera algo primero'); return; }
+  const d=SLIDES[cur];
+  d.tipo=tipo;
+  // Si el formato necesita items y el slide no los tiene, siembra un ejemplo
+  // para que no salga en blanco (podrás editarlo a tu gusto).
+  if(TIPOS_NECESITAN_ITEMS.includes(tipo) && !(d.items&&d.items.length)){
+    const ej=_ejemploDe(tipo); d.items=(ej.items||[]).slice();
+    if(!String(d.head||'').trim()) d.head=ej.head||'';
+  }
+  const sel=document.getElementById('cTipo'); if(sel) sel.value=tipo;
+  cerrarFormatos(); show(cur); refreshThumb(cur);
+  if(typeof abrirTabEditar==='function') abrirTabEditar();
+  toast2('✓ Formato aplicado — edítalo a tu gusto');
+}
 
 function abrirPlantillas(){ const m=document.getElementById('plnModal'); if(m){ m.classList.add('on'); renderPlantillas(); } }
 function cerrarPlantillas(){ document.getElementById('plnModal')?.classList.remove('on'); }

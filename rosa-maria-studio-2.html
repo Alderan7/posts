@@ -783,8 +783,16 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 #resModal .resm-grid .mlib-item,#preModal .resm-grid .mlib-item{aspect-ratio:9/16}
 #resModal .mlib-use,#preModal .mlib-use{font-size:13px}
 /* Modal favoritos / diseños guardados */
-#favModal,#calModal,#plnModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
-#favModal.on,#calModal.on,#plnModal.on{display:flex}
+#favModal,#calModal,#plnModal,#fmtModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
+#favModal.on,#calModal.on,#plnModal.on,#fmtModal.on{display:flex}
+/* Galería de formatos */
+#fmtGrid{display:flex;flex-direction:column;gap:18px}
+.fmt-group-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--UI-A);font-weight:700;margin-bottom:9px}
+.fmt-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.fmt-card{cursor:pointer;border:1px solid var(--UI-B2);border-radius:8px;overflow:hidden;background:var(--UI-B);transition:border-color .15s,transform .1s}
+.fmt-card:hover{border-color:var(--UI-A);transform:translateY(-2px)}
+.fmt-prev{position:relative;overflow:hidden;background:#111;display:block}
+.fmt-name{font-size:10px;color:var(--UI-T);padding:7px 8px;text-align:center;font-weight:500;line-height:1.3}
 .pln-tab{border:1px solid var(--UI-B2);background:transparent;color:var(--UI-M);border-radius:20px;padding:5px 14px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif}
 .pln-tab:hover{border-color:var(--UI-A);color:var(--UI-A)}
 .pln-tab.on{background:var(--UI-A);border-color:var(--UI-A);color:#fff}
@@ -1246,6 +1254,22 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
   </div>
 </div>
 
+<!-- MODAL GALERÍA DE FORMATOS — ver todos los tipos con un ejemplo -->
+<div id="fmtModal" onclick="if(event.target===this)cerrarFormatos()">
+  <div class="resm-box" style="width:min(960px,95vw);height:auto;max-height:90vh">
+    <div class="resm-head">
+      <span>🎨 Formatos — elige viendo un ejemplo de cada uno</span>
+      <button onclick="cerrarFormatos()" class="resm-close">✕</button>
+    </div>
+    <div style="padding:10px 18px;border-bottom:1px solid var(--UI-B);flex-shrink:0;font-size:10px;color:var(--UI-M);line-height:1.5">
+      Haz clic en un formato para aplicarlo al slide actual. Luego lo editas con tu texto y tus fotos.
+    </div>
+    <div class="resm-body">
+      <div id="fmtGrid"></div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PLANTILLAS VIRALES — 25 por temática, sin IA -->
 <div id="plnModal" onclick="if(event.target===this)cerrarPlantillas()">
   <div class="resm-box" style="width:min(920px,95vw);height:auto;max-height:90vh">
@@ -1600,7 +1624,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         </div>
         <div class="crow">
           <label>Tipo</label>
-          <select id="cTipo" onchange="ed('tipo',this.value)">
+          <div style="display:flex;gap:6px;flex:1;min-width:0">
+          <select id="cTipo" onchange="ed('tipo',this.value)" style="flex:1;min-width:0">
             <option value="hook">Hook</option>
             <option value="frase">Frase / Cita</option>
             <option value="ba">Before / After (texto)</option>
@@ -1647,6 +1672,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
               <option value="insignia">Insignia de premios (laurel)</option>
             </optgroup>
           </select>
+          <button class="btn btn-gh" onclick="abrirFormatos()" title="Ver todos los formatos con un ejemplo de cada uno" style="padding:3px 9px;font-size:11px;flex-shrink:0">▦</button>
+          </div>
         </div>
         <div class="crow">
           <label>Fondo</label>
@@ -2108,6 +2135,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=117"></script>
+<script src="app.js?v=118"></script>
 </body>
 </html>
