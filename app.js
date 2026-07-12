@@ -5072,6 +5072,59 @@ function show(i){
   renderLibreTextosList();
   sincronizarPanelImg(d);
   sincronizarTextoSlide(d);
+  historiaMarcar();
+}
+
+/* ═══════════════════════════════════════════
+   DESHACER / REHACER (Ctrl+Z / Ctrl+Shift+Z)
+   Sin hooks por todos lados: como show() se llama tras cada cambio de
+   contenido, comparamos el JSON de SLIDES con el último visto; si cambió,
+   apilamos el estado ANTERIOR. La navegación entre slides no cambia el
+   contenido, así que no genera pasos de deshacer.
+   ═══════════════════════════════════════════ */
+let _undoStack=[], _redoStack=[], _undoLast='', _histT=null;
+function _snap(){ try{ return JSON.stringify(SLIDES); }catch(e){ return ''; } }
+function historiaInit(){ _undoLast=_snap(); _undoStack=[]; _redoStack=[]; }
+function historiaMarcar(){                    // debounced ~500ms
+  clearTimeout(_histT);
+  _histT=setTimeout(()=>{
+    const ahora=_snap();
+    if(ahora===_undoLast) return;             // solo navegación / sin cambio real
+    if(_undoLast){ _undoStack.push(_undoLast); if(_undoStack.length>60) _undoStack.shift(); }
+    _undoLast=ahora;
+    _redoStack=[];                            // una edición nueva invalida el rehacer
+  }, 500);
+}
+function _restaurarSnap(json){
+  const arr=JSON.parse(json);
+  SLIDES.length=0; arr.forEach(s=>SLIDES.push(s));
+  _undoLast=json;                             // que historiaMarcar no lo re-grabe
+  cur=Math.max(0, Math.min(cur, SLIDES.length-1));
+  buildThumbs(); show(cur);
+}
+function deshacer(){
+  clearTimeout(_histT);
+  if(_snap()!==_undoLast && _undoLast){ _undoStack.push(_undoLast); _undoLast=_snap(); }  // captura el cambio aún pendiente
+  if(!_undoStack.length){ toast2('Nada que deshacer'); return; }
+  _redoStack.push(_snap());
+  _restaurarSnap(_undoStack.pop());
+  toast2('↶ Deshecho');
+}
+function rehacer(){
+  clearTimeout(_histT);
+  if(!_redoStack.length){ toast2('Nada que rehacer'); return; }
+  _undoStack.push(_snap());
+  _restaurarSnap(_redoStack.pop());
+  toast2('↷ Rehecho');
+}
+
+// Duplicar el slide actual: copia profunda insertada justo detrás.
+function duplicarSlide(){
+  if(!SLIDES.length){ toast2('Genera algo primero'); return; }
+  if(modo!=='carrusel'){ toast2('Duplicar es para carruseles'); return; }
+  SLIDES.splice(cur+1, 0, JSON.parse(JSON.stringify(SLIDES[cur])));
+  buildThumbs(); show(cur+1);
+  toast2(`✓ Slide duplicado · ${SLIDES.length} en total`);
 }
 
 // El slide "libre" (modo experimental por coordenadas) no usa eye/head/body/
@@ -6215,6 +6268,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   actualizarTagsPexels(angulo);
   renderBanco();
   window.addEventListener('resize',scaleStage);
+  historiaInit();               // punto de partida para deshacer/rehacer
   autosaveIniciar();            // línea base = mazo de arranque
   autosaveOfrecerRestaurar();   // ¿había trabajo sin guardar de antes?
 
@@ -6392,10 +6446,15 @@ async function precargarCarpeta(carpeta){
   return añadidas;
 }
 document.addEventListener('keydown',e=>{
-  // No navegar entre slides si estás escribiendo o hay una ventana abierta
+  // No navegar/deshacer si estás escribiendo (deja el deshacer NATIVO del texto)
+  // o si hay una ventana abierta.
   const t = e.target;
   if(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on')) return;
+  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on, #plnModal.on, #calModal.on')) return;
+  const k=(e.key||'').toLowerCase();
+  if((e.ctrlKey||e.metaKey) && k==='z'){ e.preventDefault(); e.shiftKey?rehacer():deshacer(); return; }
+  if((e.ctrlKey||e.metaKey) && k==='y'){ e.preventDefault(); rehacer(); return; }
+  if(e.ctrlKey||e.metaKey) return;              // no capturar otros atajos del sistema
   if(e.key==='ArrowRight'||e.key==='ArrowDown') nav(1);
   if(e.key==='ArrowLeft' ||e.key==='ArrowUp')   nav(-1);
 });

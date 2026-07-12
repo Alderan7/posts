@@ -1571,6 +1571,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       <button class="nbtn" id="bNext" onclick="nav(1)">Sig →</button>
       <button class="nbtn" id="bUp"   onclick="moverSlide(-1)" title="Mover slide arriba">↑</button>
       <button class="nbtn" id="bDown" onclick="moverSlide(1)"  title="Mover slide abajo">↓</button>
+      <button class="nbtn" id="bDup"  onclick="duplicarSlide()" title="Duplicar este slide">⧉</button>
+      <button class="nbtn" id="bUndo" onclick="deshacer()" title="Deshacer (Ctrl+Z)">↶</button>
     </div>
   </div>
 
@@ -2106,6 +2108,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=116"></script>
+<script src="app.js?v=117"></script>
 </body>
 </html>
