@@ -63,6 +63,49 @@ REEL_JOBS = {}
 REEL_LOCK = threading.Lock()
 
 
+def _limpiar_salida(mantener=8):
+    """Borra reels antiguos de reel-video/salida (deja los `mantener` más
+    recientes) y los ficheros de voz temporales viejos, para que la carpeta no
+    se llene. Nunca toca archivos modificados en los últimos 2 min (por si hay
+    un montaje en curso)."""
+    import time
+    try:
+        base = os.path.dirname(os.path.abspath(__file__))
+        sal = os.path.join(base, "reel-video", "salida")
+        if not os.path.isdir(sal):
+            return
+        ahora = time.time()
+        reels = []
+        for nombre in os.listdir(sal):
+            ruta = os.path.join(sal, nombre)
+            if not os.path.isfile(ruta):
+                continue
+            if nombre.startswith("_voz_grabada_"):        # temporales de voz
+                try:
+                    if ahora - os.path.getmtime(ruta) > 1800:   # > 30 min
+                        os.remove(ruta)
+                except OSError:
+                    pass
+                continue
+            if nombre.lower().endswith(".mp4"):
+                try:
+                    reels.append((os.path.getmtime(ruta), ruta))
+                except OSError:
+                    pass
+        reels.sort(reverse=True)                          # más nuevos primero
+        borrados = 0
+        for mtime, ruta in reels[mantener:]:              # todo lo que sobra
+            try:
+                if ahora - mtime > 120:                   # no tocar montajes recientes
+                    os.remove(ruta); borrados += 1
+            except OSError:
+                pass
+        if borrados:
+            print("  [reel] limpieza: %d reel(s) antiguo(s) borrado(s)" % borrados, flush=True)
+    except Exception as e:
+        print("  [reel] limpieza de salida falló:", e, flush=True)
+
+
 def _trabajo_reel(job, data):
     """Genera el reel en un hilo y deja el resultado en REEL_JOBS[job]."""
     try:
@@ -70,6 +113,7 @@ def _trabajo_reel(job, data):
         with REEL_LOCK:
             REEL_JOBS[job] = {"estado": "listo", "archivo": os.path.basename(ruta)}
         print("  [reel] %s listo: %s" % (job, os.path.basename(ruta)), flush=True)
+        _limpiar_salida()          # deja solo los reels recientes
     except Exception as e:
         import traceback; traceback.print_exc()
         with REEL_LOCK:
@@ -184,6 +228,8 @@ def generar_reel_desde_data(data):
 def main():
     # Servir siempre desde la carpeta de este archivo
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+    _limpiar_salida()   # de paso, limpia reels viejos al arrancar
 
     if not os.path.exists(ARCHIVO):
         print(f"[!] No encuentro {ARCHIVO} en esta carpeta.")

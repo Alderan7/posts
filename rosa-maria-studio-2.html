@@ -1313,7 +1313,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         <!-- Columna izquierda: tema + guion -->
         <div class="reel-col">
           <div class="reel-paso">1 · Tema del reel</div>
-          <textarea id="reelPrompt" rows="3" placeholder="Ej: los 3 errores al reformar una cocina y cómo evitarlos"></textarea>
+          <textarea id="reelPrompt" rows="3" oninput="guardarReelEstado()" placeholder="Ej: los 3 errores al reformar una cocina y cómo evitarlos"></textarea>
 
           <div style="display:flex;align-items:center;gap:8px;margin-top:7px">
             <label style="font-size:10px;color:var(--UI-M);white-space:nowrap">Longitud</label>
@@ -1391,7 +1391,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 
           <div class="reel-paso" style="margin-top:14px">5 · Subtítulos</div>
           <label style="font-size:11px;color:var(--UI-T);display:flex;align-items:center;gap:6px;cursor:pointer" title="Quema el guion como subtítulos sincronizados con la voz">
-            <input type="checkbox" id="reelSubs" checked style="accent-color:var(--UI-A)">💬 subtítulos sincronizados
+            <input type="checkbox" id="reelSubs" checked onchange="guardarReelEstado()" style="accent-color:var(--UI-A)">💬 subtítulos sincronizados
           </label>
           <div style="font-size:9px;color:var(--UI-M);margin-top:4px;line-height:1.5">La mayoría ve los reels sin sonido.</div>
 
@@ -2135,6 +2135,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=118"></script>
+<script src="app.js?v=119"></script>
 </body>
 </html>

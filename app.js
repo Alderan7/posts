@@ -6991,6 +6991,7 @@ function pintarClipsReel(){
   const t = document.getElementById('reelClipsTotal');
   if(t) t.textContent = `Suma: ${total.toFixed(1)}s · con voz, el reel dura lo que la voz y estas duraciones se reparten en proporción.`;
   if(typeof pintarTimeline === 'function') pintarTimeline();
+  guardarReelEstado();
 }
 
 function reelSt(color, txt){
@@ -7004,6 +7005,30 @@ const PALABRAS_REEL_DEF = 100;
 const PALABRAS_POR_SEG = 2.5;
 function getPalabrasReel(){ return parseInt(localStorage.getItem('rm_reel_palabras')) || PALABRAS_REEL_DEF; }
 function guardarPalabrasReel(v){ localStorage.setItem('rm_reel_palabras', String(parseInt(v)||PALABRAS_REEL_DEF)); }
+
+/* Recordar TODO el montaje del reel entre recargas (si el montaje falla o
+   recargas, no vuelves a empezar de cero). Los clips guardan URLs de Pexels y
+   números → persistibles; NO se guarda la voz grabada (blob temporal). */
+function guardarReelEstado(){
+  try{ localStorage.setItem('rm_reel_estado', JSON.stringify({
+    prompt: document.getElementById('reelPrompt')?.value || '',
+    guion:  document.getElementById('reelGuion')?.value  || '',
+    hook: _reelIA.hook, sub: _reelIA.sub, cta: _reelIA.cta, keywords: _reelIA.keywords,
+    clips: _reelClips,
+    vozModo: document.getElementById('reelVozModo')?.value || 'ia',
+    subs: !!document.getElementById('reelSubs')?.checked
+  })); }catch(e){ /* quota/otro: es solo comodidad */ }
+}
+function restaurarReelEstado(){
+  let st; try{ st=JSON.parse(localStorage.getItem('rm_reel_estado')||'null'); }catch(e){ return; }
+  if(!st) return;
+  const P=document.getElementById('reelPrompt'); if(P && st.prompt && !P.value) P.value=st.prompt;
+  const G=document.getElementById('reelGuion');  if(G && st.guion  && !G.value) G.value=st.guion;
+  if(st.hook||st.sub||st.cta){ _reelIA.hook=st.hook||''; _reelIA.sub=st.sub||''; _reelIA.cta=st.cta||''; _reelIA.keywords=Array.isArray(st.keywords)?st.keywords:[]; }
+  if(Array.isArray(st.clips) && st.clips.length && !_reelClips.length) _reelClips = st.clips;
+  const VM=document.getElementById('reelVozModo'); if(VM && st.vozModo) VM.value=st.vozModo;
+  const S=document.getElementById('reelSubs');     if(S && typeof st.subs==='boolean') S.checked=st.subs;
+}
 function nPalabras(t){ return (String(t||'').trim().match(/\S+/g)||[]).length; }
 function segundosATexto(s){
   s = Math.round(s);
@@ -7017,6 +7042,7 @@ function contarPalabrasGuion(){
   const seg = n / PALABRAS_POR_SEG;
   el.innerHTML = `${n} palabras · el reel durará ~<b style="color:var(--UI-T)">${segundosATexto(seg)}</b>`
     + (seg > 178 ? ' <span style="color:#ff9f43">— se cortará a los 3 min (máximo de Instagram)</span>' : '');
+  guardarReelEstado();
 }
 
 /* ═══════════════════════════════════════════
@@ -7224,6 +7250,7 @@ function abrirReelModal(){
   const ps = document.getElementById('reelPalabras'); if(ps) ps.value = String(getPalabrasReel());
   const trs = document.getElementById('reelTransicion'); if(trs) trs.value = getTransicionReel();
   const som = document.getElementById('reelSombra'); if(som){ som.value = getSombraReel(); const sv=document.getElementById('reelSombraVal'); if(sv) sv.textContent = getSombraReel()+'%'; }
+  restaurarReelEstado();          // recupera tema/guion/hook-sub-cta/clips/voz de la última vez
   cambiarModoVoz();
   pintarClipsReel();
   contarPalabrasGuion();
@@ -7246,6 +7273,7 @@ function guardarTextosReel(){
   _reelIA.hook = (document.getElementById('reelHook')?.value||'').trim();
   _reelIA.sub  = (document.getElementById('reelSub')?.value||'').trim();
   _reelIA.cta  = (document.getElementById('reelCtaTxt')?.value||'').trim();
+  guardarReelEstado();
 }
 
 // Pide el permiso del micrófono al abrir "Crear reel" (una vez aceptado, el
@@ -7357,6 +7385,7 @@ function cambiarModoVoz(){
   const grab = document.getElementById('reelGrabWrap');
   if(sel)  sel.style.display  = (m==='ia')  ? '' : 'none';
   if(grab) grab.style.display = (m==='mia') ? '' : 'none';
+  guardarReelEstado();
 }
 
 function blobADataURL(blob){
