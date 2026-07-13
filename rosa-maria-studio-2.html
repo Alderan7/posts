@@ -786,8 +786,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 #resModal .resm-grid .mlib-item,#preModal .resm-grid .mlib-item{aspect-ratio:9/16}
 #resModal .mlib-use,#preModal .mlib-use{font-size:13px}
 /* Modal favoritos / diseños guardados */
-#favModal,#calModal,#plnModal,#fmtModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
-#favModal.on,#calModal.on,#plnModal.on,#fmtModal.on{display:flex}
+#favModal,#calModal,#plnModal,#fmtModal,#gridModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
+#favModal.on,#calModal.on,#plnModal.on,#fmtModal.on,#gridModal.on{display:flex}
 /* Galería de formatos */
 #fmtGrid{display:flex;flex-direction:column;gap:18px}
 .fmt-group-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--UI-A);font-weight:700;margin-bottom:9px}
@@ -1129,6 +1129,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <button class="btn btn-out" id="btnPrompt" onclick="abrirPromptModal()" title="Describe lo que quieres y la IA diseña el post/carrusel/reel entero">✨ Prompt</button>
     <button class="btn btn-out" id="btnMes" onclick="generarMes()" title="Fábrica: genera el contenido de varios días con ideas del banco y lo descarga en un ZIP">📅 Mes</button>
     <button class="btn btn-out" id="btnFeed9" onclick="generarFeed9()" title="Crea 9 posts coordinados que juntos forman un mosaico en el grid de tu perfil. Sin IA">🧩 Feed 9</button>
+    <button class="btn btn-gh" id="btnPerfil" onclick="abrirVistaPerfil()" title="Ver cómo quedarán tus slides en la cuadrícula del perfil (recorte 3:4 de Instagram)">👁 Perfil</button>
     <button class="btn btn-gen" id="btnGen" onclick="generar()">
       <span class="btn-gen-ico">⚡</span>
       <div class="spinner"></div>
@@ -1225,7 +1226,12 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     </div>
     <div style="padding:14px 18px;border-bottom:1px solid var(--UI-B);flex-shrink:0">
       <button class="btn btn-out" id="favSaveBtn" onclick="guardarFavorito()" style="width:100%">＋ Guardar el diseño actual</button>
-      <div style="font-size:9px;color:var(--UI-M);margin-top:6px;line-height:1.5">Guarda el diseño completo (slides, fotos, copy y guion) en este navegador. Ábrelo cuando quieras para reutilizarlo o adaptarlo.</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-gh" onclick="exportarFavoritos()" style="flex:1;font-size:10px" title="Descarga TODOS tus diseños guardados en un archivo, como copia de seguridad">⬇ Copia de seguridad</button>
+        <button class="btn btn-gh" onclick="document.getElementById('favImportFile').click()" style="flex:1;font-size:10px" title="Recupera los diseños de un archivo de copia de seguridad">⬆ Restaurar copia</button>
+        <input type="file" id="favImportFile" accept=".json,application/json" style="display:none" onchange="importarFavoritos(this.files)">
+      </div>
+      <div style="font-size:9px;color:var(--UI-M);margin-top:6px;line-height:1.5">Guarda el diseño completo (slides, fotos, copy y guion) en este navegador. La copia de seguridad los baja a un archivo por si cambias de navegador u ordenador.</div>
     </div>
     <div class="resm-body">
       <div id="favGrid" class="fav-grid"></div>
@@ -1253,6 +1259,22 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <button class="btn btn-out" style="width:100%" onclick="usarDiaSel()">Usar este día</button>
         </aside>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VISTA DE PERFIL — cómo quedará el feed en la cuadrícula de IG -->
+<div id="gridModal" onclick="if(event.target===this)cerrarVistaPerfil()">
+  <div class="resm-box" style="width:min(740px,95vw);height:auto;max-height:90vh">
+    <div class="resm-head">
+      <span>👁 Vista de perfil — así quedará tu cuadrícula</span>
+      <button onclick="cerrarVistaPerfil()" class="resm-close">✕</button>
+    </div>
+    <div style="padding:10px 18px;border-bottom:1px solid var(--UI-B);flex-shrink:0;font-size:10px;color:var(--UI-M);line-height:1.5">
+      Instagram recorta los posts a <b style="color:var(--UI-T)">3:4</b> en la cuadrícula del perfil — esto es lo que se verá. El slide 1 queda arriba a la izquierda (el más reciente): <b style="color:var(--UI-A)">publica del último al primero</b>.
+    </div>
+    <div class="resm-body">
+      <div id="gridPerfil" style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;background:#000;border-radius:6px;overflow:hidden"></div>
     </div>
   </div>
 </div>
@@ -1287,7 +1309,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       <button class="pln-tab" data-t="Fiscalidad" onclick="filtrarPlantillas('Fiscalidad')">Fiscalidad</button>
       <button class="pln-tab" data-t="Productividad" onclick="filtrarPlantillas('Productividad')">Productividad</button>
       <button class="pln-tab" data-t="General" onclick="filtrarPlantillas('General')">Cualquier nicho</button>
-      <span style="margin-left:auto;font-size:9px;color:var(--UI-M)">Sin IA · se vuelca al editor</span>
+      <input type="text" id="plnBuscar" placeholder="🔍 Buscar entre las 323..." oninput="renderPlantillas()"
+        style="margin-left:auto;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:6px 10px;border-radius:6px;font-size:11px;font-family:'Montserrat',sans-serif;width:200px">
     </div>
     <div class="resm-body">
       <div class="prev-split">
@@ -1371,7 +1394,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
             <option value="sin">🔇 Sin voz</option>
           </select>
 
-          <select id="reelVozSel" onchange="guardarVozReel(this.value)" title="Voz que narra el reel" style="margin-top:6px">
+          <div id="reelVozIAWrap" style="display:flex;gap:6px;align-items:stretch;margin-top:6px">
+          <select id="reelVozSel" onchange="guardarVozReel(this.value)" title="Voz que narra el reel" style="flex:1;margin-top:0">
             <optgroup label="── España ──">
               <option value="es-ES-ElviraNeural">Elvira — mujer (cálida)</option>
               <option value="es-ES-XimenaNeural">Ximena — mujer (neutra)</option>
@@ -1384,6 +1408,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
               <option value="es-CO-SalomeNeural">Salomé — Colombia, mujer</option>
             </optgroup>
           </select>
+          <button class="btn btn-gh" id="btnProbarVoz" onclick="probarVozReel()" title="Escucha una frase de muestra con esta voz" style="padding:4px 10px;font-size:12px;flex-shrink:0">▶</button>
+          </div>
 
           <div id="reelGrabWrap" style="display:none;margin-top:8px;border:1px solid var(--UI-B2);border-radius:6px;padding:10px">
             <div style="font-size:10px;color:var(--UI-M);line-height:1.5;margin-bottom:7px">Lee el guion de la izquierda en voz alta mientras grabas.</div>
@@ -2138,6 +2164,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=119"></script>
+<script src="app.js?v=120"></script>
 </body>
 </html>

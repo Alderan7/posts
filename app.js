@@ -6450,7 +6450,7 @@ document.addEventListener('keydown',e=>{
   // o si hay una ventana abierta.
   const t = e.target;
   if(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on, #plnModal.on, #calModal.on, #fmtModal.on')) return;
+  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on, #plnModal.on, #calModal.on, #fmtModal.on, #gridModal.on')) return;
   const k=(e.key||'').toLowerCase();
   if((e.ctrlKey||e.metaKey) && k==='z'){ e.preventDefault(); e.shiftKey?rehacer():deshacer(); return; }
   if((e.ctrlKey||e.metaKey) && k==='y'){ e.preventDefault(); rehacer(); return; }
@@ -6490,6 +6490,47 @@ async function favPut(obj){
 async function favDel(id){
   const db=await favOpen();
   return new Promise((res,rej)=>{ const tx=db.transaction(FAV_STORE,'readwrite'); tx.objectStore(FAV_STORE).delete(id); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); });
+}
+
+// Copia de seguridad de TODOS los diseños a un archivo .json descargable.
+// (IndexedDB va atado al navegador Y al puerto: esto los saca a un archivo
+// que puedes guardar donde quieras o llevarte a otro ordenador.)
+async function exportarFavoritos(){
+  try{
+    const todos=await favGetAll();
+    if(!todos.length){ toast2('No hay diseños guardados que exportar'); return; }
+    const blob=new Blob([JSON.stringify({app:'rosa-maria-studio', tipo:'disenos', v:1, fecha:new Date().toISOString(), disenos:todos})], {type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    const f=new Date(), pad=n=>String(n).padStart(2,'0');
+    a.download=`disenos-rosa-maria-${f.getFullYear()}-${pad(f.getMonth()+1)}-${pad(f.getDate())}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
+    toast2(`✓ Copia descargada (${todos.length} diseño${todos.length>1?'s':''}) — guárdala en un sitio seguro`);
+  }catch(e){ toast2('No se pudo exportar: '+e.message); }
+}
+// Restaurar desde un archivo de copia: añade los diseños que no estén ya
+// (mismo id = ya lo tienes, se salta; no borra nada de lo actual).
+async function importarFavoritos(files){
+  const file=files&&files[0];
+  const inp=document.getElementById('favImportFile');
+  if(!file) return;
+  try{
+    const data=JSON.parse(await file.text());
+    const lista=Array.isArray(data)?data:(Array.isArray(data.disenos)?data.disenos:null);
+    if(!lista) throw new Error('ese archivo no parece una copia de diseños');
+    const existentes=new Set((await favGetAll()).map(f=>f.id));
+    let nuevos=0, saltados=0;
+    for(const fav of lista){
+      if(!fav || typeof fav!=='object' || !fav.id || !Array.isArray(fav.slides)){ saltados++; continue; }
+      if(existentes.has(fav.id)){ saltados++; continue; }
+      await favPut(fav); nuevos++;
+    }
+    if(typeof renderFavoritos==='function') renderFavoritos();
+    toast2(nuevos ? `✓ ${nuevos} diseño${nuevos>1?'s':''} restaurado${nuevos>1?'s':''}${saltados?` (${saltados} ya lo tenías)`:''}`
+                  : 'Todos los diseños del archivo ya estaban guardados');
+  }catch(e){ toast2('No se pudo restaurar: '+e.message); }
+  finally{ if(inp) inp.value=''; }
 }
 
 // Miniatura pequeña del slide actual (JPEG ~260px) para reconocer el diseño de un vistazo.
@@ -6671,6 +6712,37 @@ function previewPlantilla(i){
 function usarPlantillaSel(){ if(_plnPrevIdx>=0) usarPlantilla(_plnPrevIdx); else toast2('Pasa el ratón por una plantilla primero'); }
 
 /* ═══════════════════════════════════════════
+   👁 VISTA DE PERFIL — cómo quedará tu feed en la cuadrícula de Instagram
+   IG recorta cada post a 3:4 en el grid del perfil (recorte "cover",
+   centrado). Aquí se reproduce ese recorte exacto sobre tus slides.
+   ═══════════════════════════════════════════ */
+function abrirVistaPerfil(){
+  if(!SLIDES.length){ toast2('Genera algo primero'); return; }
+  const m=document.getElementById('gridModal'); const cont=document.getElementById('gridPerfil');
+  if(!m||!cont) return;
+  m.classList.add('on');
+  cont.innerHTML=SLIDES.map((s,i)=>`<div data-i="${i}" onclick="cerrarVistaPerfil();show(${i})" title="Slide ${i+1} — clic para editarlo"
+    style="position:relative;overflow:hidden;aspect-ratio:3/4;cursor:pointer;background:#111">
+    <span style="position:absolute;top:5px;left:6px;z-index:9;background:rgba(0,0,0,.65);color:#fff;font-size:10px;font-family:'Montserrat',sans-serif;padding:1px 6px;border-radius:3px">${i+1}</span>
+  </div>`).join('');
+  // pintar cada tile con recorte cover 3:4 centrado (mide el ancho real del tile)
+  requestAnimationFrame(()=>{
+    const H=stageH();
+    cont.querySelectorAll('[data-i]').forEach(tile=>{
+      const i=+tile.dataset.i;
+      const tw=tile.offsetWidth||226, th=tw*4/3;
+      const s=Math.max(tw/1080, th/H);
+      const ox=(tw-1080*s)/2, oy=(th-H*s)/2;
+      let html='';
+      try{ html=render(JSON.parse(JSON.stringify(SLIDES[i])), i); }catch(e){}
+      tile.insertAdjacentHTML('beforeend',
+        `<div style="position:absolute;left:${ox}px;top:${oy}px;width:1080px;height:${H}px;transform-origin:top left;transform:scale(${s});pointer-events:none">${html}</div>`);
+    });
+  });
+}
+function cerrarVistaPerfil(){ document.getElementById('gridModal')?.classList.remove('on'); }
+
+/* ═══════════════════════════════════════════
    🎨 GALERÍA DE FORMATOS — ver TODOS los tipos de slide de un vistazo
    Cada tipo se pinta con un mini-ejemplo (reusa _previewEnBox); clic aplica ese
    formato al slide actual. Los grupos se leen del propio desplegable #cTipo para
@@ -6783,7 +6855,15 @@ function renderPlantillas(){
   const cont=document.getElementById('plnGrid'); if(!cont) return;
   const all=window.RM_PLANTILLAS||[];
   if(!all.length){ cont.innerHTML='<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:30px;line-height:1.6">No se pudieron cargar las plantillas.<br>Falta <b>datos-plantillas.js</b> (ábrelo con iniciar.py).</div>'; return; }
-  const items=all.map((p,i)=>({p,i})).filter(x=>_plnFiltro==='Todas' || x.p.tema===_plnFiltro);
+  const q=(document.getElementById('plnBuscar')?.value||'').trim().toLowerCase();
+  const textoDe=(p)=>{
+    const s=p.slide||{};
+    return [p.titulo, p.tema, s.tipo, s.eye, s.head, s.body].concat(Array.isArray(s.items)?s.items:[])
+      .filter(Boolean).join(' ').toLowerCase();
+  };
+  const items=all.map((p,i)=>({p,i}))
+    .filter(x=>_plnFiltro==='Todas' || x.p.tema===_plnFiltro)
+    .filter(x=>!q || textoDe(x.p).includes(q));
   cont.innerHTML=items.map(({p,i})=>`
     <div class="cal-card" data-i="${i}" onclick="usarPlantilla(${i})" onmouseenter="previewPlantilla(${i})" title="Pasa el ratón para previsualizar · clic para usar">
       <div class="cal-top">
@@ -6792,7 +6872,7 @@ function renderPlantillas(){
       </div>
       <div class="cal-gancho">${favEsc(((p.slide&&p.slide.head)||p.titulo||'').replace(/\n/g,' ')).slice(0,95)}</div>
       <div class="cal-pilar">${favEsc(p.titulo||'')}</div>
-    </div>`).join('') || '<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:30px">Sin plantillas en esta temática.</div>';
+    </div>`).join('') || '<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:30px">Sin resultados. Prueba otra palabra o cambia de pestaña.</div>';
   if(items.length) previewPlantilla(items[0].i);   // auto-previsualiza la primera
 }
 function usarPlantilla(i){
@@ -7381,11 +7461,33 @@ Devuelve el JSON completo (hook, sub, cta, keywords y el guion ampliado).`);
 /* ── 2) Voz: IA / mi voz (grabar) / sin voz ──────────────────────────── */
 function cambiarModoVoz(){
   const m = document.getElementById('reelVozModo')?.value || 'ia';
-  const sel = document.getElementById('reelVozSel');
+  const wrap = document.getElementById('reelVozIAWrap');   // selector de voz + botón ▶
   const grab = document.getElementById('reelGrabWrap');
-  if(sel)  sel.style.display  = (m==='ia')  ? '' : 'none';
+  if(wrap) wrap.style.display = (m==='ia')  ? 'flex' : 'none';
   if(grab) grab.style.display = (m==='mia') ? '' : 'none';
   guardarReelEstado();
+}
+
+// Escuchar una frase de muestra con la voz elegida, antes de generar el reel.
+// El servidor la genera una vez por voz y la cachea (necesita iniciar.py).
+let _vozMuestraAudio=null;
+async function probarVozReel(){
+  const btn=document.getElementById('btnProbarVoz');
+  const voz=document.getElementById('reelVozSel')?.value||'es-ES-ElviraNeural';
+  if(_vozMuestraAudio){ _vozMuestraAudio.pause(); _vozMuestraAudio=null; }
+  if(btn){ btn.disabled=true; btn.textContent='…'; }
+  try{
+    const res=await fetch('/api/voz_muestra?voz='+encodeURIComponent(voz));
+    if(!res.ok){
+      let msg='no disponible';
+      try{ msg=(await res.json()).error||msg; }catch(e){ if(res.status===404||res.status===501) msg='abre la app con iniciar.py'; }
+      throw new Error(msg);
+    }
+    const blob=await res.blob();
+    _vozMuestraAudio=new Audio(URL.createObjectURL(blob));
+    _vozMuestraAudio.play();
+  }catch(e){ toast2('No se pudo probar la voz: '+e.message); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='▶'; } }
 }
 
 function blobADataURL(blob){

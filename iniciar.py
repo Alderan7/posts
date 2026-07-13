@@ -326,6 +326,42 @@ def main():
                 if not info:
                     return self._enviar_json(404, {"error": "trabajo desconocido"})
                 return self._enviar_json(200, info)
+            # Muestra corta de una voz de IA (para escucharla ANTES de generar
+            # el reel). Se genera una vez por voz y se cachea en salida/.
+            if self.path.split("?")[0] == "/api/voz_muestra":
+                from urllib.parse import urlparse, parse_qs
+                import re as _re
+                voz = (parse_qs(urlparse(self.path).query).get("voz") or [""])[0]
+                if not _re.fullmatch(r"[a-zA-Z]{2}-[a-zA-Z]{2}-[A-Za-z0-9]+", voz or ""):
+                    return self._enviar_json(400, {"error": "voz invalida"})
+                base = os.path.dirname(os.path.abspath(__file__))
+                rv_dir = os.path.join(base, "reel-video")
+                sal = os.path.join(rv_dir, "salida")
+                os.makedirs(sal, exist_ok=True)
+                mp3 = os.path.join(sal, "muestra_voz_%s.mp3" % voz)  # sin "_voz_grabada": la limpieza no lo toca
+                if not (os.path.exists(mp3) and os.path.getsize(mp3) > 800):
+                    try:
+                        if rv_dir not in sys.path:
+                            sys.path.insert(0, rv_dir)
+                        import reel_video as RV
+                        ruta, _marcas = RV.generar_voz(
+                            "Hola, soy la voz de tu próximo reel. Así sueno contando tu historia.",
+                            mp3, voz=voz)
+                        if not ruta:
+                            return self._enviar_json(500, {"error": "no se pudo generar la muestra (¿edge-tts instalado?)"})
+                    except Exception as e:
+                        return self._enviar_json(500, {"error": str(e)})
+                try:
+                    with open(mp3, "rb") as f:
+                        cuerpo = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "audio/mpeg")
+                    self.send_header("Content-Length", str(len(cuerpo)))
+                    self.end_headers()
+                    self.wfile.write(cuerpo)
+                except Exception as e:
+                    return self._enviar_json(500, {"error": str(e)})
+                return
             return super().do_GET()
 
         def _enviar_json(self, code, obj):
