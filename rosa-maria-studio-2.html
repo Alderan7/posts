@@ -393,7 +393,10 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 /* Acento Caveat (manuscrita) — notas adhesivas y anotaciones "a mano" */
 .accent-hand{font-family:var(--F-HAND)}
 
-.SP{padding:86px 90px 78px;display:flex;flex-direction:column;height:100%}
+/* Margen de seguridad del feed (4:5). Top/bottom más generosos para que el
+   eyebrow y el pie/CTA NO caigan en la franja que recorta la cuadrícula de
+   Instagram (recorta arriba y abajo en los posts verticales). */
+.SP{padding:110px 90px 102px;display:flex;flex-direction:column;height:100%}
 .SP108{padding:80px 90px 72px;display:flex;flex-direction:column;height:100%}
 
 .SH{display:flex;justify-content:space-between;align-items:center}
