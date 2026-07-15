@@ -3379,6 +3379,58 @@ items según tipo: lista/claves=frases; stats=3-4 "NÚMERO::etiqueta"; proceso=i
   finally{ if(btn){ btn.disabled=false; btn.textContent='🔄 Regenerar'; } }
 }
 
+// 3 VARIANTES del titular del slide actual con IA (directa / pregunta / dato):
+// se muestran bajo el campo Headline y eliges con un clic. Ctrl+Z deshace.
+let _headVars=[];
+async function variantesTitular(){
+  if(!SLIDES.length){ toast2('Genera algo primero'); return; }
+  const d=SLIDES[cur];
+  if(d.tipo==='libre'){ toast2('En modo libre edita los textos en su panel'); return; }
+  const actual=String(d.head||'').trim();
+  if(!actual){ toast2('Escribe primero un titular'); return; }
+  if(!hayIA()){ toast2('Sin IA ahora. Prueba en un rato'); return; }
+  const btn=document.getElementById('btnVarsHead');
+  const cfg=N();
+  const contrato=`Eres Rosa María, ${cfg.persona}. Tono: ${cfg.tono}. 2ª persona (tú).
+Este es el titular de un slide de Instagram (tipo "${d.tipo}"${d.eye?`, kicker "${d.eye}"`:''}):
+«${actual}»
+Escribe 3 VARIANTES del MISMO mensaje, cada una con un enfoque distinto:
+1) más DIRECTA y afirmativa (una verdad incómoda o una promesa concreta),
+2) en forma de PREGUNTA que pique la curiosidad,
+3) con un DATO, número o contraste inesperado.
+Reglas: longitud parecida al original (±30%), mismo idioma y misma voz, nada genérico tipo "descubre más". Puedes usar \\n para saltos de línea y rodear UNA palabra clave con *asteriscos*.
+Devuelve SOLO JSON: {"variantes":["...","...","..."]}`;
+  if(btn){ btn.disabled=true; btn.textContent='✨ …'; }
+  try{
+    const out=await iaJSON(contrato,{maxTokens:400,temperature:0.95});
+    const vars=(Array.isArray(out.variantes)?out.variantes:[])
+      .map(v=>String(v||'').trim())
+      .filter(v=>v && v.toLowerCase()!==actual.toLowerCase())
+      .slice(0,3);
+    if(!vars.length) throw new Error('la IA no devolvió variantes');
+    _headVars=vars;
+    const wrap=document.getElementById('headVarsWrap');
+    if(wrap){
+      wrap.style.display='flex';
+      wrap.innerHTML = vars.map((v,i)=>`
+        <div onclick="usarVarianteTitular(${i})" title="Usar esta variante"
+          style="cursor:pointer;border:1px solid var(--UI-B2);border-radius:6px;padding:7px 9px;font-size:11px;line-height:1.45;color:var(--UI-T);background:var(--UI-B);white-space:pre-wrap"
+          onmouseenter="this.style.borderColor='var(--UI-A)'" onmouseleave="this.style.borderColor='var(--UI-B2)'">${favEsc(v)}</div>`).join('')
+        + `<button class="btn btn-gh" onclick="cerrarVariantes()" style="font-size:9px;padding:3px 8px;align-self:flex-end">✕ cerrar</button>`;
+    }
+  }catch(e){ toast2('No se pudo: '+e.message); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='✨ 3 variantes'; } }
+}
+function usarVarianteTitular(i){
+  const v=_headVars[i]; if(!v) return;
+  if(!SLIDES.length) return;
+  SLIDES[cur].head=v;
+  cerrarVariantes();
+  show(cur); refreshThumb(cur);
+  toast2('✓ Titular cambiado — Ctrl+Z para volver al anterior');
+}
+function cerrarVariantes(){ const w=document.getElementById('headVarsWrap'); if(w){ w.style.display='none'; w.innerHTML=''; } }
+
 // AÑADIR el siguiente slide con IA: crea un slide NUEVO que continúa la historia
 // desde el slide actual (no lo reemplaza) y lo inserta justo detrás.
 async function siguienteSlide(){
@@ -5072,6 +5124,7 @@ function show(i){
   renderLibreTextosList();
   sincronizarPanelImg(d);
   sincronizarTextoSlide(d);
+  if(typeof cerrarVariantes==='function') cerrarVariantes();   // variantes de otro slide = obsoletas
   historiaMarcar();
 }
 
@@ -5561,8 +5614,14 @@ async function expActual(){
     const cv=await capture(cur);bar.style.width='100%';
     await delay(250);
     const a=document.createElement('a');
-    a.download=`rm-${modo}-${String(cur+1).padStart(2,'0')}.png`;
+    // El tamaño va en el nombre para no confundir destinos: 4:5 es para el
+    // feed; 9:16 es para reel/historia (subido al feed, IG le pone bandas).
+    const dim = modo==='reel' ? '1080x1920' : '1080x1350';
+    a.download=`rm-${modo}-${dim}-${String(cur+1).padStart(2,'0')}.png`;
     a.href=cv.toDataURL('image/png');a.click();
+    toast2(modo==='reel'
+      ? '✓ PNG 1080×1920 (9:16) — para REEL o HISTORIA. No lo subas como post: el feed le pondría bandas'
+      : '✓ PNG 1080×1350 (4:5) — listo para post o carrusel del feed');
   }catch(e){alert('Error al exportar.');}
   ov.classList.remove('on');
 }
@@ -5583,7 +5642,7 @@ async function expTodos(){
       try{
         const cv=await capture(i);
         const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
-        zip.file(`rm_slide_${String(i+1).padStart(2,'0')}_1080x1350.png`,blob);
+        zip.file(`rm_slide_${String(i+1).padStart(2,'0')}_${modo==='reel'?'1080x1920':'1080x1350'}.png`,blob);
         await delay(80);
       }catch(e){console.error(e)}
     }
@@ -6725,19 +6784,20 @@ function abrirVistaPerfil(){
     style="position:relative;overflow:hidden;aspect-ratio:3/4;cursor:pointer;background:#111">
     <span style="position:absolute;top:5px;left:6px;z-index:9;background:rgba(0,0,0,.65);color:#fff;font-size:10px;font-family:'Montserrat',sans-serif;padding:1px 6px;border-radius:3px">${i+1}</span>
   </div>`).join('');
-  // pintar cada tile con recorte cover 3:4 centrado (mide el ancho real del tile)
-  requestAnimationFrame(()=>{
-    const H=stageH();
-    cont.querySelectorAll('[data-i]').forEach(tile=>{
-      const i=+tile.dataset.i;
-      const tw=tile.offsetWidth||226, th=tw*4/3;
-      const s=Math.max(tw/1080, th/H);
-      const ox=(tw-1080*s)/2, oy=(th-H*s)/2;
-      let html='';
-      try{ html=render(JSON.parse(JSON.stringify(SLIDES[i])), i); }catch(e){}
-      tile.insertAdjacentHTML('beforeend',
-        `<div style="position:absolute;left:${ox}px;top:${oy}px;width:1080px;height:${H}px;transform-origin:top left;transform:scale(${s});pointer-events:none">${html}</div>`);
-    });
+  // pintar cada tile con recorte cover 3:4 centrado. Se mide el ancho real
+  // del tile en el momento (leer offsetWidth fuerza el layout, así que NO
+  // hace falta requestAnimationFrame — que además no dispara si la pestaña
+  // está en segundo plano).
+  const H=stageH();
+  cont.querySelectorAll('[data-i]').forEach(tile=>{
+    const i=+tile.dataset.i;
+    const tw=tile.offsetWidth||226, th=tw*4/3;
+    const s=Math.max(tw/1080, th/H);
+    const ox=(tw-1080*s)/2, oy=(th-H*s)/2;
+    let html='';
+    try{ html=render(JSON.parse(JSON.stringify(SLIDES[i])), i); }catch(e){}
+    tile.insertAdjacentHTML('beforeend',
+      `<div style="position:absolute;left:${ox}px;top:${oy}px;width:1080px;height:${H}px;transform-origin:top left;transform:scale(${s});pointer-events:none">${html}</div>`);
   });
 }
 function cerrarVistaPerfil(){ document.getElementById('gridModal')?.classList.remove('on'); }

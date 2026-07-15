@@ -1822,8 +1822,11 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <input type="text" id="cEye" oninput="ed('eye',this.value)">
         </div>
         <div class="crow" id="rowHeadline">
-          <label>Headline</label>
+          <label style="display:flex;justify-content:space-between;align-items:center">Headline
+            <button class="btn btn-gh" id="btnVarsHead" onclick="variantesTitular()" title="La IA te propone 3 formas distintas de decir este titular; eliges la que más pegue" style="padding:2px 7px;font-size:9px;text-transform:none;letter-spacing:0">✨ 3 variantes</button>
+          </label>
           <textarea id="cHead" rows="4" oninput="ed('head',this.value)"></textarea>
+          <div id="headVarsWrap" style="display:none;flex-direction:column;gap:5px;margin-top:6px"></div>
         </div>
         <div class="crow" id="rowCuerpo">
           <label>Cuerpo</label>
@@ -2164,6 +2167,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=120"></script>
+<script src="app.js?v=123"></script>
 </body>
 </html>
