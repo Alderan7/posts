@@ -5821,8 +5821,8 @@ function bancoIdeas(){
   const n=getNicho();
   if(n==='personal') return window.IDEAS_PERSONAL||[];
   if(n==='productividad') return window.IDEAS_PRODUCTIVIDAD||[];
-  if(n==='fiscalidad') return window.IDEAS_FISCALIDAD||[];   // aún sin banco de 30 días: el Plan 30 avisará
-  if(n==='ia') return window.IDEAS_IA||[];                   // aún sin banco de 30 días: el Plan 30 avisará
+  if(n==='fiscalidad') return window.IDEAS_FISCALIDAD||[];   // datos-ideas-fiscalidad.js (365 días)
+  if(n==='ia') return window.IDEAS_IA||[];                   // datos-ideas-ia.js (365 días)
   return window.IDEAS_365||[];
 }
 /* ═══════════════════════════════════════════
@@ -5913,6 +5913,16 @@ function anguloDesdeIdea(idea){
     const p=(idea.pilar||'').toLowerCase();
     return MAP_PILAR_PRODUCTIVIDAD[p] || rnd(Object.keys(N().angulos||{agenda:1}));
   }
+  // Fiscalidad: mapear por Pilar
+  if(nicho==='fiscalidad'){
+    const p=(idea.pilar||'').toLowerCase();
+    return MAP_PILAR_FISCALIDAD[p] || rnd(Object.keys(N().angulos||{deducciones:1}));
+  }
+  // IA y Automatización: mapear por Pilar
+  if(nicho==='ia'){
+    const p=(idea.pilar||'').toLowerCase();
+    return MAP_PILAR_IA[p] || rnd(Object.keys(N().angulos||{claude:1}));
+  }
   const dolor=(idea.dolor||'').toLowerCase();
   for(const k in MAP_PILAR_ANGULO){ if(dolor.includes(k.split(' ')[0])) return MAP_PILAR_ANGULO[k]; }
   const pil=(idea.pilar||'').toLowerCase();
@@ -5946,6 +5956,16 @@ const MAP_PILAR_PERSONAL={
 const MAP_PILAR_PRODUCTIVIDAD={
   'agenda':'agenda', 'prioridades':'priorizar', 'delegación':'delegar', 'delegacion':'delegar',
   'foco':'foco', 'sistemas':'sistemas', 'energía':'energia', 'energia':'energia', 'herramientas':'sistemas',
+};
+const MAP_PILAR_FISCALIDAD={
+  'verifactu':'verifactu', 'cuota autónomos':'cuotaautonomo', 'cuota autonomos':'cuotaautonomo',
+  'renta e irpf':'rentairpf', 'deducciones':'deducciones', 'control hacienda':'controlhacienda',
+  'sanciones y plazos':'sanciones', 'gestión fiscal':'deducciones', 'gestion fiscal':'deducciones',
+};
+const MAP_PILAR_IA={
+  'claude y chatgpt':'claude', 'tareas repetitivas':'tareasrepetitivas', 'miedo y excusas':'miedoia',
+  'agentes':'agentes', 'prompts':'prompts', 'horas ahorradas':'horasahorradas',
+  'herramientas y flujos':'tareasrepetitivas',
 };
 
 function renderBanco(){
@@ -6028,7 +6048,7 @@ function usarIdeaBanco(dia){
   // Sembrar con el contenido REAL de la idea
   if(slides[0]){ slides[0].head=idea.hook; slides[0].eye=idea.objetivo||idea.pilar; }
   const _nch=getNicho();
-  const ctaCorto = idea.cta && idea.cta.length>40 ? (_nch==='personal'?'Escríbeme INFO':_nch==='productividad'?'Escríbeme ORGANIZA':'Escríbeme') : (idea.cta||'');
+  const ctaCorto = idea.cta && idea.cta.length>40 ? (_nch==='personal'?'Escríbeme INFO':_nch==='productividad'?'Escríbeme ORGANIZA':_nch==='fiscalidad'?'Escríbeme FISCAL':_nch==='ia'?'Escríbeme IA':'Escríbeme') : (idea.cta||'');
   const ult=slides[slides.length-1];
   if(ult && ctaCorto) ult.cta=ctaCorto;
 
@@ -6057,7 +6077,7 @@ function repostIdea(dia){
 function verIdeaCompleta(dia){
   const it=bancoIdeas().find(i=>String(i.dia)===String(dia));
   if(!it) return;
-  if(getNicho()==='personal' || getNicho()==='productividad'){
+  if(['personal','productividad','fiscalidad','ia'].includes(getNicho())){
     alert(`DÍA ${it.dia} · ${it.formato} · ${it.pilar}\n`+
       `\n▸ TEMA:\n${it.idea}`+
       `\n\n▸ GANCHO:\n${it.hook}`+
