@@ -317,6 +317,83 @@ def _palabras_resaltadas(texto):
     return texto.replace("*", ""), resaltar
 
 
+# ── Subtítulos DINÁMICOS estilo "karaoke" (como Submagic) ─────────────────
+# Pocas palabras en pantalla y la palabra que SUENA en ese instante resaltada
+# en azul de marca (un poco más grande). Necesita las marcas de tiempo por
+# palabra de edge-tts; sin ellas se usa el estilo por líneas de siempre.
+def _subs_karaoke(marcas, n=3):
+    """Agrupa las palabras en bloques de `n` y, dentro de cada bloque, genera
+    un tramo por palabra con el índice de la que está sonando. Devuelve
+    [(inicio_s, fin_s, [palabras_del_bloque], indice_activo), ...]."""
+    out = []
+    for i in range(0, len(marcas), n):
+        bloque = marcas[i:i + n]
+        palabras = [w for (_, _, w) in bloque]
+        for j, (a, b, _w) in enumerate(bloque):
+            # la palabra se mantiene resaltada hasta que empieza la siguiente
+            fin = bloque[j + 1][0] if j + 1 < len(bloque) else b
+            out.append((a, fin, palabras, j))
+    return out
+
+
+def _texto_subs_karaoke(palabras, activo, font, fontsize, sombra=0, max_chars=22):
+    """Dibuja el bloque de palabras centrado, con la palabra `activo` en azul
+    de marca y algo más grande, y el resto en crema. Sombreado (stroke) para
+    leerse sobre cualquier vídeo. Devuelve un ImageClip centrado."""
+    from moviepy import ImageClip
+    from PIL import Image, ImageDraw, ImageFont
+    import numpy as np
+
+    try:
+        f = ImageFont.truetype(font, fontsize)
+        f_hi = ImageFont.truetype(font, int(fontsize * 1.14))     # activa un poco mayor
+    except Exception:
+        f = f_hi = ImageFont.load_default()
+
+    medidor = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+    stroke = max(2, fontsize // 12)
+    espacio = medidor.textlength(" ", font=f)
+
+    # Repartir las palabras en líneas por longitud (guardando su índice global)
+    lineas, actual, largo = [], [], 0
+    for idx, w in enumerate(palabras):
+        wlen = len(w) + 1
+        if actual and largo + wlen > max_chars:
+            lineas.append(actual); actual, largo = [], 0
+        actual.append((w, idx)); largo += wlen
+    if actual:
+        lineas.append(actual)
+
+    def _fw(w, idx):
+        return medidor.textlength(w, font=(f_hi if idx == activo else f))
+
+    filas = []
+    for ln in lineas:
+        anchos = [_fw(w, idx) for (w, idx) in ln]
+        ancho = sum(anchos) + espacio * (len(ln) - 1)
+        filas.append((ln, anchos, ancho))
+    ancho_total = int(max((fw for _, _, fw in filas), default=0)) + stroke * 2
+    alto_linea = int(fontsize * 1.5)
+    pad = stroke + 8
+    img = Image.new("RGBA", (ancho_total + pad * 2, alto_linea * len(filas) + pad * 2), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    y = pad
+    for ln, anchos, ancho in filas:
+        x = pad + (ancho_total - ancho) / 2
+        for (w, idx), aw in zip(ln, anchos):
+            es_act = idx == activo
+            fnt = f_hi if es_act else f
+            color = AZUL if es_act else CREMA
+            # centrar verticalmente la palabra grande respecto a la línea
+            dy = (fontsize - int(fontsize * 1.14)) // 2 if es_act else 0
+            d.text((x, y + dy), w, font=fnt, fill=_rgba(color),
+                   stroke_width=stroke, stroke_fill=(0, 0, 0, 210))
+            x += aw + espacio
+        y += alto_linea
+    img = _caja_oscura_pil(img, sombra, pad_x=30, pad_y=16, radio=20)
+    return ImageClip(np.array(img))
+
+
 # ── Voz IA GRATIS (Microsoft Edge TTS: voces neuronales, sin cuenta ni pagar) ──
 # Voces españolas útiles: es-ES-ElviraNeural (mujer, España), es-ES-AlvaroNeural
 # (hombre), es-MX-DaliaNeural, es-AR-ElenaNeural...
@@ -346,7 +423,13 @@ def generar_voz(texto, salida_mp3, voz="es-ES-ElviraNeural"):
     marcas = []
 
     async def _go():
-        com = edge_tts.Communicate(texto, voz)
+        # boundary="WordBoundary": edge-tts 7.x usa SentenceBoundary por defecto
+        # (una sola marca para toda la frase). Necesitamos el tiempo de CADA
+        # palabra para los subtítulos sincronizados / karaoke.
+        try:
+            com = edge_tts.Communicate(texto, voz, boundary="WordBoundary")
+        except TypeError:
+            com = edge_tts.Communicate(texto, voz)   # versiones antiguas: ya daba WordBoundary
         with open(salida_mp3, "wb") as f:
             async for chunk in com.stream():
                 if chunk["type"] == "audio":
@@ -625,15 +708,27 @@ def crear_reel(video=None, videos=None, duraciones=None, inicios=None, transicio
     # Van en Montserrat Bold (marca), con sombreado para leerse sobre
     # cualquier vídeo, y las palabras marcadas *así* en azul de marca.
     if subtitulos and voz_path:
-        subs = _agrupar_subtitulos(marcas) if marcas else _subtitulos_repartidos(narrar_limpio, dur)
-        for (ini, fin, txt) in subs:
-            fin = min(fin, dur)
-            if not txt.strip() or fin <= ini:
-                continue
-            s = _texto_subs(txt, font, 46, resaltar, max_chars=34, sombra=sombra)
-            s = (s.with_start(ini).with_duration(fin - ini)
-                 if hasattr(s, "with_start") else s.set_start(ini).set_duration(fin - ini))
-            capas.append(_pos(s, ("center", H - SAFE_BOT - 150)))
+        if marcas:
+            # Voz IA: subtítulos DINÁMICOS (estilo Submagic) — pocas palabras,
+            # la que suena en azul. Usa las marcas de tiempo por palabra.
+            for (ini, fin, palabras, activo) in _subs_karaoke(marcas, n=3):
+                fin = min(fin, dur)
+                if fin <= ini:
+                    continue
+                s = _texto_subs_karaoke(palabras, activo, font, 58, sombra=sombra)
+                s = (s.with_start(ini).with_duration(fin - ini)
+                     if hasattr(s, "with_start") else s.set_start(ini).set_duration(fin - ini))
+                capas.append(_pos(s, ("center", H - SAFE_BOT - 150)))
+        else:
+            # Tu voz grabada (sin marcas por palabra): estilo por líneas de siempre.
+            for (ini, fin, txt) in _subtitulos_repartidos(narrar_limpio, dur):
+                fin = min(fin, dur)
+                if not txt.strip() or fin <= ini:
+                    continue
+                s = _texto_subs(txt, font, 46, resaltar, max_chars=34, sombra=sombra)
+                s = (s.with_start(ini).with_duration(fin - ini)
+                     if hasattr(s, "with_start") else s.set_start(ini).set_duration(fin - ini))
+                capas.append(_pos(s, ("center", H - SAFE_BOT - 150)))
 
     final = CompositeVideoClip(capas, size=(W, H))
     final = _dur(final, dur)
