@@ -4420,26 +4420,20 @@ function actualizarCopy(angulo, ai){
   refrescarCopy();
 }
 
-// Construye el COPY a partir del CONTENIDO REAL en pantalla (SLIDES + modo)
-function refrescarCopy(){
-  const container = document.getElementById('copyContent');
-  if(!container) return;
+// Datos de copy REALES a partir del CONTENIDO en pantalla (SLIDES + modo):
+// extraído de refrescarCopy() para poder reutilizarlo (ej. 📤 Compartir) sin
+// duplicar la lógica de qué caption/hashtags corresponde a lo que se ve ahora.
+function datosCopyActual(){
   const angulo = COPY_CTX.angulo;
   const ai = COPY_CTX.ai;
   const copyData = copyDataFor(angulo);
-  const esc = s => String(s==null?'':s).replace(/[<>]/g,'');
 
-  // Hook REAL = titular del primer slide generado (lo que se ve en la imagen)
   const hookReal = (SLIDES[0]?.head) || (ai?ai.hook:'') || (BANCO.hooks[angulo]?.[0]) || '';
   const ctaReal  = (SLIDES[SLIDES.length-1]?.cta || '').replace(/\s*[→↓👇]+\s*$/,'').trim();
-
-  // Etiqueta de formato coherente con lo generado
   const fmt = modo==='reel' ? '🎬 Reel'
             : modo==='post' ? '📄 Post'
             : `🗂 Carrusel · ${SLIDES.length} slides`;
 
-  // ── Caption ── La caption COMPLEMENTA la imagen (no repite el hook).
-  //   Prioridad: idea del banco > caption de IA > caption del banco local.
   let caption, hashtags;
   if(COPY_CTX.idea && COPY_CTX.idea.caption){
     caption = COPY_CTX.idea.caption;
@@ -4450,11 +4444,19 @@ function refrescarCopy(){
     if(ctaReal && !caption.toLowerCase().includes(ctaReal.toLowerCase().slice(0,12))) caption += `\n\n${ctaReal} 👇`;
     hashtags = copyData.hashtags;
   } else {
-    // Banco local: usar la caption propia (su apertura ya complementa; NO anteponer el hook)
     caption = copyData.caption||'';
     if(ctaReal && !caption.includes(ctaReal)) caption += `\n\n${ctaReal} 👇`;
     hashtags = copyData.hashtags;
   }
+  return {hookReal, ctaReal, fmt, caption, hashtags};
+}
+
+// Construye el COPY a partir del CONTENIDO REAL en pantalla (SLIDES + modo)
+function refrescarCopy(){
+  const container = document.getElementById('copyContent');
+  if(!container) return;
+  const esc = s => String(s==null?'':s).replace(/[<>]/g,'');
+  const {hookReal, fmt, caption, hashtags} = datosCopyActual();
 
   // ── Reel: además mostrar el GUION generado ──
   const bloqueGuion = (modo==='reel' && typeof ULTIMO_GUION!=='undefined' && ULTIMO_GUION) ? `
@@ -4479,7 +4481,7 @@ function refrescarCopy(){
     <button class="cbtn" onclick="copiar(\`${esc(caption).replace(/`/g,'')}\n\n${hashtags}\`)">📋 Copiar caption + hashtags</button>
   `;
 
-  actualizarPromptsMJ(angulo);
+  actualizarPromptsMJ(COPY_CTX.angulo);
 }
 
 /* ═══════════════════════════════════════════
@@ -5601,6 +5603,47 @@ async function capture(i){
       useCORS:true,allowTaint:true,backgroundColor:null,logging:false});
     document.body.removeChild(wrap);return cv;
   }catch(e){document.body.removeChild(wrap);throw e}
+}
+
+// 📤 Compartir a Instagram: NO usa la API oficial (eso exige cuenta Business,
+// una app aprobada por Meta y hosting público — ver conversación). En su
+// lugar, deja el caption+hashtags copiados y la imagen lista, para pegarlos
+// tú en la app de Instagram en dos gestos. En móvil con Web Share API
+// (Android/iOS), además puede abrir directamente el selector "Compartir con..."
+// llevándose la imagen.
+async function compartirActual(){
+  if(!SLIDES.length){ toast2('Genera algo primero'); return; }
+  const {caption, hashtags} = datosCopyActual();
+  const texto = `${caption}\n\n${hashtags}`.trim();
+  let cv;
+  try{ cv = await capture(cur); }
+  catch(e){ toast2('No se pudo preparar la imagen: '+e.message); return; }
+  const blob = await new Promise(r=>cv.toBlob(r,'image/png'));
+  const dim = modo==='reel' ? '1080x1920' : '1080x1350';
+  const nombre = `rm-${modo}-${dim}-${String(cur+1).padStart(2,'0')}.png`;
+  const file = new File([blob], nombre, {type:'image/png'});
+
+  // Móvil con Web Share API de nivel 2 (archivos): abre el selector nativo
+  // "Compartir con..." — si tienes Instagram instalada, sale ahí directamente.
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file], text:texto});
+      toast2('✓ Compartido');
+      return;
+    }catch(e){ if(e.name==='AbortError') return; /* si falla, cae al plan B de abajo */ }
+  }
+
+  // Plan B (escritorio, o si el share nativo no está disponible): copiamos
+  // el texto y descargamos la imagen — pegas y adjuntas tú en Instagram.
+  try{ await navigator.clipboard.writeText(texto); }
+  catch(e){
+    const ta=document.createElement('textarea');
+    ta.value=texto; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  }
+  const a=document.createElement('a');
+  a.download=nombre; a.href=cv.toDataURL('image/png'); a.click();
+  toast2('✓ Caption+hashtags copiados y foto descargada — pégalos en Instagram');
 }
 
 async function expActual(){

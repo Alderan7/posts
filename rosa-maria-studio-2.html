@@ -1119,6 +1119,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <div class="exp-wrap" id="expWrap">
       <button class="btn btn-out exp-trigger" onclick="toggleExpMenu()">↓ EXPORTAR</button>
       <div class="exp-menu" id="expMenu">
+        <button onclick="compartirActual();toggleExpMenu()" style="color:var(--UI-A);font-weight:700" title="Copia el caption+hashtags y descarga la imagen lista para pegar en Instagram">📤 Compartir a Instagram</button>
         <button onclick="expActual();toggleExpMenu()">📄 PNG — slide actual</button>
         <button onclick="expTodos();toggleExpMenu()">📦 ZIP — todos los slides</button>
         <button onclick="expPPTX();toggleExpMenu()">🎨 PPTX — editable en Canva</button>
@@ -2169,6 +2170,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=124"></script>
+<script src="app.js?v=125"></script>
 </body>
 </html>
