@@ -2881,6 +2881,44 @@ function setPromptFmt(f,btn){
   const w=document.getElementById('pmSlidesWrap'); if(w) w.style.display = (f==='carrusel')?'flex':'none';
 }
 
+// 🎙 Dictar el prompt: cuentas tu idea EN VOZ ALTA y se escribe sola en el
+// cuadro (reconocimiento de voz del propio Chrome, gratis y sin servicios
+// externos). Luego solo queda pulsar ⚡ Diseñar. Toggle: 🎙 empieza, ⏹ para.
+let _dictado=null;
+function dictarPrompt(){
+  const btn=document.getElementById('pmMicBtn');
+  const ta=document.getElementById('promptTxt');
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ toast2('Tu navegador no permite dictar — usa Chrome o Edge'); return; }
+  if(_dictado){ try{_dictado.stop();}catch(e){} return; }        // segundo clic = parar
+  const rec=new SR();
+  rec.lang='es-ES'; rec.continuous=true; rec.interimResults=true;
+  const base=(ta&&ta.value||'').trim();                          // no pisa lo ya escrito
+  let finales='';
+  rec.onresult=(ev)=>{
+    finales=''; let provisional='';
+    for(let i=0;i<ev.results.length;i++){
+      const r=ev.results[i];
+      if(r.isFinal) finales+=r[0].transcript+' ';
+      else provisional+=r[0].transcript;
+    }
+    if(ta) ta.value=((base?base+' ':'')+finales+provisional).replace(/\s+/g,' ').trim();
+  };
+  rec.onerror=(e)=>{
+    if(e.error==='not-allowed') toast2('No diste permiso al micrófono');
+    else if(e.error!=='aborted' && e.error!=='no-speech') toast2('Dictado: '+e.error);
+  };
+  rec.onend=()=>{
+    _dictado=null;
+    if(btn){ btn.classList.remove('rec'); btn.textContent='🎙 Dictar'; }
+    if(ta && ta.value.trim()) toast2('✓ Idea dictada — revísala y pulsa ⚡ Diseñar');
+  };
+  _dictado=rec;
+  try{ rec.start(); }catch(e){ _dictado=null; toast2('No se pudo empezar a escuchar'); return; }
+  if(btn){ btn.classList.add('rec'); btn.textContent='⏹ Parar'; }
+  toast2('🎙 Te escucho… cuenta tu idea y pulsa ⏹ al acabar');
+}
+
 // Banco de 200 ideas de prompt (40 por nicho, datos-prompt-ideas.js) — para
 // quien no quiere escribir el prompt desde cero: elige una y la edita/usa tal cual.
 let _pmIdeasOpen = false;
@@ -5644,6 +5682,134 @@ async function compartirActual(){
   const a=document.createElement('a');
   a.download=nombre; a.href=cv.toDataURL('image/png'); a.click();
   toast2('✓ Caption+hashtags copiados y foto descargada — pégalos en Instagram');
+}
+
+// 📦 MI SEMANA EN UN CLIC: genera el contenido de una semana entera desde el
+// banco local (SIN IA, no gasta cuota) y lo descarga en un ZIP ordenado por
+// días: lunes carrusel · martes reel · miércoles post · jueves reel · viernes
+// carrusel — cada día con sus PNG + caption.txt (+ guion.txt en los reels).
+// Cada día usa un ÁNGULO distinto del nicho para no repetirse.
+async function semanaEnUnClic(){
+  if(typeof JSZip==='undefined'){ toast2('No cargó JSZip — recarga la página con internet'); return; }
+  const ov=document.getElementById('expOv');
+  const msg=document.getElementById('expMsg');
+  const bar=document.getElementById('expBar');
+  if(ov){ ov.classList.add('on'); bar.style.width='0%'; }
+  // guardar el estado del editor para dejarlo TAL CUAL estaba al terminar
+  const bak={ slides:JSON.parse(JSON.stringify(SLIDES)), modo, cur, copy:COPY_CTX,
+              pos:(typeof getFeedPos==='function')?getFeedPos():null };
+  const cfg=N();
+  const anguloBank=cfg.angulos||BANCO.angulos;
+  const baraja=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(p=>p[1]);
+  const angs=baraja(Object.keys(anguloBank));
+  while(angs.length<5) angs.push(rnd(Object.keys(anguloBank)));
+  const dias=[
+    {carpeta:'1-lunes-carrusel',    tipo:'carrusel', pos:1, ang:angs[0]},
+    {carpeta:'2-martes-reel',       tipo:'reel',            ang:angs[1]},
+    {carpeta:'3-miercoles-post',    tipo:'post',            ang:angs[2]},
+    {carpeta:'4-jueves-reel',       tipo:'reel',            ang:angs[3]},
+    {carpeta:'5-viernes-carrusel',  tipo:'carrusel', pos:5, ang:angs[4]},
+  ];
+  try{
+    const zip=new JSZip();
+    let hecho=0, total=dias.length;
+    for(const d of dias){
+      if(msg) msg.textContent=`Semana: ${d.carpeta.replace(/-/g,' ')}…`;
+      let slides;
+      if(d.tipo==='carrusel'){
+        if(typeof setFeedPos==='function' && d.pos) setFeedPos(d.pos);   // plantilla distinta lunes/viernes
+        slides=buildCarrusel(d.ang,null,5); modo='carrusel';
+      }else if(d.tipo==='post'){ slides=buildPost(d.ang,null); modo='post'; }
+      else { slides=buildReel(d.ang,null); modo='reel'; }
+      SLIDES.length=0; slides.forEach(s=>SLIDES.push(s));
+      const dim = d.tipo==='reel' ? '1080x1920' : '1080x1350';
+      for(let i=0;i<SLIDES.length;i++){
+        const cv=await capture(i);
+        const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+        const nombre = d.tipo==='reel' ? `portada-${dim}.png` : `slide-${String(i+1).padStart(2,'0')}-${dim}.png`;
+        zip.folder(d.carpeta).file(nombre, blob);
+        await delay(50);
+      }
+      COPY_CTX={angulo:d.ang, ai:null};
+      const dd=datosCopyActual();
+      zip.folder(d.carpeta).file('caption.txt', `${dd.caption}\n\n${dd.hashtags}`);
+      if(d.tipo==='reel' && typeof ULTIMO_GUION!=='undefined' && ULTIMO_GUION)
+        zip.folder(d.carpeta).file('guion.txt', ULTIMO_GUION);
+      hecho++; if(bar) bar.style.width=Math.round(hecho/total*95)+'%';
+    }
+    zip.file('LEEME.txt',
+`Tu semana de contenido — ${cfg.nombre||'Rosa María'}
+Cada carpeta es un día: dentro tienes las imágenes (el tamaño va en el nombre:
+1080x1350 = post/carrusel del feed · 1080x1920 = reel o historia), el caption
+con hashtags listo para pegar, y en los reels también el guion para narrar.
+Generado sin IA desde tu banco de contenido, con un ángulo distinto cada día.`);
+    if(msg) msg.textContent='Empaquetando ZIP…';
+    const content=await zip.generateAsync({type:'blob'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(content);
+    const f=new Date(), pad=n=>String(n).padStart(2,'0');
+    a.download=`rm-semana-${f.getFullYear()}-${pad(f.getMonth()+1)}-${pad(f.getDate())}.zip`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+    if(bar) bar.style.width='100%';
+    toast2('📦 Semana lista: 5 días de contenido en el ZIP (mira el LEEME.txt)');
+  }catch(e){ toast2('No se pudo montar la semana: '+e.message); }
+  finally{
+    // restaurar el editor exactamente como estaba
+    if(typeof setFeedPos==='function' && bak.pos) setFeedPos(bak.pos);
+    SLIDES.length=0; bak.slides.forEach(s=>SLIDES.push(s));
+    COPY_CTX=bak.copy;
+    setModo(bak.modo);
+    cur=Math.max(0,Math.min(bak.cur,SLIDES.length-1));
+    buildThumbs(); show(cur);
+    if(typeof refrescarCopy==='function') refrescarCopy();
+    if(ov) ov.classList.remove('on');
+  }
+}
+
+// 🧲 Guía PDF para regalar (lead magnet): convierte el carrusel actual en un
+// PDF con tu marca — tus slides como páginas + una página final de contacto —
+// listo para mandarlo por DM cuando alguien responde a tu CTA ("Escríbeme X").
+async function exportarGuiaPDF(){
+  if(!SLIDES.length){ toast2('Genera algo primero'); return; }
+  if(modo==='reel'){ toast2('La guía se hace desde un post o carrusel (4:5), no desde un reel'); return; }
+  if(typeof window.jspdf==='undefined' || !window.jspdf.jsPDF){ toast2('No cargó jsPDF — recarga la página con internet'); return; }
+  const ov=document.getElementById('expOv');
+  const msg=document.getElementById('expMsg');
+  const bar=document.getElementById('expBar');
+  if(ov){ ov.classList.add('on'); bar.style.width='0%'; }
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc=new jsPDF({orientation:'portrait', unit:'px', format:[1080,1350], hotfixes:['px_scaling']});
+    // páginas = tus slides
+    for(let i=0;i<SLIDES.length;i++){
+      if(msg) msg.textContent=`Guía PDF: página ${i+1} de ${SLIDES.length+1}...`;
+      if(bar) bar.style.width=Math.round(i/(SLIDES.length+1)*100)+'%';
+      const cv=await capture(i);
+      if(i>0) doc.addPage([1080,1350],'portrait');
+      doc.addImage(cv.toDataURL('image/jpeg',0.9),'JPEG',0,0,1080,1350);
+      await delay(60);
+    }
+    // página final de contacto (se monta como un slide CTA temporal y se captura
+    // con el mismo motor; se retira de SLIDES justo después)
+    if(msg) msg.textContent='Guía PDF: página de contacto...';
+    const cfg=N();
+    SLIDES.push({tipo:'cta', fondo:'blue', eye:cfg.eye||'',
+      head:'¿Te ayudo a aplicarlo\nen tu negocio?',
+      body:(cfg.p2sub||'')+'\n\nEscríbeme por DM y le damos una vuelta a tu caso, sin compromiso.',
+      items:[], cta:'Escríbeme '+String(cfg.ctaEj||'HOLA').split(',')[0].trim()});
+    try{
+      const cvC=await capture(SLIDES.length-1);
+      doc.addPage([1080,1350],'portrait');
+      doc.addImage(cvC.toDataURL('image/jpeg',0.9),'JPEG',0,0,1080,1350);
+    }finally{ SLIDES.pop(); }
+    if(bar) bar.style.width='100%';
+    const f=new Date(), pad=n=>String(n).padStart(2,'0');
+    doc.save(`guia-rosa-maria-${f.getFullYear()}-${pad(f.getMonth()+1)}-${pad(f.getDate())}.pdf`);
+    toast2(`✓ Guía PDF lista (${SLIDES.length+1} páginas) — ideal para mandar por DM`);
+    return SLIDES.length+1;
+  }catch(e){ toast2('No se pudo crear la guía: '+e.message); }
+  finally{ if(ov) ov.classList.remove('on'); }
 }
 
 async function expActual(){

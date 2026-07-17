@@ -11,6 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="datos-ideas.js"></script>
 <script src="datos-ideas-personal.js"></script>
 <script src="datos-ideas-productividad.js" onerror="/* opcional: sin banco de productividad, el nicho avisa */"></script>
@@ -834,6 +835,9 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 }
 #autosaveBar #asRestore{background:var(--UI-A);border-color:var(--UI-A);color:#fff}
 #autosaveBar button:hover{filter:brightness(1.1)}
+/* Botón de dictado mientras escucha */
+#pmMicBtn.rec{color:#ff6b6b!important;border-color:#ff6b6b!important;animation:recPulse 1.2s ease-in-out infinite}
+@keyframes recPulse{0%,100%{opacity:1}50%{opacity:.55}}
 .fav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;align-content:start}
 .fav-card{border:1px solid var(--UI-B2);border-radius:9px;overflow:hidden;background:var(--UI-B);display:flex;flex-direction:column}
 .fav-thumb{cursor:pointer;position:relative;line-height:0}
@@ -1123,6 +1127,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         <button onclick="expActual();toggleExpMenu()">📄 PNG — slide actual</button>
         <button onclick="expTodos();toggleExpMenu()">📦 ZIP — todos los slides</button>
         <button onclick="expPPTX();toggleExpMenu()">🎨 PPTX — editable en Canva</button>
+        <button onclick="exportarGuiaPDF();toggleExpMenu()" title="Convierte el carrusel en una guía PDF con tu marca, para regalarla por DM cuando te escriban">🧲 PDF — guía para regalar</button>
       </div>
     </div>
     <button class="btn btn-gh" id="btnGuionReel" onclick="descargarGuionReel()" style="display:none" title="Descarga el guión del reel en .txt">📝 Guión</button>
@@ -1131,6 +1136,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <button class="btn btn-gh" id="btnPlantillas" onclick="abrirPlantillas()" title="25 plantillas virales por temática (marketing, IA, fiscalidad...). Sin IA">🔥 Plantillas</button>
     <button class="btn btn-out" id="btnPrompt" onclick="abrirPromptModal()" title="Describe lo que quieres y la IA diseña el post/carrusel/reel entero">✨ Prompt</button>
     <button class="btn btn-out" id="btnMes" onclick="generarMes()" title="Fábrica: genera el contenido de varios días con ideas del banco y lo descarga en un ZIP">📅 Mes</button>
+    <button class="btn btn-out" id="btnSemana" onclick="semanaEnUnClic()" title="Tu semana en un clic: lunes a viernes (2 carruseles, 2 reels y 1 post) con captions y guiones, en un ZIP por días. Sin IA">📦 Semana</button>
     <button class="btn btn-out" id="btnFeed9" onclick="generarFeed9()" title="Crea 9 posts coordinados que juntos forman un mosaico en el grid de tu perfil. Sin IA">🧩 Feed 9</button>
     <button class="btn btn-gh" id="btnPerfil" onclick="abrirVistaPerfil()" title="Ver cómo quedarán tus slides en la cuadrícula del perfil (recorte 3:4 de Instagram)">👁 Perfil</button>
     <button class="btn btn-gen" id="btnGen" onclick="generar()">
@@ -1164,7 +1170,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:12px;border-radius:8px;font-size:13px;font-family:'Montserrat',sans-serif;line-height:1.5;resize:vertical"></textarea>
       <div style="display:flex;align-items:center;gap:8px">
         <button class="btn btn-gh" id="pmIdeasBtn" onclick="togglePmIdeas()" style="padding:6px 10px;font-size:10px">💡 200 ideas</button>
-        <span style="font-size:9px;color:var(--UI-M)">40 por nicho, listas para editar y usar como prompt</span>
+        <button class="btn btn-gh" id="pmMicBtn" onclick="dictarPrompt()" title="Cuenta tu idea en voz alta y se escribe sola aquí — luego pulsa ⚡ Diseñar" style="padding:6px 10px;font-size:10px">🎙 Dictar</button>
+        <span style="font-size:9px;color:var(--UI-M)">40 por nicho, listas para editar — o dicta tu idea hablando</span>
       </div>
       <div id="pmIdeasWrap" style="display:none">
         <input type="text" id="pmIdeasFiltro" placeholder="Buscar entre las 40 ideas de este nicho..." oninput="renderPmIdeas()"
@@ -2170,6 +2177,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=125"></script>
+<script src="app.js?v=126"></script>
 </body>
 </html>
