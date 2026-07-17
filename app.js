@@ -5619,15 +5619,15 @@ function toggleGuias(){
 /* ═══════════════════════════════════════════
    EXPORTAR
    ═══════════════════════════════════════════ */
-async function capture(i){
-  const d=SLIDES[i];
-  const H=stageH(); // 1350 (4:5) o 1920 (reel 9:16)
+// Captura cualquier HTML de 1080xH a canvas (lo usan capture() para los
+// slides y las páginas redactadas de la guía PDF).
+async function _capturaHTML(html, H=1350){
   const root=getComputedStyle(document.documentElement);
   const vars=['--C-DARK','--C-LIGHT','--C-BLUE']
     .map(k=>`${k}:${root.getPropertyValue(k).trim()}`).join(';');
   const wrap=document.createElement('div');
   wrap.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:1080px;height:${H}px;overflow:hidden;`;
-  wrap.innerHTML=render(d,i);
+  wrap.innerHTML=html;
   const st=document.createElement('style');
   st.textContent=`
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
@@ -5641,6 +5641,9 @@ async function capture(i){
       useCORS:true,allowTaint:true,backgroundColor:null,logging:false});
     document.body.removeChild(wrap);return cv;
   }catch(e){document.body.removeChild(wrap);throw e}
+}
+async function capture(i){
+  return _capturaHTML(render(SLIDES[i],i), stageH()); // 1350 (4:5) o 1920 (reel 9:16)
 }
 
 // 📤 Compartir a Instagram: NO usa la API oficial (eso exige cuenta Business,
@@ -5767,10 +5770,164 @@ Generado sin IA desde tu banco de contenido, con un ángulo distinto cada día.`
   }
 }
 
-// 🧲 Guía PDF para regalar (lead magnet): convierte el carrusel actual en un
-// PDF con tu marca — tus slides como páginas + una página final de contacto —
-// listo para mandarlo por DM cuando alguien responde a tu CTA ("Escríbeme X").
-async function exportarGuiaPDF(){
+/* ═══════════════════════════════════════════
+   🧲 GUÍA PDF PARA REGALAR (lead magnet)
+   Modo recomendado: la IA REDACTA una guía de verdad sobre la temática que
+   pidas (el post atrae, la guía desarrolla — regalar el carrusel tal cual no
+   aporta nada nuevo a quien ya lo vio). Modo secundario sin IA: tus slides
+   tal cual como páginas.
+   ═══════════════════════════════════════════ */
+function abrirGuiaModal(){
+  const m=document.getElementById('guiaModal'); if(!m) return;
+  m.classList.add('on');
+  const ta=document.getElementById('guiaTema');
+  if(ta && !ta.value.trim()){
+    // Prefill con el tema de lo que hay en pantalla, editable
+    ta.value=String(SLIDES[0]?.head||'').replace(/\n/g,' ').trim();
+  }
+  const st=document.getElementById('guiaStatus');
+  if(st){ st.style.color='var(--UI-M)'; st.textContent=hayIA()?'La IA redacta la guía completa (portada, secciones con pasos, checklist y contacto).':'Sin IA ahora mismo: puedes usar "Mis slides tal cual" abajo.'; }
+  setTimeout(()=>ta?.focus(),100);
+}
+function cerrarGuiaModal(){ document.getElementById('guiaModal')?.classList.remove('on'); }
+
+// ── Páginas maquetadas de la guía (1080x1350, estética de marca) ──
+function _guiaHeader(eyebrow){
+  return `<div style="display:flex;justify-content:space-between;align-items:center">
+    <div style="display:flex;align-items:center;gap:12px"><div style="width:34px;height:3px;background:#38B6FF"></div>
+    <span style="font-family:var(--F-SAN);font-weight:500;letter-spacing:.24em;text-transform:uppercase;font-size:16px;color:rgba(26,26,26,.55)">${p(eyebrow||'GUÍA')}</span></div>
+    ${logoHTML('light')}
+  </div>`;
+}
+function _guiaFooter(num,total){
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:30px">
+    <span style="font-family:var(--F-SER);font-style:italic;font-size:16px;color:rgba(26,26,26,.45)">${HANDLE}</span>
+    <span style="font-family:var(--F-SAN);font-size:14px;color:rgba(26,26,26,.35)">${num} · ${total}</span>
+  </div>`;
+}
+function _guiaPortada(g){
+  return `<div style="width:1080px;height:1350px;background:#1A1A1A;display:flex;flex-direction:column;padding:110px 90px 102px;box-sizing:border-box">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:12px"><div style="width:34px;height:3px;background:#38B6FF"></div>
+      <span style="font-family:var(--F-SAN);font-weight:500;letter-spacing:.24em;text-transform:uppercase;font-size:16px;color:#38B6FF">Guía gratuita</span></div>
+      ${logoHTML('dark')}
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:30px">
+      <h1 style="font-family:var(--F-SAN);font-weight:300;font-size:88px;line-height:1.1;letter-spacing:-.02em;color:#F5F1EA;margin:0">${p(g.titulo||'')}</h1>
+      <div style="width:70px;height:1px;background:rgba(245,241,234,.3)"></div>
+      <p style="font-family:var(--F-SAN);font-size:30px;line-height:1.5;color:rgba(245,241,234,.75);max-width:760px;margin:0">${p(g.subtitulo||'')}</p>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-family:var(--F-SER);font-style:italic;font-size:18px;color:rgba(245,241,234,.5)">${MARCA} · ${HANDLE}</span>
+      <span style="font-family:var(--F-SER);font-style:italic;font-size:18px;color:#38B6FF">para ti</span>
+    </div>
+  </div>`;
+}
+function _guiaSeccion(sec, idx, num, total){
+  const parrafos=String(sec.texto||'').split(/\n\n+/).filter(Boolean)
+    .map(t=>`<p style="font-family:var(--F-SAN);font-size:29px;line-height:1.6;color:rgba(26,26,26,.8);margin:0 0 22px">${p(t)}</p>`).join('');
+  const puntos=(sec.puntos||[]).map(pt=>`
+    <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px">
+      <span style="color:#38B6FF;font-weight:700;font-size:28px;font-family:var(--F-SAN);flex-shrink:0">✓</span>
+      <span style="font-family:var(--F-SAN);font-size:27px;line-height:1.45;color:#1A1A1A">${p(pt)}</span>
+    </div>`).join('');
+  return `<div style="width:1080px;height:1350px;background:#F5F1EA;display:flex;flex-direction:column;padding:100px 90px 90px;box-sizing:border-box">
+    ${_guiaHeader('Guía · paso a paso')}
+    <div style="flex:1;display:flex;flex-direction:column;padding-top:56px;overflow:hidden">
+      <div style="font-family:var(--F-SER);font-style:italic;font-size:64px;color:#38B6FF;line-height:1">${String(idx+1).padStart(2,'0')}</div>
+      <h2 style="font-family:var(--F-SAN);font-weight:600;font-size:46px;line-height:1.2;color:#1A1A1A;margin:14px 0 30px">${p(sec.titulo||'')}</h2>
+      ${parrafos}
+      ${puntos?`<div style="margin-top:14px">${puntos}</div>`:''}
+    </div>
+    ${_guiaFooter(num,total)}
+  </div>`;
+}
+function _guiaChecklist(items, num, total){
+  const filas=(items||[]).map(it=>`
+    <div style="display:flex;gap:16px;align-items:flex-start;padding:20px 0;border-bottom:1px solid rgba(26,26,26,.1)">
+      <span style="width:34px;height:34px;border:3px solid #38B6FF;border-radius:6px;flex-shrink:0;display:inline-block"></span>
+      <span style="font-family:var(--F-SAN);font-size:29px;line-height:1.4;color:#1A1A1A">${p(it)}</span>
+    </div>`).join('');
+  return `<div style="width:1080px;height:1350px;background:#F5F1EA;display:flex;flex-direction:column;padding:100px 90px 90px;box-sizing:border-box">
+    ${_guiaHeader('Tu checklist')}
+    <div style="flex:1;display:flex;flex-direction:column;padding-top:56px;overflow:hidden">
+      <h2 style="font-family:var(--F-SAN);font-weight:600;font-size:52px;line-height:1.15;color:#1A1A1A;margin:0 0 26px">Márcalo según<br>lo vayas haciendo</h2>
+      ${filas}
+    </div>
+    ${_guiaFooter(num,total)}
+  </div>`;
+}
+
+// La IA redacta la guía completa y se maqueta en PDF con la marca.
+async function redactarGuiaIA(){
+  const tema=(document.getElementById('guiaTema')?.value||'').trim();
+  const st=document.getElementById('guiaStatus');
+  if(!tema){ if(st){st.style.color='#ff9f43';st.textContent='Escribe la temática de la guía.';} return; }
+  if(!hayIA()){ if(st){st.style.color='#ff9f43';st.textContent='Sin IA ahora. Usa "Mis slides tal cual" o prueba en un rato.';} return; }
+  if(typeof window.jspdf==='undefined' || !window.jspdf.jsPDF){ if(st){st.style.color='#ff6b6b';st.textContent='No cargó jsPDF — recarga la página con internet.';} return; }
+  const nSec=parseInt(document.getElementById('guiaSecciones')?.value)||4;
+  const btn=document.getElementById('guiaGenBtn');
+  const cfg=N();
+  const contrato=`Eres Rosa María, ${cfg.persona}. Tono: ${cfg.tono}. Escribes en 2ª persona (tú), a: ${cfg.lector}.
+REDACTA una GUÍA PRÁCTICA descargable (lead magnet en PDF) sobre: "${tema}".
+La guía debe APORTAR MÁS que un post de Instagram: pasos accionables, ejemplos concretos y criterio real. Nada de relleno, nada de "en esta guía veremos", nada de humo.
+Devuelve SOLO JSON válido, sin markdown:
+{
+ "titulo": "título de la guía con gancho, máx 50 caracteres",
+ "subtitulo": "1 frase con la promesa concreta de la guía (qué se lleva quien la lee)",
+ "secciones": [   // EXACTAMENTE ${nSec} secciones que se encadenan como un método
+   {"titulo": "nombre del paso, claro y específico",
+    "texto": "60-90 palabras en 1-2 párrafos (sepáralos con \\n\\n): explica el paso con un ejemplo o dato concreto",
+    "puntos": ["3 acciones concretas de UNA línea para aplicar este paso"]}
+ ],
+ "checklist": ["6 frases cortas y accionables para marcar (resumen práctico de toda la guía)"],
+ "cierre": "2-3 frases cálidas de despedida que invitan a escribirte por DM"
+}`;
+  if(btn){ btn.disabled=true; btn.textContent='✨ Redactando…'; }
+  if(st){ st.style.color='#38B6FF'; st.textContent='La IA está redactando tu guía…'; }
+  try{
+    const g=await iaJSON(contrato,{maxTokens:2600,temperature:0.85,onStatus:(m)=>{ if(st) st.textContent=m; }});
+    const secciones=(Array.isArray(g.secciones)?g.secciones:[]).filter(s=>s&&s.titulo).slice(0,nSec);
+    if(!secciones.length) throw new Error('la IA no devolvió secciones');
+    const total=1+secciones.length+((g.checklist||[]).length?1:0)+1;   // portada + secciones + checklist + contacto
+    if(st) st.textContent='Maquetando el PDF…';
+    const { jsPDF }=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait', unit:'px', format:[1080,1350], hotfixes:['px_scaling']});
+    let pag=1;
+    const addPagina=async(html)=>{
+      const cv=await _capturaHTML(html,1350);
+      if(pag>1) doc.addPage([1080,1350],'portrait');
+      doc.addImage(cv.toDataURL('image/jpeg',0.9),'JPEG',0,0,1080,1350);
+      pag++;
+      if(st) st.textContent=`Maquetando el PDF… página ${pag-1} de ${total}`;
+      await delay(40);
+    };
+    await addPagina(_guiaPortada(g));
+    for(let i=0;i<secciones.length;i++) await addPagina(_guiaSeccion(secciones[i], i, i+2, total));
+    if((g.checklist||[]).length) await addPagina(_guiaChecklist(g.checklist.slice(0,7), total-1, total));
+    // página de contacto: mismo truco verificado que en "desde slides"
+    SLIDES.push({tipo:'cta', fondo:'blue', eye:cfg.eye||'',
+      head:'¿Te ayudo a aplicarlo\nen tu negocio?',
+      body:String(g.cierre||'Escríbeme por DM y le damos una vuelta a tu caso, sin compromiso.'),
+      items:[], cta:'Escríbeme '+String(cfg.ctaEj||'HOLA').split(',')[0].trim()});
+    try{
+      const bakModo=modo; modo='carrusel';                    // contacto SIEMPRE 4:5 como el resto de páginas
+      try{ await addPagina(render(SLIDES[SLIDES.length-1], SLIDES.length-1)); }
+      finally{ modo=bakModo; }
+    }finally{ SLIDES.pop(); }
+    const f=new Date(), pad=n=>String(n).padStart(2,'0');
+    doc.save(`guia-${(g.titulo||'rosa-maria').toLowerCase().replace(/[^a-z0-9áéíóúñ]+/gi,'-').slice(0,40)}-${f.getFullYear()}-${pad(f.getMonth()+1)}-${pad(f.getDate())}.pdf`);
+    if(st){ st.style.color='#38B6FF'; st.textContent=`✓ Guía lista (${total} páginas).`; }
+    toast2(`🧲 Guía PDF redactada (${total} páginas) — lista para regalar por DM`);
+    cerrarGuiaModal();
+    return total;
+  }catch(e){ if(st){ st.style.color='#ff6b6b'; st.textContent='No se pudo: '+e.message; } }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='✨ Redactar y crear PDF'; } }
+}
+
+// Modo secundario SIN IA: tus slides tal cual como páginas + contacto.
+async function guiaDesdeSlides(){
+  cerrarGuiaModal();
   if(!SLIDES.length){ toast2('Genera algo primero'); return; }
   if(modo==='reel'){ toast2('La guía se hace desde un post o carrusel (4:5), no desde un reel'); return; }
   if(typeof window.jspdf==='undefined' || !window.jspdf.jsPDF){ toast2('No cargó jsPDF — recarga la página con internet'); return; }
@@ -6738,7 +6895,7 @@ document.addEventListener('keydown',e=>{
   // o si hay una ventana abierta.
   const t = e.target;
   if(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on, #plnModal.on, #calModal.on, #fmtModal.on, #gridModal.on')) return;
+  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on, #plnModal.on, #calModal.on, #fmtModal.on, #gridModal.on, #guiaModal.on')) return;
   const k=(e.key||'').toLowerCase();
   if((e.ctrlKey||e.metaKey) && k==='z'){ e.preventDefault(); e.shiftKey?rehacer():deshacer(); return; }
   if((e.ctrlKey||e.metaKey) && k==='y'){ e.preventDefault(); rehacer(); return; }

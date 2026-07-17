@@ -789,8 +789,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 #resModal .resm-grid .mlib-item,#preModal .resm-grid .mlib-item{aspect-ratio:9/16}
 #resModal .mlib-use,#preModal .mlib-use{font-size:13px}
 /* Modal favoritos / diseños guardados */
-#favModal,#calModal,#plnModal,#fmtModal,#gridModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
-#favModal.on,#calModal.on,#plnModal.on,#fmtModal.on,#gridModal.on{display:flex}
+#favModal,#calModal,#plnModal,#fmtModal,#gridModal,#guiaModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
+#favModal.on,#calModal.on,#plnModal.on,#fmtModal.on,#gridModal.on,#guiaModal.on{display:flex}
 /* Galería de formatos */
 #fmtGrid{display:flex;flex-direction:column;gap:18px}
 .fmt-group-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--UI-A);font-weight:700;margin-bottom:9px}
@@ -1127,7 +1127,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         <button onclick="expActual();toggleExpMenu()">📄 PNG — slide actual</button>
         <button onclick="expTodos();toggleExpMenu()">📦 ZIP — todos los slides</button>
         <button onclick="expPPTX();toggleExpMenu()">🎨 PPTX — editable en Canva</button>
-        <button onclick="exportarGuiaPDF();toggleExpMenu()" title="Convierte el carrusel en una guía PDF con tu marca, para regalarla por DM cuando te escriban">🧲 PDF — guía para regalar</button>
+        <button onclick="abrirGuiaModal();toggleExpMenu()" title="La IA redacta una guía completa sobre tu temática y la maqueta en PDF con tu marca — para regalarla por DM cuando te escriban">🧲 PDF — guía para regalar</button>
       </div>
     </div>
     <button class="btn btn-gh" id="btnGuionReel" onclick="descargarGuionReel()" style="display:none" title="Descarga el guión del reel en .txt">📝 Guión</button>
@@ -1268,6 +1268,38 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <div class="prev-meta" id="calPrevMeta">Pasa el ratón por un día para verlo aquí.</div>
           <button class="btn btn-out" style="width:100%" onclick="usarDiaSel()">Usar este día</button>
         </aside>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GUÍA PDF — la IA redacta un lead magnet con tu marca -->
+<div id="guiaModal" onclick="if(event.target===this)cerrarGuiaModal()">
+  <div class="resm-box" style="width:min(640px,94vw);height:auto;max-height:88vh">
+    <div class="resm-head">
+      <span>🧲 Guía PDF para regalar</span>
+      <button onclick="cerrarGuiaModal()" class="resm-close">✕</button>
+    </div>
+    <div style="padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto">
+      <div style="font-size:11px;color:var(--UI-M);line-height:1.6">El post atrae; la guía <b style="color:var(--UI-T)">desarrolla</b>. La IA redacta una guía completa (portada, pasos con ejemplos, checklist y página de contacto) para mandarla por DM cuando respondan a tu CTA.</div>
+      <div>
+        <div style="font-size:10px;color:var(--UI-M);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px">Temática de la guía</div>
+        <textarea id="guiaTema" rows="3" placeholder="Ej: cómo dejar de atraer clientes que solo preguntan el precio"
+          style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:11px;border-radius:8px;font-size:13px;font-family:'Montserrat',sans-serif;line-height:1.5;resize:vertical"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:10px;color:var(--UI-M)">Extensión</span>
+        <select id="guiaSecciones" style="background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:6px 8px;border-radius:5px;font-size:11px;font-family:'Montserrat',sans-serif">
+          <option value="3">Breve · 3 pasos (~6 págs)</option>
+          <option value="4" selected>Media · 4 pasos (~7 págs)</option>
+          <option value="6">Completa · 6 pasos (~9 págs)</option>
+        </select>
+        <button class="btn btn-gen" id="guiaGenBtn" onclick="redactarGuiaIA()" style="margin-left:auto"><span class="spinner"></span>✨ Redactar y crear PDF</button>
+      </div>
+      <div id="guiaStatus" style="font-size:11px;color:var(--UI-M);line-height:1.5"></div>
+      <div style="border-top:1px solid var(--UI-B);padding-top:10px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:9px;color:var(--UI-M);flex:1">Sin IA: usa el diseño que tienes en pantalla tal cual como páginas.</span>
+        <button class="btn btn-gh" onclick="guiaDesdeSlides()" style="font-size:10px;padding:5px 10px">Mis slides tal cual</button>
       </div>
     </div>
   </div>
@@ -2177,6 +2209,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=126"></script>
+<script src="app.js?v=127"></script>
 </body>
 </html>
