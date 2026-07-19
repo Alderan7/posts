@@ -1281,7 +1281,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       <button onclick="cerrarGuiaModal()" class="resm-close">✕</button>
     </div>
     <div style="padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto">
-      <div style="font-size:11px;color:var(--UI-M);line-height:1.6">El post atrae; la guía <b style="color:var(--UI-T)">desarrolla</b>. La IA redacta una guía completa (portada, pasos con ejemplos, checklist y página de contacto) para mandarla por DM cuando respondan a tu CTA.</div>
+      <div style="font-size:11px;color:var(--UI-M);line-height:1.6">El post atrae; la guía <b style="color:var(--UI-T)">desarrolla y convierte</b>. La IA redacta un ebook útil de verdad — cada paso con su porqué, cómo hacerlo hoy, un ejemplo con números y el error típico — más un <b style="color:var(--UI-T)">autodiagnóstico</b> que lleva de forma natural a pedirte la <b style="color:var(--UI-A)">auditoría</b> por DM.</div>
       <div>
         <div style="font-size:10px;color:var(--UI-M);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px">Temática de la guía</div>
         <textarea id="guiaTema" rows="3" placeholder="Ej: cómo dejar de atraer clientes que solo preguntan el precio"
@@ -1290,9 +1290,9 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <span style="font-size:10px;color:var(--UI-M)">Extensión</span>
         <select id="guiaSecciones" style="background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:6px 8px;border-radius:5px;font-size:11px;font-family:'Montserrat',sans-serif">
-          <option value="3">Breve · 3 pasos (~6 págs)</option>
-          <option value="4" selected>Media · 4 pasos (~7 págs)</option>
-          <option value="6">Completa · 6 pasos (~9 págs)</option>
+          <option value="3">Breve · 3 pasos (~7 págs)</option>
+          <option value="4" selected>Media · 4 pasos (~8 págs)</option>
+          <option value="6">Completa · 6 pasos (~10 págs)</option>
         </select>
         <button class="btn btn-gen" id="guiaGenBtn" onclick="redactarGuiaIA()" style="margin-left:auto"><span class="spinner"></span>✨ Redactar y crear PDF</button>
       </div>
@@ -2209,6 +2209,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=127"></script>
+<script src="app.js?v=129"></script>
 </body>
 </html>

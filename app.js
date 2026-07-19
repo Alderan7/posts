@@ -5823,21 +5823,67 @@ function _guiaPortada(g){
     </div>
   </div>`;
 }
+function _guiaLabel(txt){
+  return `<div style="font-family:var(--F-SAN);font-weight:700;font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:#38B6FF;margin:26px 0 10px">${p(txt)}</div>`;
+}
 function _guiaSeccion(sec, idx, num, total){
-  const parrafos=String(sec.texto||'').split(/\n\n+/).filter(Boolean)
-    .map(t=>`<p style="font-family:var(--F-SAN);font-size:29px;line-height:1.6;color:rgba(26,26,26,.8);margin:0 0 22px">${p(t)}</p>`).join('');
-  const puntos=(sec.puntos||[]).map(pt=>`
-    <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px">
-      <span style="color:#38B6FF;font-weight:700;font-size:28px;font-family:var(--F-SAN);flex-shrink:0">✓</span>
-      <span style="font-family:var(--F-SAN);font-size:27px;line-height:1.45;color:#1A1A1A">${p(pt)}</span>
-    </div>`).join('');
-  return `<div style="width:1080px;height:1350px;background:#F5F1EA;display:flex;flex-direction:column;padding:100px 90px 90px;box-sizing:border-box">
+  let cuerpo='';
+  if(sec.como || sec.porque){
+    // v2: por qué + cómo (pasos numerados) + ejemplo real + error típico
+    const pasos=(sec.como||[]).map((pt,i)=>`
+      <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:12px">
+        <span style="color:#38B6FF;font-weight:700;font-size:26px;font-family:var(--F-SAN);flex-shrink:0;min-width:32px">${i+1}.</span>
+        <span style="font-family:var(--F-SAN);font-size:26px;line-height:1.4;color:#1A1A1A">${p(pt)}</span>
+      </div>`).join('');
+    cuerpo=`
+      ${sec.porque?`${_guiaLabel('Por qué importa')}<p style="font-family:var(--F-SAN);font-size:26px;line-height:1.5;color:rgba(26,26,26,.8);margin:0">${p(sec.porque)}</p>`:''}
+      ${pasos?`${_guiaLabel('Hazlo así')}${pasos}`:''}
+      ${sec.ejemplo?`<div style="margin-top:24px;border-left:5px solid #38B6FF;background:rgba(56,182,255,.07);padding:18px 22px;border-radius:0 10px 10px 0">
+        <div style="font-family:var(--F-SAN);font-weight:700;font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:#38B6FF;margin-bottom:7px">Ejemplo real</div>
+        <p style="font-family:var(--F-SAN);font-size:24px;line-height:1.45;color:rgba(26,26,26,.85);margin:0">${p(sec.ejemplo)}</p>
+      </div>`:''}
+      ${sec.error?`<div style="margin-top:16px;background:#1A1A1A;padding:16px 22px;border-radius:10px">
+        <p style="font-family:var(--F-SAN);font-size:23px;line-height:1.45;color:#F5F1EA;margin:0"><span style="color:#38B6FF;font-weight:700">⚠ El error típico:</span> ${p(sec.error)}</p>
+      </div>`:''}`;
+  }else{
+    // compatibilidad con el formato antiguo {texto, puntos}
+    const parrafos=String(sec.texto||'').split(/\n\n+/).filter(Boolean)
+      .map(t=>`<p style="font-family:var(--F-SAN);font-size:29px;line-height:1.6;color:rgba(26,26,26,.8);margin:0 0 22px">${p(t)}</p>`).join('');
+    const puntos=(sec.puntos||[]).map(pt=>`
+      <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px">
+        <span style="color:#38B6FF;font-weight:700;font-size:28px;font-family:var(--F-SAN);flex-shrink:0">✓</span>
+        <span style="font-family:var(--F-SAN);font-size:27px;line-height:1.45;color:#1A1A1A">${p(pt)}</span>
+      </div>`).join('');
+    cuerpo=parrafos+(puntos?`<div style="margin-top:14px">${puntos}</div>`:'');
+  }
+  return `<div style="width:1080px;height:1350px;background:#F5F1EA;display:flex;flex-direction:column;padding:90px 90px 80px;box-sizing:border-box">
     ${_guiaHeader('Guía · paso a paso')}
-    <div style="flex:1;display:flex;flex-direction:column;padding-top:56px;overflow:hidden">
-      <div style="font-family:var(--F-SER);font-style:italic;font-size:64px;color:#38B6FF;line-height:1">${String(idx+1).padStart(2,'0')}</div>
-      <h2 style="font-family:var(--F-SAN);font-weight:600;font-size:46px;line-height:1.2;color:#1A1A1A;margin:14px 0 30px">${p(sec.titulo||'')}</h2>
-      ${parrafos}
-      ${puntos?`<div style="margin-top:14px">${puntos}</div>`:''}
+    <div style="flex:1;display:flex;flex-direction:column;padding-top:40px;overflow:hidden">
+      <div style="display:flex;align-items:baseline;gap:18px">
+        <span style="font-family:var(--F-SER);font-style:italic;font-size:60px;color:#38B6FF;line-height:1">${String(idx+1).padStart(2,'0')}</span>
+        <h2 style="font-family:var(--F-SAN);font-weight:600;font-size:42px;line-height:1.15;color:#1A1A1A;margin:0">${p(sec.titulo||'')}</h2>
+      </div>
+      ${cuerpo}
+    </div>
+    ${_guiaFooter(num,total)}
+  </div>`;
+}
+// Autodiagnóstico: preguntas de sí/no que llevan de forma natural a pedir la
+// auditoría ("si marcas 2 o más..."). Es la página que convierte.
+function _guiaAutodiag(diag, num, total){
+  const pregs=(diag.preguntas||[]).map(q=>`
+    <div style="display:flex;gap:16px;align-items:flex-start;padding:17px 0;border-bottom:1px solid rgba(26,26,26,.1)">
+      <span style="width:32px;height:32px;border:3px solid #1A1A1A;border-radius:6px;flex-shrink:0;display:inline-block"></span>
+      <span style="font-family:var(--F-SAN);font-size:27px;line-height:1.4;color:#1A1A1A">${p(q)}</span>
+    </div>`).join('');
+  return `<div style="width:1080px;height:1350px;background:#F5F1EA;display:flex;flex-direction:column;padding:90px 90px 80px;box-sizing:border-box">
+    ${_guiaHeader('Autodiagnóstico')}
+    <div style="flex:1;display:flex;flex-direction:column;padding-top:40px;overflow:hidden">
+      <h2 style="font-family:var(--F-SAN);font-weight:600;font-size:48px;line-height:1.15;color:#1A1A1A;margin:0 0 24px">¿Te está pasando?<br><span style="font-weight:300;font-size:30px;color:rgba(26,26,26,.6)">Marca lo que reconozcas:</span></h2>
+      ${pregs}
+      ${diag.si_marcas?`<div style="margin-top:30px;background:#1A1A1A;border-radius:12px;padding:26px 30px">
+        <p style="font-family:var(--F-SAN);font-size:26px;line-height:1.5;color:#F5F1EA;margin:0"><span style="color:#38B6FF;font-weight:700">¿Has marcado 2 o más?</span> ${p(diag.si_marcas)}</p>
+      </div>`:''}
     </div>
     ${_guiaFooter(num,total)}
   </div>`;
@@ -5858,6 +5904,21 @@ function _guiaChecklist(items, num, total){
   </div>`;
 }
 
+// ¿El borrador de la guía es flojo/genérico? (los modelos gratis tienden a
+// pasos de 3 palabras y ejemplos sin cifras — si pasa, se pide una 2ª pasada)
+function _guiaFloja(g){
+  const secs=Array.isArray(g&&g.secciones)?g.secciones:[];
+  if(!secs.length) return true;
+  for(const s of secs){
+    const pasos=Array.isArray(s.como)?s.como:[];
+    const mediaPalabras=pasos.length?pasos.reduce((a,p)=>a+String(p).trim().split(/\s+/).length,0)/pasos.length:0;
+    if(mediaPalabras<6) return true;                        // pasos telegráficos, no accionables
+    if(s.ejemplo && !/\d/.test(s.ejemplo)) return true;      // ejemplo sin ni un número
+    if(String(s.porque||'').trim().split(/\s+/).length<10) return true;  // porqué de una línea vacía
+  }
+  return false;
+}
+
 // La IA redacta la guía completa y se maqueta en PDF con la marca.
 async function redactarGuiaIA(){
   const tema=(document.getElementById('guiaTema')?.value||'').trim();
@@ -5869,27 +5930,66 @@ async function redactarGuiaIA(){
   const btn=document.getElementById('guiaGenBtn');
   const cfg=N();
   const contrato=`Eres Rosa María, ${cfg.persona}. Tono: ${cfg.tono}. Escribes en 2ª persona (tú), a: ${cfg.lector}.
-REDACTA una GUÍA PRÁCTICA descargable (lead magnet en PDF) sobre: "${tema}".
-La guía debe APORTAR MÁS que un post de Instagram: pasos accionables, ejemplos concretos y criterio real. Nada de relleno, nada de "en esta guía veremos", nada de humo.
+REDACTA el contenido de un EBOOK-GUÍA descargable sobre: "${tema}".
+
+OBJETIVO COMERCIAL (tenlo presente en TODO el texto): quien lo lea debe poder APLICAR algo hoy mismo y, al ver el criterio que hay detrás, querer pedirte una AUDITORÍA (tu revisión personalizada de su caso). La guía demuestra que sabes; la auditoría lo aplica a SU negocio.
+
+CALIDAD — esto es lo más importante:
+- CONCRETO SIEMPRE: números, plazos, porcentajes, ejemplos con cifras. Prohibido el relleno ("es fundamental", "hoy en día", "no olvides que", "la clave del éxito").
+- ACCIONABLE: cada paso del "como" empieza con un VERBO y se puede hacer HOY sin comprar nada.
+- El "ejemplo" de cada sección es un mini-caso creíble (persona/negocio + situación + resultado) con AL MENOS un número.
+- El "error" es el fallo real que comete la gente en ese paso, no una obviedad.
+
+EJEMPLO DEL NIVEL QUE EXIJO (tema distinto al tuyo, solo para calibrar — NO lo copies):
+{"titulo":"Audita tu agenda","porque":"Si no sabes en qué se van tus horas, decides a ciegas. La mayoría descubre que pierde 6-8 h/semana en tareas que valdrían 2 €/hora externalizadas.","como":["Apunta durante 3 días todo lo que haces, en bloques de 30 min","Marca cada bloque: ¿me acerca a facturar o es rutina?","Suma las horas de rutina y ponles tu precio/hora","Elige la primera tarea a delegar el lunes"],"ejemplo":"Marta (gestoría, 2 empleados) descubrió 9 h/semana en emails repetidos. Con 2 plantillas las bajó a 3 h: 24 horas al mes recuperadas.","error":"Apuntar 'trabajé en clientes' en vez del detalle: sin desglose no se ve el patrón."}
+
 Devuelve SOLO JSON válido, sin markdown:
 {
  "titulo": "título de la guía con gancho, máx 50 caracteres",
- "subtitulo": "1 frase con la promesa concreta de la guía (qué se lleva quien la lee)",
- "secciones": [   // EXACTAMENTE ${nSec} secciones que se encadenan como un método
-   {"titulo": "nombre del paso, claro y específico",
-    "texto": "60-90 palabras en 1-2 párrafos (sepáralos con \\n\\n): explica el paso con un ejemplo o dato concreto",
-    "puntos": ["3 acciones concretas de UNA línea para aplicar este paso"]}
+ "subtitulo": "promesa CONCRETA y medible de la guía (qué se lleva quien la lee)",
+ "secciones": [   // EXACTAMENTE ${nSec}, encadenadas como un método (cada una continúa la anterior)
+   {"titulo": "nombre del paso, específico, máx 6 palabras",
+    "porque": "por qué importa, máx 35 palabras, con un dato o consecuencia concreta",
+    "como": ["3-4 pasos accionables, cada uno empieza con verbo, máx 14 palabras cada uno"],
+    "ejemplo": "mini-caso creíble con al menos UN número, máx 45 palabras",
+    "error": "el fallo típico en este paso, máx 25 palabras"}
  ],
- "checklist": ["6 frases cortas y accionables para marcar (resumen práctico de toda la guía)"],
- "cierre": "2-3 frases cálidas de despedida que invitan a escribirte por DM"
+ "autodiagnostico": {
+   "preguntas": ["5 preguntas de SÍ/NO sobre síntomas REALES del problema, específicas (nada de '¿quieres crecer?')"],
+   "si_marcas": "1-2 frases: qué significa marcar 2 o más, y por qué el siguiente paso lógico es que TÚ revises su caso con una auditoría"
+ },
+ "checklist": ["6 acciones cortas para marcar, resumen práctico de toda la guía"],
+ "cierre": "2-3 frases cercanas y sin presión invitando a pedir la AUDITORÍA por DM: di qué revisarás tú y qué se lleva (claridad + siguiente paso), no vendas humo"
 }`;
   if(btn){ btn.disabled=true; btn.textContent='✨ Redactando…'; }
   if(st){ st.style.color='#38B6FF'; st.textContent='La IA está redactando tu guía…'; }
   try{
-    const g=await iaJSON(contrato,{maxTokens:2600,temperature:0.85,onStatus:(m)=>{ if(st) st.textContent=m; }});
+    let g=await iaJSON(contrato,{maxTokens:Math.min(4000,1400+nSec*500),temperature:0.85,onStatus:(m)=>{ if(st) st.textContent=m; }});
+    // 2ª PASADA si el borrador salió flojo (mismo truco que el guion del reel:
+    // regenerar no mejora, pero devolverle SU texto y exigir concreción sí).
+    if(_guiaFloja(g)){
+      if(st) st.textContent='Primer borrador flojo — puliendo el contenido…';
+      try{
+        const mejora=await iaJSON(contrato+`
+
+Este fue tu primer borrador:
+"""${JSON.stringify(g)}"""
+Es DEMASIADO GENÉRICO. Eres ahora el editor jefe: REESCRÍBELO ENTERO subiendo la concreción, con el MISMO esquema JSON:
+- Cada paso del "como" debe tener 8-14 palabras con el detalle operativo (QUÉ exactamente, DÓNDE, CUÁNTO). "Identifica tus fortalezas" está PROHIBIDO; "Escribe las 3 obras de las que el cliente habló mejor y por qué" está bien.
+- Cada "porque" con un dato, cifra o consecuencia medible.
+- Cada "ejemplo" con nombre/tipo de negocio + situación + resultado EN NÚMEROS.
+- Preguntas del autodiagnóstico = síntomas concretos del día a día ("¿Tus 3 últimos presupuestos se cayeron al dar el precio?"), nunca genéricas.
+Devuelve SOLO el JSON completo mejorado.`,
+        {maxTokens:Math.min(4000,1400+nSec*500),temperature:0.8,onStatus:(m)=>{ if(st) st.textContent=m; }});
+        if(Array.isArray(mejora.secciones)&&mejora.secciones.length&&!_guiaFloja(mejora)) g=mejora;
+        else if(Array.isArray(mejora.secciones)&&mejora.secciones.length) g=mejora;  // aun imperfecta, suele ser mejor que el borrador
+      }catch(e){ /* si la 2ª pasada falla, seguimos con el borrador */ }
+    }
     const secciones=(Array.isArray(g.secciones)?g.secciones:[]).filter(s=>s&&s.titulo).slice(0,nSec);
     if(!secciones.length) throw new Error('la IA no devolvió secciones');
-    const total=1+secciones.length+((g.checklist||[]).length?1:0)+1;   // portada + secciones + checklist + contacto
+    const diag=(g.autodiagnostico && Array.isArray(g.autodiagnostico.preguntas) && g.autodiagnostico.preguntas.length) ? g.autodiagnostico : null;
+    // portada + secciones + autodiagnóstico + checklist + contacto
+    const total=1+secciones.length+(diag?1:0)+((g.checklist||[]).length?1:0)+1;
     if(st) st.textContent='Maquetando el PDF…';
     const { jsPDF }=window.jspdf;
     const doc=new jsPDF({orientation:'portrait', unit:'px', format:[1080,1350], hotfixes:['px_scaling']});
@@ -5903,13 +6003,16 @@ Devuelve SOLO JSON válido, sin markdown:
       await delay(40);
     };
     await addPagina(_guiaPortada(g));
-    for(let i=0;i<secciones.length;i++) await addPagina(_guiaSeccion(secciones[i], i, i+2, total));
-    if((g.checklist||[]).length) await addPagina(_guiaChecklist(g.checklist.slice(0,7), total-1, total));
-    // página de contacto: mismo truco verificado que en "desde slides"
+    let numPag=2;
+    for(let i=0;i<secciones.length;i++){ await addPagina(_guiaSeccion(secciones[i], i, numPag, total)); numPag++; }
+    if(diag){ await addPagina(_guiaAutodiag(diag, numPag, total)); numPag++; }
+    if((g.checklist||[]).length){ await addPagina(_guiaChecklist(g.checklist.slice(0,7), numPag, total)); numPag++; }
+    // página de contacto: mismo truco verificado que en "desde slides".
+    // El CTA es SIEMPRE la auditoría: es el objetivo comercial de la guía.
     SLIDES.push({tipo:'cta', fondo:'blue', eye:cfg.eye||'',
-      head:'¿Te ayudo a aplicarlo\nen tu negocio?',
-      body:String(g.cierre||'Escríbeme por DM y le damos una vuelta a tu caso, sin compromiso.'),
-      items:[], cta:'Escríbeme '+String(cfg.ctaEj||'HOLA').split(',')[0].trim()});
+      head:'¿Quieres que lo revise\nyo contigo?',
+      body:String(g.cierre||'Escríbeme AUDITORÍA por DM y reviso tu caso: te dices dónde estás y cuál es tu siguiente paso, sin compromiso.'),
+      items:[], cta:'Escríbeme AUDITORÍA'});
     try{
       const bakModo=modo; modo='carrusel';                    // contacto SIEMPRE 4:5 como el resto de páginas
       try{ await addPagina(render(SLIDES[SLIDES.length-1], SLIDES.length-1)); }
