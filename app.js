@@ -6998,7 +6998,7 @@ document.addEventListener('keydown',e=>{
   // o si hay una ventana abierta.
   const t = e.target;
   if(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on, #plnModal.on, #calModal.on, #fmtModal.on, #gridModal.on, #guiaModal.on')) return;
+  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on, #plnModal.on, #calModal.on, #fmtModal.on, #gridModal.on, #guiaModal.on, #obraModal.on')) return;
   const k=(e.key||'').toLowerCase();
   if((e.ctrlKey||e.metaKey) && k==='z'){ e.preventDefault(); e.shiftKey?rehacer():deshacer(); return; }
   if((e.ctrlKey||e.metaKey) && k==='y'){ e.preventDefault(); rehacer(); return; }
@@ -7258,6 +7258,115 @@ function previewPlantilla(i){
   document.querySelectorAll('#plnGrid .cal-card').forEach(c=>c.classList.toggle('sel', +c.dataset.i===i));
 }
 function usarPlantillaSel(){ if(_plnPrevIdx>=0) usarPlantilla(_plnPrevIdx); else toast2('Pasa el ratón por una plantilla primero'); }
+
+/* ═══════════════════════════════════════════
+   🏗 CARRUSEL DE OBRA — antes/después con fotos reales
+   El formato rey del nicho reformas: eliges fotos de ANTES y DESPUÉS y se
+   monta el carrusel narrativo entero (portada con el resultado, punto de
+   partida, comparativa partida, pares extra, dato y CTA). Funciona sin IA
+   (textos potentes por defecto); con IA se escriben sobre TU obra.
+   ═══════════════════════════════════════════ */
+let _obraSel=new Map();   // id de MEDIA → 'antes' | 'despues'
+function abrirObraModal(){
+  const m=document.getElementById('obraModal'); if(!m) return;
+  m.classList.add('on');
+  renderObraGrid();
+  const st=document.getElementById('obraStatus');
+  if(st){ st.style.color='var(--UI-M)'; st.textContent=hayIA()?'Funciona sin IA; con IA los textos se escriben sobre TU obra.':'Sin IA ahora: se usan textos de marca (también quedan muy bien).'; }
+}
+function cerrarObraModal(){ document.getElementById('obraModal')?.classList.remove('on'); }
+function renderObraGrid(){
+  const cont=document.getElementById('obraGrid'); if(!cont) return;
+  let fotos=MEDIA;
+  try{ if(typeof esFotoContenido==='function'){ const f2=MEDIA.filter(x=>esFotoContenido(x.name||'')); if(f2.length) fotos=f2; } }catch(e){}
+  if(!fotos.length){ cont.innerHTML='<div style="grid-column:1/-1;color:var(--UI-M);font-size:11px;text-align:center;padding:24px;line-height:1.6">No hay fotos en la biblioteca.<br>Súbelas en 📷 Fotos/Vídeos (o arrástralas allí) y vuelve a abrir esto.</div>'; return; }
+  cont.innerHTML=fotos.map(f=>{
+    const rol=_obraSel.get(f.id)||'';
+    return `<div class="obra-ph ${rol}" data-id="${f.id}" onclick="obraToggle(${f.id})">
+      <img src="${f.url}" alt="">
+      <span class="obra-tag">${rol==='antes'?'ANTES':rol==='despues'?'DESPUÉS':''}</span>
+    </div>`;
+  }).join('');
+}
+function obraToggle(id){
+  const rol=_obraSel.get(id);
+  if(!rol) _obraSel.set(id,'antes');
+  else if(rol==='antes'){ _obraSel.delete(id); _obraSel.set(id,'despues'); }  // re-insertar mantiene orden de marcado
+  else _obraSel.delete(id);
+  const cell=document.querySelector(`.obra-ph[data-id="${id}"]`);
+  if(cell){
+    const nuevo=_obraSel.get(id)||'';
+    cell.className='obra-ph '+nuevo;
+    const tag=cell.querySelector('.obra-tag');
+    if(tag) tag.textContent=nuevo==='antes'?'ANTES':nuevo==='despues'?'DESPUÉS':'';
+  }
+}
+async function generarCarruselObra(){
+  const antes=[...(_obraSel.entries())].filter(([,r])=>r==='antes').map(([id])=>id);
+  const despues=[...(_obraSel.entries())].filter(([,r])=>r==='despues').map(([id])=>id);
+  const st=document.getElementById('obraStatus');
+  if(!antes.length||!despues.length){ if(st){ st.style.color='#ff9f43'; st.textContent='Marca al menos una foto de ANTES (naranja) y una de DESPUÉS (azul).'; } return; }
+  const btn=document.getElementById('obraGenBtn');
+  const desc=(document.getElementById('obraDesc')?.value||'').trim();
+  const dato=(document.getElementById('obraDato')?.value||'').trim();
+  // Textos por defecto (potentes, de marca) — la IA los personaliza si puede
+  let T2={
+    hook: rnd(['Nadie daba un euro\npor este espacio.','Mismo piso.\nCuesta creerlo, ¿verdad?','De "esto no se puede salvar"\na esto.','Así se ve una obra\nbien pensada.']),
+    antes:'Cansado, oscuro y sin aprovechar. De aquí partimos.',
+    despues:'El mismo espacio, entendido de otra manera.',
+    detalle:'Los acabados son los que marcan la diferencia.',
+    cierre_head:'¿Tu casa también\npuede dar este salto?',
+    cierre_body:'Cuéntame qué quieres transformar y te digo cómo lo haríamos, sin compromiso.',
+    caption:`La parte que no se ve de una obra así no son los azulejos: es la planificación.${desc?` Esta vez: ${desc}.`:''}\n\n¿Quieres saber qué haríamos con tu espacio? Escríbeme OBRA por DM y lo vemos.`
+  };
+  if(btn){ btn.disabled=true; }
+  if(hayIA()&&desc){
+    if(st){ st.style.color='#38B6FF'; st.textContent='Escribiendo los textos sobre tu obra…'; }
+    try{
+      const cfg=N();
+      const out=await iaJSON(`Eres Rosa María, ${cfg.persona}. Tono: ${cfg.tono}. Español de España.
+Carrusel de ANTES/DESPUÉS de una obra real: "${desc}".
+Los textos van SOBRE las fotos: cortos, con emoción contenida y cero humo.
+Devuelve SOLO JSON: {"hook":"titular de portada sobre la foto del DESPUÉS, máx 55 caracteres, que pare el scroll (puedes usar \\n)","antes":"frase del punto de partida, máx 12 palabras","despues":"frase del resultado, máx 12 palabras","detalle":"frase sobre un detalle o acabado, máx 12 palabras","cierre_head":"titular del CTA final, máx 45 caracteres (puedes usar \\n)","cierre_body":"1-2 frases invitando a contar su caso","caption":"caption de Instagram: 3-4 frases en 1ª persona contando la historia de ESTA obra, termina invitando a escribir OBRA por DM"}`,
+        {maxTokens:600,temperature:0.85});
+      ['hook','antes','despues','detalle','cierre_head','cierre_body','caption'].forEach(k=>{
+        if(out[k]&&String(out[k]).trim()) T2[k]=String(out[k]).trim();
+      });
+    }catch(e){ /* con los textos por defecto vamos bien */ }
+  }
+  // Montaje del carrusel
+  const slides=[];
+  const foto=(id,eye,head,cta,op)=>({tipo:'foto',fondo:'dark',imgFondo:id,overlay:'dark',imgLayout:'bg-full',txtPos:'bottom',ovOpacity:op??58,eye,head,body:'',items:[],cta});
+  slides.push(foto(despues[0],'Transformación real',T2.hook,'Desliza para ver el antes →',52));
+  slides.push(foto(antes[0],'El punto de partida',T2.antes,'Sigue →',62));
+  slides.push({tipo:'bafoto',fondo:'dark',imgAntes:antes[0],imgDespues:despues[0],eye:'',head:'',body:'',
+    items:['Antes: '+T2.antes,'Después: '+T2.despues],cta:'Mismo espacio. Otra vida.'});
+  const pares=Math.min(antes.length,despues.length);
+  for(let i=1;i<pares;i++){
+    slides.push({tipo:'bafoto',fondo:'dark',imgAntes:antes[i],imgDespues:despues[i],eye:'',head:'',body:'',
+      items:['Antes: Otro ángulo del punto de partida.','Después: '+T2.detalle],cta:'→'});
+  }
+  for(let j=pares;j<despues.length;j++){
+    slides.push(foto(despues[j],'El resultado',j===pares?T2.detalle:'Cada rincón cuenta.','→'));
+  }
+  const mDato=dato.match(/([\d.,]+)\s*(.*)/);
+  if(mDato&&mDato[1]){
+    slides.push({tipo:'numero',fondo:'dark',eye:'El dato',head:mDato[1],body:(mDato[2]||'de obra').trim(),
+      items:[mDato[1],'Planificada para molestar lo justo en tu día a día.'],cta:'→'});
+  }
+  slides.push({tipo:'cta',fondo:'blue',eye:'Trabaja conmigo',head:T2.cierre_head,body:T2.cierre_body,items:[],cta:'Escríbeme OBRA'});
+  // Volcar al editor (nicho reformas: es su contenido)
+  if(_nicho!=='reformas'){ setNicho('reformas'); const ns=document.getElementById('nichoSel'); if(ns) ns.value='reformas'; }
+  SLIDES.length=0; slides.forEach(s=>SLIDES.push(s));
+  cur=0; setModo('carrusel');
+  buildThumbs(); show(0);
+  COPY_CTX={angulo:'sistema', ai:null, idea:{caption:T2.caption, hashtags:'#antesydespues '+(N().hashtags||''), cta:'Escríbeme OBRA'}};
+  if(typeof refrescarCopy==='function') refrescarCopy();
+  if(btn){ btn.disabled=false; }
+  cerrarObraModal();
+  if(typeof abrirTabEditar==='function') abrirTabEditar();
+  toast2(`🏗 Carrusel de obra listo (${slides.length} slides) — revísalo y ajusta lo que quieras`);
+}
 
 /* ═══════════════════════════════════════════
    👁 VISTA DE PERFIL — cómo quedará tu feed en la cuadrícula de Instagram

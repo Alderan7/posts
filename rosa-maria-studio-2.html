@@ -789,8 +789,16 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 #resModal .resm-grid .mlib-item,#preModal .resm-grid .mlib-item{aspect-ratio:9/16}
 #resModal .mlib-use,#preModal .mlib-use{font-size:13px}
 /* Modal favoritos / diseños guardados */
-#favModal,#calModal,#plnModal,#fmtModal,#gridModal,#guiaModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
-#favModal.on,#calModal.on,#plnModal.on,#fmtModal.on,#gridModal.on,#guiaModal.on{display:flex}
+#favModal,#calModal,#plnModal,#fmtModal,#gridModal,#guiaModal,#obraModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
+#favModal.on,#calModal.on,#plnModal.on,#fmtModal.on,#gridModal.on,#guiaModal.on,#obraModal.on{display:flex}
+/* Selector de fotos del carrusel de obra */
+.obra-ph{position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;cursor:pointer;border:3px solid transparent;background:#111}
+.obra-ph img{width:100%;height:100%;object-fit:cover;display:block}
+.obra-ph .obra-tag{position:absolute;top:5px;left:5px;font-size:9px;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:4px;font-family:'Montserrat',sans-serif;display:none}
+.obra-ph.antes{border-color:#ff9f43}
+.obra-ph.antes .obra-tag{display:block;background:#ff9f43;color:#1A1A1A}
+.obra-ph.despues{border-color:var(--UI-A)}
+.obra-ph.despues .obra-tag{display:block;background:var(--UI-A);color:#fff}
 /* Galería de formatos */
 #fmtGrid{display:flex;flex-direction:column;gap:18px}
 .fmt-group-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--UI-A);font-weight:700;margin-bottom:9px}
@@ -1137,6 +1145,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <button class="btn btn-out" id="btnPrompt" onclick="abrirPromptModal()" title="Describe lo que quieres y la IA diseña el post/carrusel/reel entero">✨ Prompt</button>
     <button class="btn btn-out" id="btnMes" onclick="generarMes()" title="Fábrica: genera el contenido de varios días con ideas del banco y lo descarga en un ZIP">📅 Mes</button>
     <button class="btn btn-out" id="btnSemana" onclick="semanaEnUnClic()" title="Tu semana en un clic: lunes a viernes (2 carruseles, 2 reels y 1 post) con captions y guiones, en un ZIP por días. Sin IA">📦 Semana</button>
+    <button class="btn btn-out" id="btnObra" onclick="abrirObraModal()" title="Elige fotos de ANTES y DESPUÉS de una obra y monta el carrusel narrativo entero — el formato que mejor funciona en reformas">🏗 Obra</button>
     <button class="btn btn-out" id="btnFeed9" onclick="generarFeed9()" title="Crea 9 posts coordinados que juntos forman un mosaico en el grid de tu perfil. Sin IA">🧩 Feed 9</button>
     <button class="btn btn-gh" id="btnPerfil" onclick="abrirVistaPerfil()" title="Ver cómo quedarán tus slides en la cuadrícula del perfil (recorte 3:4 de Instagram)">👁 Perfil</button>
     <button class="btn btn-gen" id="btnGen" onclick="generar()">
@@ -1268,6 +1277,36 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <div class="prev-meta" id="calPrevMeta">Pasa el ratón por un día para verlo aquí.</div>
           <button class="btn btn-out" style="width:100%" onclick="usarDiaSel()">Usar este día</button>
         </aside>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CARRUSEL DE OBRA — antes/después con fotos reales -->
+<div id="obraModal" onclick="if(event.target===this)cerrarObraModal()">
+  <div class="resm-box" style="width:min(860px,95vw);height:auto;max-height:90vh">
+    <div class="resm-head">
+      <span>🏗 Carrusel de obra — antes / después</span>
+      <button onclick="cerrarObraModal()" class="resm-close">✕</button>
+    </div>
+    <div style="padding:16px 18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto">
+      <div style="font-size:11px;color:var(--UI-M);line-height:1.6">Toca cada foto para marcarla: 1º toque = <b style="color:#ff9f43">ANTES</b> · 2º = <b style="color:var(--UI-A)">DESPUÉS</b> · 3º = quitar. Con una de cada ya se monta el carrusel entero (portada, revelación, comparativa, dato y CTA). <b style="color:var(--UI-T)">Consejo: usa fotos REALES de obra</b> (tuyas o de tus clientes) — es lo que para el scroll.</div>
+      <div id="obraGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;max-height:300px;overflow-y:auto"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="flex:2;min-width:240px">
+          <div style="font-size:10px;color:var(--UI-M);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">¿Qué obra es? (para que los textos hablen de ELLA)</div>
+          <input type="text" id="obraDesc" placeholder="Ej: cocina completa en un piso de los años 80"
+            style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:9px 11px;border-radius:6px;font-size:12px;font-family:'Montserrat',sans-serif">
+        </div>
+        <div style="flex:1;min-width:160px">
+          <div style="font-size:10px;color:var(--UI-M);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Dato destacado (opcional)</div>
+          <input type="text" id="obraDato" placeholder="Ej: 6 semanas"
+            style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:9px 11px;border-radius:6px;font-size:12px;font-family:'Montserrat',sans-serif">
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span id="obraStatus" style="font-size:11px;color:var(--UI-M);flex:1;line-height:1.5">Funciona sin IA; con IA los textos se escriben sobre TU obra.</span>
+        <button class="btn btn-gen" id="obraGenBtn" onclick="generarCarruselObra()"><span class="spinner"></span>🏗 Montar carrusel</button>
       </div>
     </div>
   </div>
@@ -2209,6 +2248,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=129"></script>
+<script src="app.js?v=130"></script>
 </body>
 </html>
