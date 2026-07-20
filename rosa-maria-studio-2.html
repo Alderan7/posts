@@ -789,8 +789,20 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 #resModal .resm-grid .mlib-item,#preModal .resm-grid .mlib-item{aspect-ratio:9/16}
 #resModal .mlib-use,#preModal .mlib-use{font-size:13px}
 /* Modal favoritos / diseños guardados */
-#favModal,#calModal,#plnModal,#fmtModal,#gridModal,#guiaModal,#obraModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
-#favModal.on,#calModal.on,#plnModal.on,#fmtModal.on,#gridModal.on,#guiaModal.on,#obraModal.on{display:flex}
+#favModal,#calModal,#plnModal,#fmtModal,#gridModal,#guiaModal,#obraModal,#estModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
+#favModal.on,#calModal.on,#plnModal.on,#fmtModal.on,#gridModal.on,#guiaModal.on,#obraModal.on,#estModal.on{display:flex}
+/* Estrategia viral: pestañas y tarjetas */
+.est-tab{border:1px solid var(--UI-B2);background:transparent;color:var(--UI-M);border-radius:6px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif}
+.est-tab.on{background:var(--UI-A);border-color:var(--UI-A);color:#fff}
+.est-panel{display:none}
+.est-panel.on{display:block}
+.est-card{background:var(--UI-B);border:1px solid var(--UI-B2);border-radius:10px;padding:14px 16px}
+.est-card h4{font-family:'Montserrat',sans-serif;font-size:14px;color:var(--UI-T);margin:0 0 6px;font-weight:700}
+.est-chip{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:4px;background:rgba(56,182,255,.14);color:var(--UI-A)}
+.est-mini{font-size:10px;color:var(--UI-M);letter-spacing:.08em;text-transform:uppercase;margin:10px 0 3px;font-weight:700}
+.est-card p{font-family:'Montserrat',sans-serif;font-size:12px;color:var(--UI-T);line-height:1.5;margin:0}
+.est-act{border:1px solid var(--UI-A);background:transparent;color:var(--UI-A);border-radius:6px;padding:5px 11px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;margin-top:10px}
+.est-act:hover{background:var(--UI-A);color:#fff}
 /* Selector de fotos del carrusel de obra */
 .obra-ph{position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;cursor:pointer;border:3px solid transparent;background:#111}
 .obra-ph img{width:100%;height:100%;object-fit:cover;display:block}
@@ -1146,6 +1158,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <button class="btn btn-out" id="btnMes" onclick="generarMes()" title="Fábrica: genera el contenido de varios días con ideas del banco y lo descarga en un ZIP">📅 Mes</button>
     <button class="btn btn-out" id="btnSemana" onclick="semanaEnUnClic()" title="Tu semana en un clic: lunes a viernes (2 carruseles, 2 reels y 1 post) con captions y guiones, en un ZIP por días. Sin IA">📦 Semana</button>
     <button class="btn btn-out" id="btnObra" onclick="abrirObraModal()" title="Elige fotos de ANTES y DESPUÉS de una obra y monta el carrusel narrativo entero — el formato que mejor funciona en reformas">🏗 Obra</button>
+    <button class="btn btn-out" id="btnEstrategia" onclick="abrirEstrategia('radar')" title="Embudo de contenido: Radar (5 ideas potentes) → Copys (3 versiones) → Creatividad (diseño). Cada paso con su botón">🧠 Estrategia</button>
     <button class="btn btn-out" id="btnFeed9" onclick="generarFeed9()" title="Crea 9 posts coordinados que juntos forman un mosaico en el grid de tu perfil. Sin IA">🧩 Feed 9</button>
     <button class="btn btn-gh" id="btnPerfil" onclick="abrirVistaPerfil()" title="Ver cómo quedarán tus slides en la cuadrícula del perfil (recorte 3:4 de Instagram)">👁 Perfil</button>
     <button class="btn btn-gen" id="btnGen" onclick="generar()">
@@ -1277,6 +1290,54 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <div class="prev-meta" id="calPrevMeta">Pasa el ratón por un día para verlo aquí.</div>
           <button class="btn btn-out" style="width:100%" onclick="usarDiaSel()">Usar este día</button>
         </aside>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ESTRATEGIA VIRAL — Radar → Copys → Creatividad (embudo) -->
+<div id="estModal" onclick="if(event.target===this)cerrarEstrategia()">
+  <div class="resm-box" style="width:min(880px,96vw);height:auto;max-height:92vh">
+    <div class="resm-head">
+      <span>🧠 Estrategia viral</span>
+      <button onclick="cerrarEstrategia()" class="resm-close">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;padding:12px 18px;border-bottom:1px solid var(--UI-B);flex-shrink:0;flex-wrap:wrap">
+      <button class="est-tab on" data-t="radar" onclick="estTab('radar')">📡 1 · Radar</button>
+      <button class="est-tab" data-t="copys" onclick="estTab('copys')">✍️ 2 · Copys</button>
+      <button class="est-tab" data-t="crea" onclick="estTab('crea')">🎨 3 · Creatividad</button>
+      <span style="margin-left:auto;font-size:9px;color:var(--UI-M);align-self:center" id="estNicho"></span>
+    </div>
+    <div class="resm-body">
+      <!-- TAB RADAR -->
+      <div class="est-panel on" id="estPanel-radar">
+        <div style="font-size:11px;color:var(--UI-M);line-height:1.6;margin-bottom:12px">5 ángulos de contenido de alto potencial para tu nicho, con gancho, formato y prioridad. <b style="color:var(--UI-T)">Ojo:</b> no lee las noticias de hoy en internet — se basa en los dolores y patrones reales de tu sector (que es donde está el jugo).</div>
+        <button class="btn btn-gen" id="estRadarBtn" onclick="radarViral()"><span class="spinner"></span>📡 Buscar oportunidades de hoy</button>
+        <div id="estRadarOut" style="margin-top:14px;display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+      <!-- TAB COPYS -->
+      <div class="est-panel" id="estPanel-copys">
+        <div style="font-size:11px;color:var(--UI-M);line-height:1.6;margin-bottom:8px">3 versiones de copy del mismo tema (Autoridad · Dolor · Oportunidad), con gancho, desarrollo, CTA, hashtags y puntuación de potencial.</div>
+        <div style="font-size:10px;color:var(--UI-M);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Tema</div>
+        <textarea id="estTema" rows="2" placeholder="Escríbelo, o elige uno del Radar con '→ Escribir copys'"
+          style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:10px;border-radius:8px;font-size:13px;font-family:'Montserrat',sans-serif;line-height:1.5;resize:vertical"></textarea>
+        <button class="btn btn-gen" id="estCopysBtn" onclick="generarCopysEst()" style="margin-top:8px"><span class="spinner"></span>✍️ Generar los 3 copys</button>
+        <div id="estCopysOut" style="margin-top:14px;display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+      <!-- TAB CREATIVIDAD -->
+      <div class="est-panel" id="estPanel-crea">
+        <div style="font-size:11px;color:var(--UI-M);line-height:1.6;margin-bottom:10px">Convierte un copy en diseño de tu marca (portada/carrusel/reel) con el motor de la app. Elige un copy en la pestaña anterior con "🎨 Diseñar esto".</div>
+        <div id="estCreaResumen" style="font-size:12px;color:var(--UI-M);background:var(--UI-B);border:1px solid var(--UI-B2);border-radius:8px;padding:14px;line-height:1.5">Todavía no has elegido ningún copy. Ve a <b style="color:var(--UI-T)">✍️ Copys</b>, genera y pulsa "🎨 Diseñar esto" en el que más te guste.</div>
+        <div id="estCreaBtnWrap" style="display:none;margin-top:12px;display:flex;align-items:center;gap:10px">
+          <span style="font-size:10px;color:var(--UI-M)">Formato</span>
+          <select id="estCreaFmt" style="background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:6px 8px;border-radius:5px;font-size:11px;font-family:'Montserrat',sans-serif">
+            <option value="carrusel">🗂 Carrusel</option>
+            <option value="post">📄 Post</option>
+            <option value="reel">🎬 Reel (portada)</option>
+          </select>
+          <button class="btn btn-gen" id="estCreaBtn" onclick="crearCreatividad()" style="margin-left:auto"><span class="spinner"></span>🎨 Diseñar en la app</button>
+        </div>
+        <div id="estCreaStatus" style="font-size:11px;color:var(--UI-M);margin-top:10px;line-height:1.5"></div>
       </div>
     </div>
   </div>
@@ -2248,6 +2309,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=130"></script>
+<script src="app.js?v=131"></script>
 </body>
 </html>

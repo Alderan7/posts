@@ -6998,7 +6998,7 @@ document.addEventListener('keydown',e=>{
   // o si hay una ventana abierta.
   const t = e.target;
   if(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on, #plnModal.on, #calModal.on, #fmtModal.on, #gridModal.on, #guiaModal.on, #obraModal.on')) return;
+  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on, #plnModal.on, #calModal.on, #fmtModal.on, #gridModal.on, #guiaModal.on, #obraModal.on, #estModal.on')) return;
   const k=(e.key||'').toLowerCase();
   if((e.ctrlKey||e.metaKey) && k==='z'){ e.preventDefault(); e.shiftKey?rehacer():deshacer(); return; }
   if((e.ctrlKey||e.metaKey) && k==='y'){ e.preventDefault(); rehacer(); return; }
@@ -7258,6 +7258,181 @@ function previewPlantilla(i){
   document.querySelectorAll('#plnGrid .cal-card').forEach(c=>c.classList.toggle('sel', +c.dataset.i===i));
 }
 function usarPlantillaSel(){ if(_plnPrevIdx>=0) usarPlantilla(_plnPrevIdx); else toast2('Pasa el ratón por una plantilla primero'); }
+
+/* ═══════════════════════════════════════════
+   🧠 ESTRATEGIA VIRAL — embudo Radar → Copys → Creatividad
+   3 herramientas encadenadas: el Radar da 5 ideas potentes del nicho; Copys
+   escribe 3 versiones de una idea; Creatividad convierte un copy en diseño con
+   el motor de la app. NO navega internet: el Radar se basa en los dolores y
+   patrones REALES del nicho (que es donde está el jugo), no en "noticias de hoy".
+   ═══════════════════════════════════════════ */
+let _estIdeas=[], _estCopys=[], _estCopy=null;
+function abrirEstrategia(tab){
+  const m=document.getElementById('estModal'); if(!m) return;
+  m.classList.add('on');
+  const nl=document.getElementById('estNicho'); if(nl) nl.textContent='Nicho: '+(N().nombre||getNicho());
+  estTab(tab||'radar');
+}
+function cerrarEstrategia(){ document.getElementById('estModal')?.classList.remove('on'); }
+function estTab(t){
+  document.querySelectorAll('#estModal .est-tab').forEach(b=>b.classList.toggle('on', b.dataset.t===t));
+  document.querySelectorAll('#estModal .est-panel').forEach(p=>p.classList.toggle('on', p.id==='estPanel-'+t));
+}
+
+// 📡 PASO 1 — Radar: 5 ideas de contenido de alto potencial del nicho activo.
+async function radarViral(){
+  const btn=document.getElementById('estRadarBtn');
+  const out=document.getElementById('estRadarOut');
+  if(!hayIA()){ if(out) out.innerHTML='<div style="color:#ff9f43;font-size:12px;line-height:1.6">Sin IA ahora mismo. Vuelve a intentarlo en un rato, o usa 💡 200 ideas / 🔥 Plantillas (funcionan sin IA).</div>'; return; }
+  const cfg=N();
+  const contrato=`Eres estratega de contenido para Instagram del nicho "${cfg.nombre}". Cliente ideal: ${cfg.lector}. Objetivo de la marca: posicionar a Rosa María como referente en captación de clientes para este sector. Tono: ${cfg.tono}.
+IMPORTANTE: NO inventes "noticias de hoy" ni datos de actualidad que no puedas conocer. Básate en los DOLORES reales, objeciones frecuentes, deseos y comportamientos del cliente ideal, y en formatos que funcionan en Instagram para este nicho.
+Dame 5 ideas de contenido de ALTO potencial (nada genérico; pensadas para atraer a ese cliente y generar conversaciones comerciales).
+Devuelve SOLO JSON:
+{"ideas":[{
+  "tema":"tema concreto",
+  "porque":"por qué puede funcionar (dolor / identificación / utilidad / potencial de comentarios), 1 frase",
+  "formato":"Reel|Carrusel|Post|Stories",
+  "gancho":"primera frase potente que pare el scroll",
+  "desarrollo":"2-3 líneas de cómo estructurarlo",
+  "cta":"llamada a la acción orientada a leads/conversación",
+  "prioridad":"Publícalo primero|Para stories|Reel principal|Guardar para remarketing"
+}],
+ "recomendacion":"cuál de las 5 publicarías primero y por qué, 1-2 frases"}`;
+  if(btn){ btn.disabled=true; btn.classList.add('loading'); }
+  if(out) out.innerHTML='<div style="color:var(--UI-A);font-size:12px">📡 Buscando ángulos de alto potencial…</div>';
+  try{
+    const r=await iaJSON(contrato,{maxTokens:2000,temperature:0.9});
+    _estIdeas=(Array.isArray(r.ideas)?r.ideas:[]).filter(x=>x&&x.tema).slice(0,5);
+    if(!_estIdeas.length) throw new Error('sin ideas');
+    out.innerHTML=_estIdeas.map((it,i)=>`
+      <div class="est-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <h4>${favEsc(it.tema)}</h4>
+          <span class="est-chip">${favEsc(it.formato||'')}</span>
+        </div>
+        <p style="color:var(--UI-M);margin-bottom:8px"><b style="color:var(--UI-A)">Por qué:</b> ${favEsc(it.porque||'')}</p>
+        <div class="est-mini">Gancho</div><p>${favEsc(it.gancho||'')}</p>
+        <div class="est-mini">Desarrollo</div><p style="color:var(--UI-M)">${favEsc(it.desarrollo||'')}</p>
+        <div class="est-mini">CTA</div><p>${favEsc(it.cta||'')}</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+          <span style="font-size:10px;color:#ff9f43;font-weight:700">▸ ${favEsc(it.prioridad||'')}</span>
+          <button class="est-act" onclick="usarTemaRadar(${i})">→ Escribir copys</button>
+        </div>
+      </div>`).join('')
+      + (r.recomendacion?`<div class="est-card" style="background:#1A1A1A;border-color:#38B6FF">
+          <div class="est-mini" style="color:#38B6FF">Recomendación del día</div>
+          <p style="color:#F5F1EA">${favEsc(r.recomendacion)}</p></div>`:'');
+  }catch(e){ if(out) out.innerHTML='<div style="color:#ff6b6b;font-size:12px">No se pudo: '+favEsc(e.message)+'</div>'; }
+  finally{ if(btn){ btn.disabled=false; btn.classList.remove('loading'); } }
+}
+function usarTemaRadar(i){
+  const it=_estIdeas[i]; if(!it) return;
+  const ta=document.getElementById('estTema'); if(ta) ta.value=it.tema;
+  estTab('copys');
+  toast2('Tema cargado — pulsa "Generar los 3 copys"');
+}
+
+// ✍️ PASO 2 — Copys: 3 versiones (Autoridad / Dolor / Oportunidad) del tema.
+async function generarCopysEst(){
+  const tema=(document.getElementById('estTema')?.value||'').trim();
+  const out=document.getElementById('estCopysOut');
+  const btn=document.getElementById('estCopysBtn');
+  if(!tema){ if(out) out.innerHTML='<div style="color:#ff9f43;font-size:12px">Escribe un tema (o elígelo del Radar).</div>'; return; }
+  if(!hayIA()){ if(out) out.innerHTML='<div style="color:#ff9f43;font-size:12px">Sin IA ahora. Prueba en un rato.</div>'; return; }
+  const cfg=N();
+  const contrato=`Eres copywriter senior de Instagram, marketing y captación de clientes para el nicho "${cfg.nombre}". Cliente ideal: ${cfg.lector}. Tono cercano, profesional, estratégico y fácil; evita lo agresivo/vendehumo.
+Tema: "${tema}".
+Genera 3 versiones completas de copy con enfoque distinto: 1) Autoridad (demuestra experiencia), 2) Dolor/Problema (un problema habitual del cliente), 3) Oportunidad/Crecimiento (una mejora posible).
+Devuelve SOLO JSON:
+{"versiones":[{
+  "enfoque":"Autoridad|Dolor|Oportunidad",
+  "titulo":"título corto que genere curiosidad",
+  "gancho":"primera frase que capta la atención en 3s",
+  "desarrollo":"párrafos cortos y fáciles separados por \\n\\n, hablando de tú al cliente, con ejemplo concreto si puedes",
+  "cierre":"resume la idea clave, 1-2 frases",
+  "cta":"llamada a la acción que genere conversación",
+  "hashtags":"10-15 hashtags con # (mezcla nicho, marketing, negocio local, captación)",
+  "formato":"Reel|Carrusel|Post",
+  "idea_visual":"qué imagen/vídeo/secuencia usarías, 1 frase",
+  "viral":{"alcance":0,"comentarios":0,"leads":0}
+}],
+ "recomendacion":"cuál de las 3 publicarías primero y por qué, 1-2 frases"}
+Las puntuaciones "viral" son del 1 al 10.`;
+  if(btn){ btn.disabled=true; btn.classList.add('loading'); }
+  if(out) out.innerHTML='<div style="color:var(--UI-A);font-size:12px">✍️ Escribiendo las 3 versiones…</div>';
+  try{
+    const r=await iaJSON(contrato,{maxTokens:2600,temperature:0.85});
+    _estCopys=(Array.isArray(r.versiones)?r.versiones:[]).filter(x=>x&&(x.titulo||x.gancho)).slice(0,3);
+    if(!_estCopys.length) throw new Error('sin copys');
+    const col={Autoridad:'#38B6FF',Dolor:'#ff9f43',Oportunidad:'#5BD68A'};
+    out.innerHTML=_estCopys.map((c,i)=>{
+      const v=c.viral||{};
+      return `<div class="est-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+          <span class="est-chip" style="background:${(col[c.enfoque]||'#38B6FF')}22;color:${col[c.enfoque]||'#38B6FF'}">${favEsc(c.enfoque||'')}</span>
+          <span style="font-size:9px;color:var(--UI-M)">Alcance ${v.alcance||'-'} · Comentarios ${v.comentarios||'-'} · Leads ${v.leads||'-'}</span>
+        </div>
+        <h4 style="margin-top:8px">${favEsc(c.titulo||'')}</h4>
+        <p style="margin-bottom:8px"><b>${favEsc(c.gancho||'')}</b></p>
+        <p style="color:var(--UI-M);white-space:pre-wrap">${favEsc(c.desarrollo||'')}</p>
+        <div class="est-mini">Cierre</div><p style="color:var(--UI-M)">${favEsc(c.cierre||'')}</p>
+        <div class="est-mini">CTA</div><p>${favEsc(c.cta||'')}</p>
+        <div class="est-mini">Idea visual</div><p style="color:var(--UI-M)">${favEsc(c.idea_visual||'')} · <span style="color:var(--UI-A)">${favEsc(c.formato||'')}</span></p>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="est-act" onclick="copiarCopyEst(${i})" style="border-color:var(--UI-B2);color:var(--UI-T)">📋 Copiar texto+hashtags</button>
+          <button class="est-act" onclick="usarCopyEst(${i})">🎨 Diseñar esto</button>
+        </div>
+      </div>`;
+    }).join('')
+      + (r.recomendacion?`<div class="est-card" style="background:#1A1A1A;border-color:#38B6FF">
+          <div class="est-mini" style="color:#38B6FF">Recomendación</div>
+          <p style="color:#F5F1EA">${favEsc(r.recomendacion)}</p></div>`:'');
+  }catch(e){ if(out) out.innerHTML='<div style="color:#ff6b6b;font-size:12px">No se pudo: '+favEsc(e.message)+'</div>'; }
+  finally{ if(btn){ btn.disabled=false; btn.classList.remove('loading'); } }
+}
+function _textoCopyEst(c){
+  return `${c.titulo||''}\n\n${c.gancho||''}\n\n${c.desarrollo||''}\n\n${c.cierre||''}\n\n${c.cta||''}\n\n${c.hashtags||''}`.trim();
+}
+function copiarCopyEst(i){ const c=_estCopys[i]; if(c) copiar(_textoCopyEst(c)); }
+function usarCopyEst(i){
+  _estCopy=_estCopys[i]; if(!_estCopy) return;
+  const fsel=document.getElementById('estCreaFmt');
+  if(fsel) fsel.value=(_estCopy.formato==='Reel')?'reel':(_estCopy.formato==='Post')?'post':'carrusel';
+  const res=document.getElementById('estCreaResumen');
+  if(res) res.innerHTML=`<div class="est-mini" style="margin-top:0">Copy elegido (${favEsc(_estCopy.enfoque||'')})</div>
+    <p style="color:var(--UI-T);font-weight:700;margin-bottom:6px">${favEsc(_estCopy.titulo||'')}</p>
+    <p style="color:var(--UI-M)">${favEsc(_estCopy.gancho||'')}</p>`;
+  const w=document.getElementById('estCreaBtnWrap'); if(w) w.style.display='flex';
+  document.getElementById('estCreaStatus').textContent='';
+  estTab('crea');
+}
+
+// 🎨 PASO 3 — Creatividad: convierte el copy en diseño de marca (motor existente).
+async function crearCreatividad(){
+  if(!_estCopy){ estTab('copys'); toast2('Elige primero un copy con "🎨 Diseñar esto"'); return; }
+  const st=document.getElementById('estCreaStatus');
+  if(!hayIA()){ if(st){ st.style.color='#ff9f43'; st.textContent='Sin IA ahora. Prueba en un rato.'; } return; }
+  const fmt=document.getElementById('estCreaFmt')?.value||'carrusel';
+  const n = fmt==='carrusel' ? 6 : 1;
+  const c=_estCopy, cfg=N();
+  const brief=`${c.titulo||''}. Enfoque ${c.enfoque||''}. Gancho: ${c.gancho||''}. Idea: ${String(c.desarrollo||'').replace(/\s+/g,' ').slice(0,320)}`;
+  const btn=document.getElementById('estCreaBtn');
+  if(btn){ btn.disabled=true; btn.classList.add('loading'); }
+  if(st){ st.style.color='#38B6FF'; st.textContent='Diseñando con IA…'; }
+  try{
+    const {arr,out}=await pedirDisenoIA(brief, fmt, n, cfg, m=>{ if(st) st.textContent=m; });
+    aplicarDisenoIA(arr,out,fmt,n);
+    // El caption y hashtags son los del COPY que redactaste, no los que invente el diseñador
+    COPY_CTX={ angulo:'sistema', ai:null, idea:{ caption:`${c.desarrollo||''}\n\n${c.cierre||''}\n\n${c.cta||''}`.trim(), hashtags:(c.hashtags||N().hashtags), cta:c.cta||'' } };
+    if(typeof refrescarCopy==='function') refrescarCopy();
+    if(st){ st.style.color='#38B6FF'; st.textContent='✓ Diseño creado.'; }
+    cerrarEstrategia();
+    if(typeof abrirTabEditar==='function') abrirTabEditar();
+    toast2('🎨 Diseño creado desde tu copy — ajústalo a tu gusto');
+  }catch(e){ if(st){ st.style.color='#ff6b6b'; st.textContent='No se pudo: '+e.message; } }
+  finally{ if(btn){ btn.disabled=false; btn.classList.remove('loading'); } }
+}
 
 /* ═══════════════════════════════════════════
    🏗 CARRUSEL DE OBRA — antes/después con fotos reales
