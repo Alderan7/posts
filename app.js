@@ -2238,6 +2238,62 @@ function fitFontParrafo(texto, maxFont, boxW, boxH){
   return Math.max(20, Math.min(maxFont, Math.floor(f)));
 }
 
+// Tamaño de un titular condensado (Anton) para que llene el ancho sin salirse,
+// según la línea más larga y el nº de líneas.
+function _fitImpacto(head){
+  const lineas=String(head||'').split('\n').map(l=>l.replace(/\*/g,''));
+  const maxLen=Math.max(1,...lineas.map(l=>l.length));
+  const L=Math.max(1,lineas.length);
+  const porAncho=940/(maxLen*0.44);          // Anton ≈ 0.44em/car; ancho útil ~940px
+  const porAlto=880/(L*0.98);                // zona de titular ~880px de alto
+  return Math.max(54, Math.min(172, Math.floor(Math.min(porAncho,porAlto))));
+}
+// Titular condensado con UNA palabra/frase marcada *así* dentro de una CAJA
+// de color (como "DINERO"/"CIERRAS" de las referencias).
+function _headImpacto(head, cajaBg, cajaTxt){
+  return String(head||'').split('\n').map(linea=>
+    linea.replace(/\*([^*]+)\*/g, `<span style="background:${cajaBg};color:${cajaTxt};padding:.02em .16em;margin:0 .02em;box-decoration-break:clone;-webkit-box-decoration-break:clone">$1</span>`)
+  ).join('<br>');
+}
+// IMPACTO — titular GIGANTE condensado (estilo "waysuccess"): eyebrow con línea,
+// número gigante de fondo, palabra en caja de color, contador de página y, si
+// hay items, pills de "pilar". Cubre portadas y slides de problema/pilar.
+function rImpacto(d,n){
+  const fondo=d.fondo||'dark';
+  const dark = fondo!=='light';
+  const bg = fondo==='light' ? '#F5F1EA' : fondo==='blue' ? '#38B6FF' : '#1A1A1A';
+  const txt = dark && fondo!=='blue' ? '#F5F1EA' : '#1A1A1A';
+  const accent = fondo==='blue' ? '#1A1A1A' : '#38B6FF';
+  const cajaBg = accent, cajaTxt = (fondo==='blue') ? '#F5F1EA' : (dark ? '#F5F1EA' : '#F5F1EA');
+  const sub = dark && fondo!=='blue' ? 'rgba(245,241,234,.75)' : 'rgba(26,26,26,.72)';
+  const fs=_fitImpacto(d.head);
+  const big=String(d.big||n).trim();
+  const items=(d.items||[]).filter(Boolean);
+  const pills=items.map(it=>`<span style="border:2px solid ${accent};color:${dark&&fondo!=='blue'?'#F5F1EA':'#1A1A1A'};border-radius:999px;padding:8px 18px;font-family:var(--F-SAN);font-weight:600;font-size:${Math.min(T.items,22)}px;white-space:nowrap">${p(it)}</span>`).join('');
+  return`<div class="slide ${slideH()} ${spClass()}" style="position:relative;overflow:hidden;background:${bg}">
+    <!-- número gigante de fondo -->
+    <div style="position:absolute;right:-30px;bottom:-90px;z-index:0;font-family:var(--F-COND);font-size:820px;line-height:.72;color:${accent};opacity:${dark?.07:.09};pointer-events:none">${p(big)}</div>
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%">
+      <div class="SH">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-family:var(--F-SAN);font-weight:700;letter-spacing:.28em;text-transform:uppercase;font-size:${T.eye}px;color:${accent}">${p(d.eye||'')}</span>
+          <div style="width:56px;height:4px;background:${accent}"></div>
+        </div>
+        ${logoHTML(fondo)}
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:26px">
+        <h1 style="font-family:var(--F-COND);font-weight:400;text-transform:uppercase;font-size:${fs}px;line-height:.94;letter-spacing:.005em;color:${txt};margin:0">${_headImpacto(d.head,cajaBg,cajaTxt)}</h1>
+        ${d.body?`<p style="font-family:var(--F-SAN);font-weight:400;font-size:${Math.min(T.body,32)}px;line-height:1.5;color:${sub};max-width:820px;margin:0">${p(d.body)}</p>`:''}
+        ${pills?`<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:4px">${pills}</div>`:''}
+      </div>
+      <div class="SF" style="align-items:flex-end">
+        <span style="font-family:var(--F-SAN);font-size:${T.cta}px;color:${sub};letter-spacing:.1em">${String(n)} · ${String(SLIDES.length).padStart(2,'0')}</span>
+        <span style="font-family:var(--F-SER);font-style:italic;font-size:${T.cta}px;color:${sub}">${p(d.cta||HANDLE)}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
 // Número gigante (hero editorial): un dato enorme + etiqueta + contexto
 function rNumero(d,n){
   const num=(d.head||d.items?.[0]||'+100%');
@@ -2711,6 +2767,7 @@ function renderTipo(d,n){
     case'cuadrante':        return rCuadrante(d,n);
     case'glosario':         return rGlosario(d,n);
     case'comparativa':      return rComparativa(d,n);
+    case'impacto':          return rImpacto(d,n);
     case'revista':          return rRevista(d,n);
     case'indice':           return rIndice(d,n);
     case'citafoto':         return rCitaFoto(d,n);
@@ -3019,7 +3076,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 
 // Tipos de slide que la IA puede usar (foto/fototxt/autoridad/revista llevan imagen)
-const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice','citafoto','numero','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal','bloques','postit','cuadrante','glosario','comparativa'];
+const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice','citafoto','numero','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal','bloques','postit','cuadrante','glosario','comparativa','impacto'];
 const TIPOS_IA_FOTO=['foto','fototxt','autoridad','revista','citafoto','postit'];
 // Tipos que SOLO se ven bien con items rellenos (si la IA los deja vacíos,
 // el slide sale casi en blanco: solo eyebrow + titular). Red de seguridad:
@@ -3050,7 +3107,7 @@ Devuelve SOLO JSON válido, sin markdown:
   "guion": "solo si es reel: guion de 20-25s (gancho/desarrollo/cierre)",
   "slides": [
     {
-      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt | revista | indice | citafoto | numero | chat | nota | versus | bloques | postit | cuadrante | glosario | comparativa",
+      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt | revista | indice | citafoto | numero | chat | nota | versus | bloques | postit | cuadrante | glosario | comparativa | impacto",
       "fondo": "dark | light | blue",
       "eye": "eyebrow corto (kicker en mayúsculas conceptual)",
       "head": "titular del slide (puedes usar \\n)",
@@ -3085,6 +3142,7 @@ TIPOS VIRALES (parecen contenido real, no anuncio — úsalos para enganchar):
 · "cuadrante"=diagrama educativo 2x2 (infografía tipo carrusel de diseño). head=el tema general; body=UNA palabra para el círculo central; items=EXACTAMENTE 4 "Etiqueta::descripción corta" (los 4 pilares/partes del tema). Úsalo para explicar un concepto con 4 partes claras.
 · "glosario"=ficha tipo "cheat sheet" con términos explicados. head=título (ej "Lo que necesitas saber de X"); items=3-5 "TÉRMINO::definición corta en una frase". Úsalo cuando el tema tenga jerga o conceptos que traducir.
 · "comparativa"=2 columnas DON'T/DO con varias viñetas cada una (no una sola frase como "versus"). head=el tema; items=4-8 frases cortas, prefija "no:" las que van en DON'T (errores/lo que NO hacer), el resto en DO (lo correcto).
+· "impacto"=titular GIGANTE de máximo impacto (tipografía condensada, estilo portada premium). MUY bueno para portadas y para el slide del "problema". head=2-4 líneas CORTÍSIMAS en mayúsculas (usa \\n), con UNA palabra clave marcada *así* (saldrá dentro de una caja de color). body=1 frase de apoyo. items opcional: si es un "pilar", 3-4 etiquetas cortas (salen como pills). eye=kicker tipo "EL PROBLEMA REAL". Úsalo cuando la frase tenga fuerza por sí sola.
 REGLAS: 1er slide engancha (un "chat", "nota", "busqueda", "encuesta" o "hook" potente va MUY bien de portada). Último = CTA con una palabra de acción. Alterna fondos. "stats"/"numero"/"factura" solo si el tema pide cifras. Sin tecnicismos vacíos.`;
 }
 
@@ -5520,7 +5578,8 @@ const TIPO_L={hook:'Hook',frase:'Frase',ba:'BA Texto',lista:'Lista',
   manomovil:'Móvil en mano', insignia:'Insignia',
   icononum:'Numerado+Icono', relato3:'Micro-relato', fotominimal:'Foto minimalista',
   geofoto:'Foto geométrica', bloques:'Bloque + anotación', postit:'Notas adhesivas',
-  cuadrante:'Cuadrante', glosario:'Glosario / cheat sheet', comparativa:'Comparativa DO/DON\'T'};
+  cuadrante:'Cuadrante', glosario:'Glosario / cheat sheet', comparativa:'Comparativa DO/DON\'T',
+  impacto:'Impacto (titular gigante)'};
 
 function buildThumbs(){
   const panel=document.getElementById('sideL');
@@ -6630,7 +6689,7 @@ async function expPPTX(){
 
     // Layouts visuales/complejos: exportar el slide como IMAGEN fiel (los de
     // texto simple siguen siendo elementos editables en Canva).
-    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','manomovil','insignia','icononum','relato3','fotominimal','geofoto','bloques','postit','cuadrante','glosario','comparativa','ba','bafoto','foto','fototxt','autoridad','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
+    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','manomovil','insignia','icononum','relato3','fotominimal','geofoto','bloques','postit','cuadrante','glosario','comparativa','impacto','ba','bafoto','foto','fototxt','autoridad','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
     if(IMG_ONLY_PPTX.includes(d.tipo)){
       let ok=false;
       try{ const cv=await capture(i); slide.addImage({ data:cv.toDataURL('image/png'), x:0,y:0,w:10.8,h:13.5 }); ok=true; }catch(e){}
@@ -7665,6 +7724,7 @@ function _ejemploDe(tipo){
     glosario:{head:'Términos clave',items:['ROI::lo que recuperas','KPI::lo que mides','LEAD::contacto interesado']},
     comparativa:{head:'Sí y no',items:['Define tu paleta','Cuida el orden','no:Copiar plantillas','no:Cambiar de estilo']},
     bloques:{head:'El crecimiento no es suerte.\nEs estrategia.',body:'esto se lo digo a cada cliente'},
+    impacto:{eye:'El problema real',head:'Tienes autoridad.\nNo tienes *visibilidad*.',body:'Alguien con menos experiencia tiene más clientes porque tiene un sistema.',big:'01'},
     ba:{head:'Antes y después',items:['Antes: caos y prisas','Después: orden y control']},
     hook:{head:'¿Y si el problema\nno es lo que crees?'},
     frase:{fondo:'blue',head:'Lo que no se ve,\nno se vende.',body:'Ser bueno es solo el mínimo.'},
