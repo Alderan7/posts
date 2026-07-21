@@ -1306,6 +1306,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       <button class="est-tab on" data-t="radar" onclick="estTab('radar')">📡 1 · Radar</button>
       <button class="est-tab" data-t="copys" onclick="estTab('copys')">✍️ 2 · Copys</button>
       <button class="est-tab" data-t="crea" onclick="estTab('crea')">🎨 3 · Creatividad</button>
+      <button class="est-tab" data-t="ads" onclick="estTab('ads')">🛠 4 · Optimiza Ads</button>
       <span style="margin-left:auto;font-size:9px;color:var(--UI-M);align-self:center" id="estNicho"></span>
     </div>
     <div class="resm-body">
@@ -1338,6 +1339,14 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <button class="btn btn-gen" id="estCreaBtn" onclick="crearCreatividad()" style="margin-left:auto"><span class="spinner"></span>🎨 Diseñar en la app</button>
         </div>
         <div id="estCreaStatus" style="font-size:11px;color:var(--UI-M);margin-top:10px;line-height:1.5"></div>
+      </div>
+      <!-- TAB OPTIMIZA ADS -->
+      <div class="est-panel" id="estPanel-ads">
+        <div style="font-size:11px;color:var(--UI-M);line-height:1.6;margin-bottom:8px">Pega un prompt tosco de <b style="color:var(--UI-T)">Meta Ads</b> (anuncios de Facebook/Instagram) y te lo devuelve reescrito, claro y listo para pegar en ChatGPT. No ejecuta el prompt: lo <b style="color:var(--UI-T)">mejora</b>. Rellena lo que falte asumiendo tu negocio.</div>
+        <textarea id="adsPrompt" rows="3" placeholder="Ej: hazme un texto para un anuncio de Meta"
+          style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:10px;border-radius:8px;font-size:13px;font-family:'Montserrat',sans-serif;line-height:1.5;resize:vertical"></textarea>
+        <button class="btn btn-gen" id="adsBtn" onclick="optimizarPromptAds()" style="margin-top:8px"><span class="spinner"></span>🛠 Optimizar el prompt</button>
+        <div id="adsOut" style="margin-top:14px;display:flex;flex-direction:column;gap:12px"></div>
       </div>
     </div>
   </div>
@@ -2309,6 +2318,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=131"></script>
+<script src="app.js?v=132"></script>
 </body>
 </html>
