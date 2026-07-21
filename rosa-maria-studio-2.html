@@ -1308,6 +1308,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
       <button class="est-tab" data-t="copys" onclick="estTab('copys')">✍️ 2 · Copys</button>
       <button class="est-tab" data-t="crea" onclick="estTab('crea')">🎨 3 · Creatividad</button>
       <button class="est-tab" data-t="ads" onclick="estTab('ads')">🛠 4 · Optimiza Ads</button>
+      <button class="est-tab" data-t="adscrea" onclick="estTab('adscrea')">🖼 5 · Creativos</button>
       <span style="margin-left:auto;font-size:9px;color:var(--UI-M);align-self:center" id="estNicho"></span>
     </div>
     <div class="resm-body">
@@ -1348,6 +1349,18 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:10px;border-radius:8px;font-size:13px;font-family:'Montserrat',sans-serif;line-height:1.5;resize:vertical"></textarea>
         <button class="btn btn-gen" id="adsBtn" onclick="optimizarPromptAds()" style="margin-top:8px"><span class="spinner"></span>🛠 Optimizar el prompt</button>
         <div id="adsOut" style="margin-top:14px;display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+      <!-- TAB CREATIVOS (ADS) -->
+      <div class="est-panel" id="estPanel-adscrea">
+        <div style="font-size:11px;color:var(--UI-M);line-height:1.6;margin-bottom:8px">Convierte el mensaje de tu anuncio en <b style="color:var(--UI-T)">creatividades listas</b> con foto, en formato Post (4:5) o Reel (portada 9:16). El texto queda dentro de las <b style="color:var(--UI-T)">zonas seguras del anuncio</b> (sin pegarse a los bordes ni a donde IG pone sus botones).</div>
+        <div style="font-size:10px;color:var(--UI-M);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Mensaje / oferta del anuncio</div>
+        <textarea id="creaBrief" rows="2" placeholder="Ej: reforma integral de cocina en 6 semanas, presupuesto sin compromiso"
+          style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:10px;border-radius:8px;font-size:13px;font-family:'Montserrat',sans-serif;line-height:1.5;resize:vertical"></textarea>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-gen" id="creaPostBtn" onclick="crearCreativoAd('post')"><span class="spinner"></span>📄 Crear el Post</button>
+          <button class="btn btn-gen" id="creaReelBtn" onclick="crearCreativoAd('reel')"><span class="spinner"></span>🎬 Crear el Reel</button>
+        </div>
+        <div id="creaAdStatus" style="font-size:11px;color:var(--UI-M);margin-top:10px;line-height:1.5">Consejo: crea uno, guárdalo en ⭐ Diseños, y crea el otro formato.</div>
       </div>
     </div>
   </div>
@@ -1842,6 +1855,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
               <option value="glosario">Glosario / cheat sheet (etiquetas)</option>
               <option value="comparativa">Comparativa DO/DON'T</option>
               <option value="impacto">💥 Impacto (titular gigante)</option>
+              <option value="ranking">🔢 Lista numerada (educativo)</option>
             </optgroup>
             <optgroup label="── WOW / especiales ──">
               <option value="tweet">Tweet (tarjeta X)</option>
@@ -2320,6 +2334,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=134"></script>
+<script src="app.js?v=136"></script>
 </body>
 </html>

@@ -2294,6 +2294,43 @@ function rImpacto(d,n){
   </div>`;
 }
 
+// RANKING / listicle educativo (como "10 herramientas de Google"): titular con
+// palabra resaltada + filas numeradas [nº en círculo] [título] [descripción].
+// items = "Título::descripción". Se auto-ajusta según cuántos haya.
+function rRanking(d,n){
+  const fondo=d.fondo||'light';
+  const dark = fondo==='dark';
+  const bg = fondo==='dark' ? '#1A1A1A' : fondo==='blue' ? '#38B6FF' : '#F5F1EA';
+  const txt = dark ? '#F5F1EA' : '#1A1A1A';
+  const cardBg = dark ? 'rgba(245,241,234,.06)' : fondo==='blue' ? 'rgba(255,255,255,.28)' : 'rgba(26,26,26,.045)';
+  const desc = dark ? 'rgba(245,241,234,.62)' : 'rgba(26,26,26,.6)';
+  const badgeBg = fondo==='blue' ? '#1A1A1A' : '#1A1A1A';
+  const badgeTxt = '#F5F1EA';
+  const its=(d.items||[]).filter(Boolean);
+  const nIt=Math.max(1,its.length);
+  const fsTit = nIt<=4 ? 30 : nIt<=6 ? 26 : nIt<=8 ? 22 : 19;
+  const fsDesc= nIt<=4 ? 22 : nIt<=6 ? 19 : nIt<=8 ? 16 : 14;
+  const badge = nIt<=6 ? 54 : nIt<=8 ? 46 : 40;
+  const gap   = nIt<=4 ? 14 : nIt<=6 ? 11 : nIt<=8 ? 8 : 6;
+  const filas=its.map((it,i)=>{
+    const [tit,de]=String(it).split('::');
+    return `<div style="display:flex;align-items:center;gap:16px;background:${cardBg};border-radius:14px;padding:${gap+4}px 18px">
+      <div style="width:${badge}px;height:${badge}px;border-radius:50%;background:${badgeBg};color:${badgeTxt};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--F-SAN);font-weight:800;font-size:${Math.round(badge*0.42)}px">${i+1}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:var(--F-SAN);font-weight:700;font-size:${fsTit}px;line-height:1.15;color:${txt}">${p(tit||'')}</div>
+        ${de?`<div style="font-family:var(--F-SAN);font-size:${fsDesc}px;line-height:1.35;color:${desc};margin-top:3px">${p(de)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  return`<div class="slide ${slideH()} ${spClass()}" style="background:${bg}">
+    <div class="SH"><div style="display:flex;align-items:center;gap:12px"><div class="abar"></div><span style="font-family:var(--F-SAN);font-weight:700;letter-spacing:.2em;text-transform:uppercase;font-size:${T.eye}px;color:${fondo==='blue'?'#1A1A1A':'#38B6FF'}">${p(d.eye||'')}</span></div>${logoHTML(fondo)}</div>
+    <h1 style="font-family:var(--F-SAN);font-weight:800;text-transform:uppercase;font-size:${Math.min(T.head,nIt<=6?46:38)}px;line-height:1.1;letter-spacing:-.01em;color:${txt};margin:18px 0 20px">${pK(d.head)}</h1>
+    <div style="flex:1;display:flex;flex-direction:column;gap:${gap}px;justify-content:center;overflow:hidden">${filas}</div>
+    ${d.cta?`<div style="text-align:center;margin-top:16px;font-family:var(--F-SAN);font-weight:700;font-size:${T.cta+3}px;color:${fondo==='blue'?'#1A1A1A':'#38B6FF'}">${p(d.cta)}</div>`:''}
+    <div class="SF"><span class="TCap" style="font-size:${T.cta}px;color:${desc}">${HANDLE}</span><span class="TCap" style="font-size:${T.cta}px;color:${desc}">${n} · ${String(SLIDES.length).padStart(2,'0')}</span></div>
+  </div>`;
+}
+
 // Número gigante (hero editorial): un dato enorme + etiqueta + contexto
 function rNumero(d,n){
   const num=(d.head||d.items?.[0]||'+100%');
@@ -2768,6 +2805,7 @@ function renderTipo(d,n){
     case'glosario':         return rGlosario(d,n);
     case'comparativa':      return rComparativa(d,n);
     case'impacto':          return rImpacto(d,n);
+    case'ranking':          return rRanking(d,n);
     case'revista':          return rRevista(d,n);
     case'indice':           return rIndice(d,n);
     case'citafoto':         return rCitaFoto(d,n);
@@ -3076,12 +3114,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 
 // Tipos de slide que la IA puede usar (foto/fototxt/autoridad/revista llevan imagen)
-const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice','citafoto','numero','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal','bloques','postit','cuadrante','glosario','comparativa','impacto'];
+const TIPOS_IA=['hook','frase','lista','stats','proceso','servicio','debate','claves','pills','cta','foto','fototxt','autoridad','revista','indice','citafoto','numero','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal','bloques','postit','cuadrante','glosario','comparativa','impacto','ranking'];
 const TIPOS_IA_FOTO=['foto','fototxt','autoridad','revista','citafoto','postit'];
 // Tipos que SOLO se ven bien con items rellenos (si la IA los deja vacíos,
 // el slide sale casi en blanco: solo eyebrow + titular). Red de seguridad:
 // si llegan sin items, se convierten a 'hook' (siempre se ve bien con solo texto).
-const TIPOS_NECESITAN_ITEMS=['lista','stats','proceso','servicio','claves','pills','debate','indice','chat','versus','checklist','wrapped','dashboard','cuadrante','glosario','comparativa'];
+const TIPOS_NECESITAN_ITEMS=['lista','stats','proceso','servicio','claves','pills','debate','indice','chat','versus','checklist','wrapped','dashboard','cuadrante','glosario','comparativa','ranking'];
 function saneaTipoSinItems(slide){
   if(TIPOS_NECESITAN_ITEMS.includes(slide.tipo) && !(slide.items&&slide.items.length)) slide.tipo='hook';
   return slide;
@@ -3107,7 +3145,7 @@ Devuelve SOLO JSON válido, sin markdown:
   "guion": "solo si es reel: guion de 20-25s (gancho/desarrollo/cierre)",
   "slides": [
     {
-      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt | revista | indice | citafoto | numero | chat | nota | versus | bloques | postit | cuadrante | glosario | comparativa | impacto",
+      "tipo": "uno de: hook | frase | lista | stats | proceso | servicio | debate | claves | pills | cta | foto | fototxt | revista | indice | citafoto | numero | chat | nota | versus | bloques | postit | cuadrante | glosario | comparativa | impacto | ranking",
       "fondo": "dark | light | blue",
       "eye": "eyebrow corto (kicker en mayúsculas conceptual)",
       "head": "titular del slide (puedes usar \\n)",
@@ -3143,6 +3181,7 @@ TIPOS VIRALES (parecen contenido real, no anuncio — úsalos para enganchar):
 · "glosario"=ficha tipo "cheat sheet" con términos explicados. head=título (ej "Lo que necesitas saber de X"); items=3-5 "TÉRMINO::definición corta en una frase". Úsalo cuando el tema tenga jerga o conceptos que traducir.
 · "comparativa"=2 columnas DON'T/DO con varias viñetas cada una (no una sola frase como "versus"). head=el tema; items=4-8 frases cortas, prefija "no:" las que van en DON'T (errores/lo que NO hacer), el resto en DO (lo correcto).
 · "impacto"=titular GIGANTE de máximo impacto (tipografía condensada, estilo portada premium). MUY bueno para portadas y para el slide del "problema". head=2-4 líneas CORTÍSIMAS en mayúsculas (usa \\n), con UNA palabra clave marcada *así* (saldrá dentro de una caja de color). body=1 frase de apoyo. items opcional: si es un "pilar", 3-4 etiquetas cortas (salen como pills). eye=kicker tipo "EL PROBLEMA REAL". Úsalo cuando la frase tenga fuerza por sí sola.
+· "ranking"=lista numerada educativa tipo "cheat sheet" (guárdalo). head=título con una *palabra* clave; items=4-8 como "Título::descripción corta" (nombre + para qué sirve, muy claro). Ideal para "X herramientas/errores/pasos" que la gente guarda.
 REGLAS: 1er slide engancha (un "chat", "nota", "busqueda", "encuesta" o "hook" potente va MUY bien de portada). Último = CTA con una palabra de acción. Alterna fondos. "stats"/"numero"/"factura" solo si el tema pide cifras. Sin tecnicismos vacíos.`;
 }
 
@@ -3373,11 +3412,14 @@ async function pedirDisenoIA(prompt, fmt, n, cfg, onStatus, opcFoto){
     return saneaTipoSinItems(slide);
   }).filter(s=>s.head||s.items.length);
   if(!arr.length) throw new Error('la IA no devolvió slides');
-  // El usuario pidió foto pero la IA no puso ningún slide de tipo foto → forzamos el primero.
-  if(opcFoto && opcFoto.usar && (opcFoto.kw||opcFoto.mediaId) && !arr.some(s=>TIPOS_IA_FOTO.includes(s.tipo))){
+  // El usuario pidió foto pero la IA no puso ningún slide de tipo foto → forzamos
+  // el primero. Antes solo se forzaba si dabas palabra clave/foto; ahora también
+  // en modo automático (marcar "con foto" debe DAR foto), con una keyword del
+  // nicho como respaldo si el modelo no sugirió ninguna.
+  if(opcFoto && opcFoto.usar && !arr.some(s=>TIPOS_IA_FOTO.includes(s.tipo))){
     const s0=arr[0];
     s0.tipo='foto'; s0.overlay='dark'; s0.imgLayout='bg-full'; s0.txtPos='bottom'; s0.ovOpacity=68;
-    if(opcFoto.mediaId) s0.imgFondo=opcFoto.mediaId; else s0.img=opcFoto.kw;
+    if(opcFoto.mediaId) s0.imgFondo=opcFoto.mediaId; else s0.img=opcFoto.kw || s0.img || _kwFotoNicho();
   }
   // Buscar en Pexels/Pixabay solo los slides que aún necesitan foto (los que ya
   // tienen tu foto subida vía imgFondo se saltan la búsqueda).
@@ -5579,7 +5621,7 @@ const TIPO_L={hook:'Hook',frase:'Frase',ba:'BA Texto',lista:'Lista',
   icononum:'Numerado+Icono', relato3:'Micro-relato', fotominimal:'Foto minimalista',
   geofoto:'Foto geométrica', bloques:'Bloque + anotación', postit:'Notas adhesivas',
   cuadrante:'Cuadrante', glosario:'Glosario / cheat sheet', comparativa:'Comparativa DO/DON\'T',
-  impacto:'Impacto (titular gigante)'};
+  impacto:'Impacto (titular gigante)', ranking:'Lista numerada (educativo)'};
 
 function buildThumbs(){
   const panel=document.getElementById('sideL');
@@ -6689,7 +6731,7 @@ async function expPPTX(){
 
     // Layouts visuales/complejos: exportar el slide como IMAGEN fiel (los de
     // texto simple siguen siendo elementos editables en Canva).
-    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','manomovil','insignia','icononum','relato3','fotominimal','geofoto','bloques','postit','cuadrante','glosario','comparativa','impacto','ba','bafoto','foto','fototxt','autoridad','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
+    const IMG_ONLY_PPTX = ['revista','citafoto','numero','indice','pills','claves','debate','stats','testimonio','movil','manomovil','insignia','icononum','relato3','fotominimal','geofoto','bloques','postit','cuadrante','glosario','comparativa','impacto','ranking','ba','bafoto','foto','fototxt','autoridad','chat','nota','versus','encuesta','busqueda','tweet','checklist','factura','neon','glitch','wrapped','dashboard','brutal','terminal'];
     if(IMG_ONLY_PPTX.includes(d.tipo)){
       let ok=false;
       try{ const cv=await capture(i); slide.addImage({ data:cv.toDataURL('image/png'), x:0,y:0,w:10.8,h:13.5 }); ok=true; }catch(e){}
@@ -7336,6 +7378,46 @@ function cerrarEstrategia(){ document.getElementById('estModal')?.classList.remo
 function estTab(t){
   document.querySelectorAll('#estModal .est-tab').forEach(b=>b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('#estModal .est-panel').forEach(p=>p.classList.toggle('on', p.id==='estPanel-'+t));
+  // Al entrar en Creativos, sembrar el mensaje del anuncio con lo que escribiste
+  // en "Optimiza Ads" (si el campo está vacío).
+  if(t==='adscrea'){
+    const bf=document.getElementById('creaBrief');
+    if(bf && !bf.value.trim() && _adsTema) bf.value=_adsTema;
+  }
+}
+
+// 🖼 PASO 5 — Creativos de anuncio: diseña un Post (4:5) o Reel (portada 9:16)
+// con foto a partir del mensaje del anuncio, reusando el motor de diseño. Las
+// zonas seguras las respeta el propio layout (.SP feed / SPreel para el reel).
+// Palabra clave EN INGLÉS para buscar foto de respaldo según el nicho activo
+// (Pexels/Pixabay funcionan mejor en inglés).
+function _kwFotoNicho(){
+  const map={reformas:'home renovation interior', personal:'business professional working',
+    productividad:'organized desk workspace', fiscalidad:'accounting desk documents', ia:'laptop technology working'};
+  return map[getNicho()]||'business professional';
+}
+async function crearCreativoAd(fmt){
+  const brief=(document.getElementById('creaBrief')?.value||'').trim();
+  const st=document.getElementById('creaAdStatus');
+  if(!brief){ if(st){ st.style.color='#ff9f43'; st.textContent='Escribe el mensaje/oferta del anuncio.'; } return; }
+  if(!hayIA()){ if(st){ st.style.color='#ff9f43'; st.textContent='Sin IA ahora. Prueba en un rato.'; } return; }
+  const cfg=N();
+  // Enfoque ANUNCIO: un único mensaje claro, gancho en 3s, CTA de acción.
+  const promptAd=`ANUNCIO de Instagram para captar clientes. Mensaje/oferta: "${brief}". Un solo mensaje potente que pare el scroll en 3s, beneficio claro y CTA de acción (escribir/reservar). Nada de "desliza".`;
+  const btnId = fmt==='reel' ? 'creaReelBtn' : 'creaPostBtn';
+  const btn=document.getElementById(btnId);
+  if(btn) btn.classList.add('loading');
+  if(st){ st.style.color='#38B6FF'; st.textContent=`Diseñando el ${fmt==='reel'?'reel':'post'} con foto…`; }
+  try{
+    const opcFoto={usar:true, kw:'', mediaId:null};   // busca foto automática (Pexels/Pixabay)
+    const {arr,out}=await pedirDisenoIA(promptAd, fmt, 1, cfg, m=>{ if(st) st.textContent=m; }, opcFoto);
+    aplicarDisenoIA(arr,out,fmt,1);
+    if(st){ st.style.color='#38B6FF'; st.textContent=`✓ ${fmt==='reel'?'Reel':'Post'} creado — guárdalo en ⭐ Diseños y crea el otro formato si quieres.`; }
+    cerrarEstrategia();
+    if(typeof abrirTabEditar==='function') abrirTabEditar();
+    toast2(`🖼 Creatividad de anuncio lista (${fmt==='reel'?'reel 9:16':'post 4:5'}) — texto en zona segura`);
+  }catch(e){ if(st){ st.style.color='#ff6b6b'; st.textContent='No se pudo: '+e.message; } }
+  finally{ if(btn) btn.classList.remove('loading'); }
 }
 
 // 📡 PASO 1 — Radar: 5 ideas de contenido de alto potencial del nicho activo.
@@ -7495,12 +7577,13 @@ async function crearCreatividad(){
 
 // 🛠 PASO 4 — Optimizador de prompts de Meta Ads: NO ejecuta el prompt, lo
 // reescribe mejor para pegarlo en ChatGPT (persona "ingeniero de prompts").
-let _adsRes=null;
+let _adsRes=null, _adsTema='';
 async function optimizarPromptAds(){
   const entrada=(document.getElementById('adsPrompt')?.value||'').trim();
   const out=document.getElementById('adsOut');
   const btn=document.getElementById('adsBtn');
   if(!entrada){ if(out) out.innerHTML='<div style="color:#ff9f43;font-size:12px">Pega el prompt que quieres mejorar.</div>'; return; }
+  _adsTema=entrada;   // se reutiliza como semilla del brief en el paso 5 (Creativos)
   if(!hayIA()){ if(out) out.innerHTML='<div style="color:#ff9f43;font-size:12px">Sin IA ahora. Prueba en un rato.</div>'; return; }
   const cfg=N();
   const contrato=`Eres un ingeniero de prompts SENIOR especializado en publicidad de Meta Ads (Facebook e Instagram Ads).
@@ -7725,6 +7808,7 @@ function _ejemploDe(tipo){
     comparativa:{head:'Sí y no',items:['Define tu paleta','Cuida el orden','no:Copiar plantillas','no:Cambiar de estilo']},
     bloques:{head:'El crecimiento no es suerte.\nEs estrategia.',body:'esto se lo digo a cada cliente'},
     impacto:{eye:'El problema real',head:'Tienes autoridad.\nNo tienes *visibilidad*.',body:'Alguien con menos experiencia tiene más clientes porque tiene un sistema.',big:'01'},
+    ranking:{fondo:'light',eye:'Guárdalo',head:'5 *herramientas* que deberías usar',items:['Analytics::Mira quién te visita y qué convierte','Search Console::Cómo te encuentra Google','Trends::Ideas con demanda real','Gemini::Escribe y pule tus textos','NotebookLM::Resume y organiza tu investigación']},
     ba:{head:'Antes y después',items:['Antes: caos y prisas','Después: orden y control']},
     hook:{head:'¿Y si el problema\nno es lo que crees?'},
     frase:{fondo:'blue',head:'Lo que no se ve,\nno se vende.',body:'Ser bueno es solo el mínimo.'},
