@@ -790,8 +790,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 #resModal .resm-grid .mlib-item,#preModal .resm-grid .mlib-item{aspect-ratio:9/16}
 #resModal .mlib-use,#preModal .mlib-use{font-size:13px}
 /* Modal favoritos / diseños guardados */
-#favModal,#calModal,#plnModal,#fmtModal,#gridModal,#guiaModal,#obraModal,#estModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
-#favModal.on,#calModal.on,#plnModal.on,#fmtModal.on,#gridModal.on,#guiaModal.on,#obraModal.on,#estModal.on{display:flex}
+#favModal,#calModal,#plnModal,#fmtModal,#gridModal,#guiaModal,#obraModal,#estModal,#eduModal{display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
+#favModal.on,#calModal.on,#plnModal.on,#fmtModal.on,#gridModal.on,#guiaModal.on,#obraModal.on,#estModal.on,#eduModal.on{display:flex}
 /* Estrategia viral: pestañas y tarjetas */
 .est-tab{border:1px solid var(--UI-B2);background:transparent;color:var(--UI-M);border-radius:6px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif}
 .est-tab.on{background:var(--UI-A);border-color:var(--UI-A);color:#fff}
@@ -1160,6 +1160,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <button class="btn btn-out" id="btnSemana" onclick="semanaEnUnClic()" title="Tu semana en un clic: lunes a viernes (2 carruseles, 2 reels y 1 post) con captions y guiones, en un ZIP por días. Sin IA">📦 Semana</button>
     <button class="btn btn-out" id="btnObra" onclick="abrirObraModal()" title="Elige fotos de ANTES y DESPUÉS de una obra y monta el carrusel narrativo entero — el formato que mejor funciona en reformas">🏗 Obra</button>
     <button class="btn btn-out" id="btnEstrategia" onclick="abrirEstrategia('radar')" title="Embudo de contenido: Radar (5 ideas potentes) → Copys (3 versiones) → Creatividad (diseño). Cada paso con su botón">🧠 Estrategia</button>
+    <button class="btn btn-out" id="btnEdu" onclick="abrirEducativo()" title="La IA monta un carrusel educativo completo (portada → puntos → CTA) con el estilo Impacto">🎓 Educativo</button>
     <button class="btn btn-out" id="btnFeed9" onclick="generarFeed9()" title="Crea 9 posts coordinados que juntos forman un mosaico en el grid de tu perfil. Sin IA">🧩 Feed 9</button>
     <button class="btn btn-gh" id="btnPerfil" onclick="abrirVistaPerfil()" title="Ver cómo quedarán tus slides en la cuadrícula del perfil (recorte 3:4 de Instagram)">👁 Perfil</button>
     <button class="btn btn-gen" id="btnGen" onclick="generar()">
@@ -1292,6 +1293,35 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
           <button class="btn btn-out" style="width:100%" onclick="usarDiaSel()">Usar este día</button>
         </aside>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CARRUSEL EDUCATIVO — portada → puntos → CTA, estilo Impacto -->
+<div id="eduModal" onclick="if(event.target===this)cerrarEducativo()">
+  <div class="resm-box" style="width:min(620px,94vw);height:auto;max-height:88vh">
+    <div class="resm-head">
+      <span>🎓 Carrusel educativo</span>
+      <button onclick="cerrarEducativo()" class="resm-close">✕</button>
+    </div>
+    <div style="padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto">
+      <div style="font-size:11px;color:var(--UI-M);line-height:1.6">La IA monta un carrusel educativo completo con el <b style="color:var(--UI-T)">estilo Impacto</b>: portada potente → un punto por slide (con su número gigante) → CTA final. Solo dime el tema.</div>
+      <div>
+        <div style="font-size:10px;color:var(--UI-M);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px">Tema del carrusel</div>
+        <textarea id="eduTema" rows="2" placeholder="Ej: cómo elegir bien una empresa de reformas y no llevarte sustos"
+          style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:11px;border-radius:8px;font-size:13px;font-family:'Montserrat',sans-serif;line-height:1.5;resize:vertical"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:10px;color:var(--UI-M)">Puntos</span>
+        <select id="eduPuntos" style="background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:6px 8px;border-radius:5px;font-size:11px;font-family:'Montserrat',sans-serif">
+          <option value="3">3 puntos (5 slides)</option>
+          <option value="4" selected>4 puntos (6 slides)</option>
+          <option value="5">5 puntos (7 slides)</option>
+          <option value="6">6 puntos (8 slides)</option>
+        </select>
+        <button class="btn btn-gen" id="eduGenBtn" onclick="carruselEducativo()" style="margin-left:auto"><span class="spinner"></span>🎓 Montar carrusel</button>
+      </div>
+      <div id="eduStatus" style="font-size:11px;color:var(--UI-M);line-height:1.5"></div>
     </div>
   </div>
 </div>
@@ -2334,6 +2364,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=140"></script>
+<script src="app.js?v=141"></script>
 </body>
 </html>

@@ -7099,7 +7099,7 @@ document.addEventListener('keydown',e=>{
   // o si hay una ventana abierta.
   const t = e.target;
   if(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on, #plnModal.on, #calModal.on, #fmtModal.on, #gridModal.on, #guiaModal.on, #obraModal.on, #estModal.on')) return;
+  if(document.querySelector('#favModal.on, #reelModal.on, #preModal.on, #promptModal.on, #resModal.on, #plnModal.on, #calModal.on, #fmtModal.on, #gridModal.on, #guiaModal.on, #obraModal.on, #estModal.on, #eduModal.on')) return;
   const k=(e.key||'').toLowerCase();
   if((e.ctrlKey||e.metaKey) && k==='z'){ e.preventDefault(); e.shiftKey?rehacer():deshacer(); return; }
   if((e.ctrlKey||e.metaKey) && k==='y'){ e.preventDefault(); rehacer(); return; }
@@ -7624,6 +7624,71 @@ Devuelve SOLO JSON válido, sin markdown:
         <button class="est-act" onclick="copiar(_adsRes.alternativa.prompt)" style="border-color:var(--UI-B2);color:var(--UI-T)">📋 Copiar alternativa</button>
       </div>`:''}`;
   }catch(e){ if(out) out.innerHTML='<div style="color:#ff6b6b;font-size:12px">No se pudo: '+favEsc(e.message)+'</div>'; }
+  finally{ if(btn){ btn.disabled=false; btn.classList.remove('loading'); } }
+}
+
+/* ═══════════════════════════════════════════
+   🎓 CARRUSEL EDUCATIVO COMPLETO — portada → puntos → CTA, estilo Impacto
+   La IA estructura un carrusel educativo y se maqueta con el tipo 'impacto'
+   (titular condensado gigante + número por punto), fondos alternados y CTA.
+   ═══════════════════════════════════════════ */
+function abrirEducativo(){
+  const m=document.getElementById('eduModal'); if(!m) return;
+  m.classList.add('on');
+  const st=document.getElementById('eduStatus');
+  if(st){ st.style.color='var(--UI-M)'; st.textContent=hayIA()?'':'Sin IA ahora mismo. Prueba en un rato, o usa ⚡ Generar / 🔥 Plantillas.'; }
+  setTimeout(()=>document.getElementById('eduTema')?.focus(),100);
+}
+function cerrarEducativo(){ document.getElementById('eduModal')?.classList.remove('on'); }
+async function carruselEducativo(){
+  const tema=(document.getElementById('eduTema')?.value||'').trim();
+  const n=parseInt(document.getElementById('eduPuntos')?.value)||4;
+  const st=document.getElementById('eduStatus');
+  if(!tema){ if(st){ st.style.color='#ff9f43'; st.textContent='Escribe el tema del carrusel.'; } return; }
+  if(!hayIA()){ if(st){ st.style.color='#ff9f43'; st.textContent='Sin IA ahora. Prueba en un rato.'; } return; }
+  const cfg=N();
+  const contrato=`Eres Rosa María, ${cfg.persona}. Tono: ${cfg.tono}. Escribes en 2ª persona (tú), a: ${cfg.lector}.
+Diseña un CARRUSEL EDUCATIVO de Instagram sobre: "${tema}". Estructura: portada + ${n} puntos que se encadenan + cierre. Cada punto APORTA valor accionable (nada de relleno, nada de "es importante").
+Devuelve SOLO JSON válido, sin markdown:
+{
+ "titulo": "titular de PORTADA con gancho, 3-6 palabras, marca UNA *palabra* clave (saldrá en caja de color)",
+ "subtitulo": "1 frase con la promesa concreta del carrusel",
+ "puntos": [ { "titulo": "nombre del punto, 2-5 palabras, con UNA *palabra* clave si encaja", "explicacion": "1-2 frases claras y accionables, hablando de tú" } ],
+ "cta_head": "titular del CIERRE, 3-6 palabras, marca UNA *palabra*",
+ "cta_body": "1-2 frases invitando a escribirte por DM",
+ "cta_word": "UNA palabra en mayúsculas para el CTA (ej: ${cfg.ctaEj})",
+ "caption": "caption de Instagram que COMPLEMENTA (no repite el texto de las imágenes), 3-5 frases, termina invitando a interactuar"
+}
+"puntos" debe tener EXACTAMENTE ${n} elementos.`;
+  const btn=document.getElementById('eduGenBtn');
+  if(btn){ btn.disabled=true; btn.classList.add('loading'); }
+  if(st){ st.style.color='#38B6FF'; st.textContent='La IA está montando el carrusel…'; }
+  try{
+    const g=await iaJSON(contrato,{maxTokens:Math.min(2600,900+n*300),temperature:0.85,onStatus:(m)=>{ if(st) st.textContent=m; }});
+    const puntos=(Array.isArray(g.puntos)?g.puntos:[]).filter(pt=>pt&&pt.titulo).slice(0,n);
+    if(!puntos.length) throw new Error('la IA no devolvió los puntos');
+    const fondos=['dark','blue','light'];
+    const slides=[];
+    // Portada (sin número gigante: big=' ' evita el fallback al nº de página)
+    slides.push({tipo:'impacto',fondo:'dark',eye:cfg.eye||'Guárdalo',head:String(g.titulo||tema),
+      body:String(g.subtitulo||''),big:' ',items:[],cta:'Desliza →'});
+    // Un punto por slide, fondos alternados, con su número gigante
+    puntos.forEach((pt,i)=>{
+      slides.push({tipo:'impacto',fondo:fondos[(i+1)%fondos.length],eye:'Punto '+String(i+1).padStart(2,'0'),
+        head:String(pt.titulo||''),body:String(pt.explicacion||''),big:String(i+1),items:[],cta:'Sigue →'});
+    });
+    // Cierre CTA
+    const word=String(g.cta_word||String(cfg.ctaEj||'HOLA').split(',')[0]).trim().split(/\s+/)[0].toUpperCase();
+    slides.push({tipo:'cta',fondo:'blue',eye:cfg.eye||'',head:String(g.cta_head||'¿Te ayudo con esto?'),
+      body:String(g.cta_body||'Escríbeme por DM y lo vemos, sin compromiso.'),items:[],cta:'Escríbeme '+word});
+    SLIDES.length=0; slides.forEach(s=>SLIDES.push(s));
+    cur=0; setModo('carrusel'); buildThumbs(); show(0);
+    COPY_CTX={angulo:'sistema', ai:null, idea:{caption:String(g.caption||''), hashtags:(N().hashtags||''), cta:'Escríbeme '+word}};
+    if(typeof refrescarCopy==='function') refrescarCopy();
+    cerrarEducativo();
+    if(typeof abrirTabEditar==='function') abrirTabEditar();
+    toast2(`🎓 Carrusel educativo listo (${slides.length} slides) — revísalo y ajústalo`);
+  }catch(e){ if(st){ st.style.color='#ff6b6b'; st.textContent='No se pudo: '+e.message; } }
   finally{ if(btn){ btn.disabled=false; btn.classList.remove('loading'); } }
 }
 
