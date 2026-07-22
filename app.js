@@ -917,8 +917,18 @@ function setLogoTam(px){
   if(typeof buildThumbs==='function' && SLIDES.length) buildThumbs();
 }
 
-// Isotipo RM según fondo: BLANCO solo en negro/oscuro; NEGRO en azul y claro
+// Mostrar u ocultar el logo RM en TODOS los slides (persistente).
+function getLogoOff(){ return localStorage.getItem('rm_logo_off')==='1'; }
+function setLogoOff(off){
+  localStorage.setItem('rm_logo_off', off?'1':'0');
+  const cb=document.getElementById('logoOff'); if(cb) cb.checked=!!off;
+  if(typeof show==='function' && SLIDES.length) show(cur);
+  if(typeof buildThumbs==='function' && SLIDES.length) buildThumbs();
+}
+// Isotipo RM según fondo: BLANCO solo en negro/oscuro; NEGRO en azul y claro.
+// Devuelve vacío si has ocultado el logo (evita también el logo duplicado).
 function logoHTML(fondo){
+  if(getLogoOff()) return '';
   const src = (fondo==='light' || fondo==='blue') ? 'logo-rm-negro-iso.png' : 'logo-rm-blanco-iso.png';
   const h = getLogoTam();
   return `<div class="logo-wrap" style="--logo-h:${h}px"><img class="slide-logo-img" src="${src}" alt="RM" onerror="this.outerHTML='<span class=\\'rm\\'>RM</span>'"></div>`;
@@ -1806,7 +1816,7 @@ function rCTA(d,n){
   </div>
   <div class="SF">
     <span class="TCap Cm" style="font-size:${T.cta}px">${HANDLE}</span>
-    ${logoHTML(d.fondo)}
+    <span class="TCap Cm" style="font-size:${T.cta}px">${n} · ${String(SLIDES.length).padStart(2,'0')}</span>
   </div>
   <div class="BGN Cn" style="font-size:380px;opacity:.04">${n}</div>
 </div>`;}
@@ -6890,6 +6900,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   actualizarAngulos();
   actualizarFeedLabel(); // Mostrar posición actual del feed
   setLogoTam(getLogoTam()); // Restaurar tamaño de logo guardado
+  const _lo=document.getElementById('logoOff'); if(_lo) _lo.checked=getLogoOff();   // estado "ocultar logo"
   const vs=document.getElementById('reelVozSel'); if(vs) vs.value=getVozReel();  // voz del reel guardada
   // Restaurar API key (guardada o por defecto)
   const ki=document.getElementById('pexelsKey');

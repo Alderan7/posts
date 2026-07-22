@@ -2181,6 +2181,9 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 
       <div class="csec">
         <div class="csec-h"><span>Logo RM</span><span id="logoTamLbl" style="color:var(--UI-A);font-weight:700">Normal</span></div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--UI-T);cursor:pointer;margin-bottom:8px" title="Oculta el logo RM en TODOS los slides">
+          <input type="checkbox" id="logoOff" onchange="setLogoOff(this.checked)" style="accent-color:var(--UI-A)">Ocultar el logo en todos los slides
+        </label>
         <div class="crow">
           <label>Tamaño en todos los slides</label>
           <input type="range" id="logoTam" min="34" max="120" step="2" value="46" oninput="setLogoTam(this.value)">
@@ -2364,6 +2367,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=141"></script>
+<script src="app.js?v=142"></script>
 </body>
 </html>
