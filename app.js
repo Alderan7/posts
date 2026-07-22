@@ -2245,14 +2245,14 @@ function _fitImpacto(head){
   const maxLen=Math.max(1,...lineas.map(l=>l.length));
   const L=Math.max(1,lineas.length);
   const porAncho=940/(maxLen*0.44);          // Anton ≈ 0.44em/car; ancho útil ~940px
-  const porAlto=880/(L*0.98);                // zona de titular ~880px de alto
-  return Math.max(54, Math.min(172, Math.floor(Math.min(porAncho,porAlto))));
+  const porAlto=880/(L*1.12);                // zona de titular ~880px, interlineado 1.06 + aire
+  return Math.max(52, Math.min(168, Math.floor(Math.min(porAncho,porAlto))));
 }
 // Titular condensado con UNA palabra/frase marcada *así* dentro de una CAJA
 // de color (como "DINERO"/"CIERRAS" de las referencias).
 function _headImpacto(head, cajaBg, cajaTxt){
   return String(head||'').split('\n').map(linea=>
-    linea.replace(/\*([^*]+)\*/g, `<span style="background:${cajaBg};color:${cajaTxt};padding:.02em .16em;margin:0 .02em;box-decoration-break:clone;-webkit-box-decoration-break:clone">$1</span>`)
+    linea.replace(/\*([^*]+)\*/g, `<span style="background:${cajaBg};color:${cajaTxt};padding:0 .16em;margin:0 .02em;box-decoration-break:clone;-webkit-box-decoration-break:clone">$1</span>`)
   ).join('<br>');
 }
 // IMPACTO — titular GIGANTE condensado (estilo "waysuccess"): eyebrow con línea,
@@ -2281,8 +2281,8 @@ function rImpacto(d,n){
         </div>
         ${logoHTML(fondo)}
       </div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:26px">
-        <h1 style="font-family:var(--F-COND);font-weight:400;text-transform:uppercase;font-size:${fs}px;line-height:.94;letter-spacing:.005em;color:${txt};margin:0">${_headImpacto(d.head,cajaBg,cajaTxt)}</h1>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:46px">
+        <h1 style="font-family:var(--F-COND);font-weight:400;text-transform:uppercase;font-size:${fs}px;line-height:1.06;letter-spacing:.005em;color:${txt};margin:0">${_headImpacto(d.head,cajaBg,cajaTxt)}</h1>
         ${d.body?`<p style="font-family:var(--F-SAN);font-weight:400;font-size:${Math.min(T.body,32)}px;line-height:1.5;color:${sub};max-width:820px;margin:0">${p(d.body)}</p>`:''}
         ${pills?`<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:4px">${pills}</div>`:''}
       </div>
