@@ -7395,6 +7395,154 @@ function estTab(t){
     const bf=document.getElementById('creaBrief');
     if(bf && !bf.value.trim() && _adsTema) bf.value=_adsTema;
   }
+  if(t==='ganchos') renderGanchos();
+}
+
+/* ═══════════════════════════════════════════
+   🎣 GANCHOS VIRALES — 30 plantillas de primera frase para cualquier nicho.
+   Se rellenan los [corchetes] con tu tema, o la IA los adapta a tu nicho activo
+   y de ahí saltas a escribir los 3 copys. Funciona sin IA (copiar la plantilla).
+   ═══════════════════════════════════════════ */
+const GANCHOS_VIRALES=[
+  "Esto es cómo se ve [X] antes, durante y después de [acción].",
+  "Aquí está exactamente cuánto [acción] necesitas para lograr [resultado].",
+  "¿Puedes explicar cómo lograr [resultado] en 60 segundos?",
+  "Así se ve [X] cuando haces [acción]… y así se ve cuando no la haces.",
+  "Te voy a mostrar cómo conseguir [resultado] usando un método que casi nadie aplica.",
+  "Me tomó 10 años aprender esto, pero te lo explico en menos de 1 minuto.",
+  "Cuando consigues [resultado], estas son las primeras 3 cosas que debes hacer.",
+  "Si no tienes [recurso/hábito], empieza a hacer esto.",
+  "Mis reglas de dinero como [perfil] que está construyendo independencia financiera.",
+  "El dinero puede comprarte [cosa], pero no puede comprarte [resultado real].",
+  "Así es como desarrollas una habilidad tan fuerte que no puedes dejar de usarla.",
+  "Esto es cómo se ve [cantidad] de [algo] en la vida real.",
+  "Si mañana despertara con [problema] y quisiera lograr [resultado] en [tiempo], haría exactamente esto.",
+  "Si eres [tipo de persona] y quieres [resultado], escucha esto.",
+  "Si tienes [edad o etapa], NO hagas esto.",
+  "Como [perfil] con un objetivo claro, estas son 3 cosas que jamás me voy a arrepentir de haber hecho.",
+  "No es por presumir, pero soy muy bueno en [habilidad/nicho].",
+  "Así se ve [objeto o proceso] cuando lo haces correctamente.",
+  "¿Todavía estás [acción incorrecta]? Yo logré [resultado] en [tiempo] sin hacer eso.",
+  "3 canales de YouTube que te enseñan más que cualquier carrera de [industria].",
+  "Creo que acabo de encontrar el mayor atajo en [nicho/industria].",
+  "Estas son 3 personas que te harán mejor en [rol/habilidad].",
+  "[Tipo de persona A] vs [Tipo de persona B]: la diferencia real.",
+  "Todos te dicen que hagas [acción], pero nadie te explica cómo hacerlo de verdad.",
+  "Si tienes entre [edad] y [edad], estas son las cosas que debes hacer para no terminar en [problema].",
+  "Si empezara desde cero en mis [edad], sin [recurso], haría esto.",
+  "Si quieres terminar en [resultado negativo], ignora este video.",
+  "Haz [acción] durante [tiempo] y obtendrás [resultado].",
+  "De [estado inicial] a [estado final] en pasos simples y rápidos.",
+  "Si estás intentando [resultado], hay una sola cosa que debes hacer primero."
+];
+// Tipos de gancho (para filtrar). El 1er elemento es el botón "Todas".
+const GANCHOS_CATS=[
+  {k:'todas',        n:'Todas'},
+  {k:'metodo',       n:'🧠 Método'},
+  {k:'transformacion',n:'🔄 Transformación'},
+  {k:'comparacion',  n:'⚔️ Comparación'},
+  {k:'curiosidad',   n:'👀 Curiosidad'},
+  {k:'error',        n:'⚠️ Error'},
+  {k:'autoridad',    n:'👑 Autoridad'},
+  {k:'listas',       n:'📋 Listas'}
+];
+// Categoría de cada gancho, en el MISMO orden que GANCHOS_VIRALES.
+const GANCHOS_CAT=['transformacion','metodo','curiosidad','comparacion','metodo','metodo','listas','error','autoridad','comparacion','metodo','curiosidad','metodo','curiosidad','error','autoridad','autoridad','curiosidad','error','listas','metodo','listas','comparacion','error','error','metodo','error','metodo','transformacion','metodo'];
+const _ganchoCatNom=k=>(GANCHOS_CATS.find(c=>c.k===k)||{}).n||k;
+let _ganchosPintados=false, _ganchoAdapt={}, _ganchoFiltro='todas';   // versiones adaptadas por índice + filtro activo
+
+// Resalta los [corchetes] de la plantilla (texto ya escapado por favEsc).
+function _ganchoHTML(txt){ return favEsc(txt).replace(/\[([^\]]+)\]/g,'<span class="gk">[$1]</span>'); }
+
+// Pinta filtros + las 30 tarjetas una sola vez (al abrir la pestaña).
+function renderGanchos(){
+  if(_ganchosPintados) return;
+  const fil=document.getElementById('estGanchosFiltro');
+  if(fil) fil.innerHTML=GANCHOS_CATS.map(c=>{
+    const num=c.k==='todas'?GANCHOS_VIRALES.length:GANCHOS_CAT.filter(x=>x===c.k).length;
+    return `<button class="est-tab${c.k==='todas'?' on':''}" data-gk="${c.k}" onclick="filtrarGanchos('${c.k}')">${c.n} <span style="opacity:.6">${num}</span></button>`;
+  }).join('');
+  const cont=document.getElementById('estGanchosOut'); if(!cont) return;
+  cont.innerHTML=GANCHOS_VIRALES.map((g,i)=>`
+    <div class="est-card" id="ganchoCard-${i}" data-cat="${GANCHOS_CAT[i]}">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <span class="gk-num">${i+1}</span>
+        <div style="flex:1">
+          <span class="est-chip" style="margin-bottom:6px">${favEsc(_ganchoCatNom(GANCHOS_CAT[i]))}</span>
+          <p style="line-height:1.55;margin-top:6px">${_ganchoHTML(g)}</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button class="est-act" onclick="copiarGancho(${i})" style="border-color:var(--UI-B2);color:var(--UI-T)">📋 Copiar</button>
+        <button class="est-act" onclick="adaptarGancho(${i})" id="ganchoAdaptBtn-${i}"><span class="spinner"></span>✨ Adaptar a mi nicho</button>
+      </div>
+      <div id="ganchoAdaptOut-${i}"></div>
+    </div>`).join('');
+  _ganchosPintados=true;
+}
+// Muestra solo las tarjetas del tipo elegido (o todas).
+function filtrarGanchos(k){
+  _ganchoFiltro=k;
+  document.querySelectorAll('#estGanchosFiltro .est-tab').forEach(b=>b.classList.toggle('on', b.dataset.gk===k));
+  document.querySelectorAll('#estGanchosOut .est-card').forEach(c=>{
+    c.style.display=(k==='todas'||c.dataset.cat===k)?'':'none';
+  });
+}
+function copiarGancho(i){ if(GANCHOS_VIRALES[i]) copiar(GANCHOS_VIRALES[i]); }
+
+// 🎲 Elige un gancho al azar (del filtro activo), lo enfoca y lo adapta al nicho.
+function ganchoSorpresa(){
+  renderGanchos();
+  const elegibles=GANCHOS_VIRALES.map((_,i)=>i).filter(i=>_ganchoFiltro==='todas'||GANCHOS_CAT[i]===_ganchoFiltro);
+  if(!elegibles.length) return;
+  const i=elegibles[Math.floor(Math.random()*elegibles.length)];
+  const card=document.getElementById('ganchoCard-'+i);
+  if(card){
+    card.scrollIntoView({behavior:'smooth',block:'center'});
+    card.style.transition='box-shadow .3s';
+    card.style.boxShadow='0 0 0 2px var(--UI-A)';
+    setTimeout(()=>{ card.style.boxShadow=''; },1400);
+  }
+  adaptarGancho(i);
+}
+
+// La IA rellena los [corchetes] del gancho con el nicho activo → 3 versiones listas.
+async function adaptarGancho(i){
+  const plantilla=GANCHOS_VIRALES[i]; if(!plantilla) return;
+  const out=document.getElementById('ganchoAdaptOut-'+i);
+  const btn=document.getElementById('ganchoAdaptBtn-'+i);
+  if(!hayIA()){ if(out) out.innerHTML='<div style="color:#ff9f43;font-size:11px;margin-top:8px">Sin IA ahora. Puedes copiar la plantilla y rellenar los [corchetes] a mano.</div>'; return; }
+  const cfg=N();
+  const contrato=`Eres copywriter de Instagram para el nicho "${cfg.nombre}". Cliente ideal: ${cfg.lector}. Tono: ${cfg.tono}.
+Tienes esta PLANTILLA de gancho viral (primera frase de un reel/post) con huecos entre [corchetes]:
+"""${plantilla}"""
+Reescríbela 3 veces rellenando los [corchetes] con contenido CONCRETO y realista de este nicho (nada genérico, nada de dejar corchetes). Cada versión debe sonar natural, parar el scroll en 3s y encajar con el cliente ideal.
+Devuelve SOLO JSON válido, sin markdown: {"versiones":["gancho 1","gancho 2","gancho 3"]}`;
+  if(btn){ btn.disabled=true; btn.classList.add('loading'); }
+  if(out) out.innerHTML='<div style="color:var(--UI-A);font-size:11px;margin-top:8px">✨ Adaptando a tu nicho…</div>';
+  try{
+    const r=await iaJSON(contrato,{maxTokens:700,temperature:0.9});
+    const vs=(Array.isArray(r.versiones)?r.versiones:[]).filter(x=>x&&String(x).trim()).slice(0,3);
+    if(!vs.length) throw new Error('sin versiones');
+    _ganchoAdapt[i]=vs;
+    out.innerHTML=`<div class="est-mini" style="color:var(--UI-A)">Para tu nicho</div>`+vs.map((v,j)=>`
+      <div style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;padding-top:8px;border-top:1px solid var(--UI-B2)">
+        <p style="flex:1;color:var(--UI-T);line-height:1.5">${favEsc(v)}</p>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+          <button class="gk-mini" onclick="copiar(_ganchoAdapt[${i}][${j}])" title="Copiar">📋</button>
+          <button class="gk-mini" onclick="usarGanchoCopys(${i},${j})" title="Escribir copys con este gancho">✍️</button>
+        </div>
+      </div>`).join('');
+  }catch(e){ if(out) out.innerHTML='<div style="color:#ff6b6b;font-size:11px;margin-top:8px">No se pudo: '+favEsc(e.message)+'</div>'; }
+  finally{ if(btn){ btn.disabled=false; btn.classList.remove('loading'); } }
+}
+
+// Lleva un gancho adaptado a la pestaña Copys como tema de partida.
+function usarGanchoCopys(i,j){
+  const v=(_ganchoAdapt[i]||[])[j]; if(!v) return;
+  const ta=document.getElementById('estTema'); if(ta) ta.value=v;
+  estTab('copys');
+  toast2('Gancho cargado en Copys — pulsa "Generar los 3 copys"');
 }
 
 // 🖼 PASO 5 — Creativos de anuncio: diseña un Post (4:5) o Reel (portada 9:16)
