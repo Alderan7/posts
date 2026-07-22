@@ -2252,7 +2252,7 @@ function _fitImpacto(head){
 // de color (como "DINERO"/"CIERRAS" de las referencias).
 function _headImpacto(head, cajaBg, cajaTxt){
   return String(head||'').split('\n').map(linea=>
-    linea.replace(/\*([^*]+)\*/g, `<span style="background:${cajaBg};color:${cajaTxt};padding:0 .16em;margin:0 .02em;box-decoration-break:clone;-webkit-box-decoration-break:clone">$1</span>`)
+    linea.replace(/\*([^*]+)\*/g, `<span style="display:inline-block;background:${cajaBg};color:${cajaTxt};padding:.02em .15em;line-height:.78;border-radius:2px;vertical-align:baseline">$1</span>`)
   ).join('<br>');
 }
 // IMPACTO — titular GIGANTE condensado (estilo "waysuccess"): eyebrow con línea,
