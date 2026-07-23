@@ -7160,6 +7160,30 @@ document.addEventListener('keydown',e=>{
 const FAV_DB='rm_favoritos', FAV_STORE='disenos';
 const FAV_IMG_FIELDS=['imgFondo','imgFondo2','imgAntes','imgDespues'];
 
+// Pipeline de estados de un diseño. Un diseño sin estado (guardado antes de
+// esta función) se trata como borrador.
+const FAV_ESTADOS={
+  borrador: {n:'Borrador',            emoji:'✏️', col:'#9aa0a6'},
+  listo:    {n:'Listo para publicar', emoji:'📤', col:'#ff9f43'},
+  publicado:{n:'Publicado',           emoji:'✅', col:'#5BD68A'}
+};
+const FAV_ESTADO_ORDEN=['borrador','listo','publicado'];
+const favEstado=f=>FAV_ESTADOS[f&&f.estado]?f.estado:'borrador';
+let _favFiltro='todos';
+
+// Texto comparable de un diseño (para saber de qué va y detectar repeticiones):
+// junta los textos de todos los slides + el caption del copy.
+function _textoDiseno(slides, copyCtx){
+  const partes=[];
+  (slides||[]).forEach(s=>{
+    ['eye','head','body','cta'].forEach(k=>{ if(s[k]) partes.push(String(s[k])); });
+    if(Array.isArray(s.items)) s.items.forEach(it=>partes.push(String(it)));
+  });
+  const cap=copyCtx&&copyCtx.idea&&copyCtx.idea.caption;
+  if(cap) partes.push(String(cap));
+  return partes.join(' ').replace(/\s+/g,' ').trim();
+}
+
 function favEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 // --- IndexedDB mínimo (una tienda con keyPath id) ---
@@ -7238,6 +7262,18 @@ async function favThumb(){
 
 async function guardarFavorito(){
   if(!SLIDES.length){ toast2('Genera un diseño primero'); return; }
+  // Anti-repetición: si se parece a algo ya guardado (sobre todo publicado), avisa.
+  const textoActual=_textoDiseno(SLIDES, COPY_CTX);
+  try{
+    const par=_disenoParecido(textoActual, await favGetAll(), null);
+    if(par){
+      const e=FAV_ESTADOS[favEstado(par.fav)];
+      const cu=(par.fav.estado==='publicado'&&par.fav.fechaPub)
+        ? 'que publicaste el '+new Date(par.fav.fechaPub).toLocaleDateString('es-ES',{day:'numeric',month:'long'})
+        : `(${e.n.toLowerCase()})`;
+      if(!window.confirm(`⚠️ Esto se parece mucho (${Math.round(par.sim*100)}%) a tu diseño «${par.fav.nombre}» ${cu}.\n\n¿Guardarlo igualmente?`)) return;
+    }
+  }catch(e){/* si falla la comprobación, seguimos guardando igual */}
   const sug=(SLIDES[0]?.head||SLIDES[0]?.eye||'Diseño').replace(/\s+/g,' ').trim().slice(0,60);
   const nombre=window.prompt('Ponle un nombre a este diseño para reconocerlo luego:', sug);
   if(nombre===null) return;                       // cancelado
@@ -7250,9 +7286,11 @@ async function guardarFavorito(){
     const fav={
       id:'f'+Date.now()+Math.random().toString(36).slice(2,6),
       nombre:(nombre.trim()||sug), fecha:Date.now(), nicho:_nicho, modo,
+      estado:'borrador',
       slides:JSON.parse(JSON.stringify(SLIDES)), imgs,
       copyCtx:JSON.parse(JSON.stringify(COPY_CTX||{})),
       guion:ULTIMO_GUION||'',
+      texto:_textoDiseno(SLIDES, COPY_CTX),
       thumb:await favThumb()
     };
     await favPut(fav);
@@ -7296,6 +7334,55 @@ async function eliminarFavorito(id){
   if(!window.confirm('¿Eliminar este diseño guardado? No se puede deshacer.')) return;
   try{ await favDel(id); }catch(e){ toast2('No se pudo eliminar'); return; }
   renderFavoritos();
+}
+
+// Cambia el estado de un diseño en el pipeline. Al marcarlo "Publicado" guarda
+// la fecha (la usa el aviso anti-repetición: «lo publicaste el 12 de junio»).
+async function cambiarEstadoFav(id, estado){
+  if(!FAV_ESTADOS[estado]) return;
+  let all=[]; try{ all=await favGetAll(); }catch(e){ return; }
+  const f=all.find(x=>x.id===id); if(!f) return;
+  f.estado=estado;
+  if(estado==='publicado'){ if(!f.fechaPub) f.fechaPub=Date.now(); }
+  else { f.fechaPub=null; }
+  // Si un diseño viejo no tenía texto guardado, se calcula ahora.
+  if(!f.texto) f.texto=_textoDiseno(f.slides, f.copyCtx);
+  try{ await favPut(f); }catch(e){ toast2('No se pudo cambiar el estado'); return; }
+  const e=FAV_ESTADOS[estado];
+  toast2(`${e.emoji} «${f.nombre}» → ${e.n}`);
+  renderFavoritos();
+}
+function filtrarFav(estado){ _favFiltro=estado; renderFavoritos(); }
+
+// ── Anti-repetición ──────────────────────────────────────────────
+// Similitud entre dos textos por solape de palabras con peso (índice de
+// Jaccard sobre palabras significativas). Rápido, sin IA. 0 = nada, 1 = igual.
+const _STOP=new Set('de la que el en y a los las un una para por con no te su lo le se mi tu es al como más o pero si ya del me nos os sus este esta eso esa muy sin sobre entre cuando tus'.split(' '));
+function _palabrasClave(txt){
+  return new Set(String(txt||'').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')   // fuera acentos
+    .replace(/[^a-z0-9ñ\s]/g,' ').split(/\s+/)
+    .filter(w=>w.length>3 && !_STOP.has(w)));
+}
+function _similitud(a,b){
+  const A=_palabrasClave(a), B=_palabrasClave(b);
+  if(!A.size || !B.size) return 0;
+  let inter=0; A.forEach(w=>{ if(B.has(w)) inter++; });
+  return inter/(A.size+B.size-inter);
+}
+// Devuelve el diseño ya guardado más parecido (si supera el umbral), priorizando
+// los PUBLICADOS. Se salta el propio diseño por id.
+function _disenoParecido(texto, todos, idPropio){
+  let mejor=null, mejorSim=0;
+  for(const f of todos){
+    if(f.id===idPropio) continue;
+    const t=f.texto || _textoDiseno(f.slides, f.copyCtx);
+    const sim=_similitud(texto, t);
+    // Un publicado con la misma similitud pesa más que un borrador
+    const ajust=sim + (favEstado(f)==='publicado'?0.05:0);
+    if(ajust>mejorSim){ mejorSim=ajust; mejor={fav:f, sim}; }
+  }
+  return (mejor && mejor.sim>=0.35) ? mejor : null;
 }
 
 function abrirFavoritos(){ document.getElementById('favModal').classList.add('on'); renderFavoritos(); }
@@ -8846,23 +8933,45 @@ async function renderFavoritos(){
   try{ all=await favGetAll(); }
   catch(e){ cont.innerHTML='<div style="grid-column:1/-1;color:#ff6b6b;font-size:12px">No se pudieron leer los diseños guardados.</div>'; return; }
   all.sort((a,b)=>(b.fecha||0)-(a.fecha||0));
+
+  // Barra de filtros por estado (Todos + los 3 del pipeline), con recuento.
+  const fbar=document.getElementById('favFiltro');
+  if(fbar){
+    const cnt=e=>all.filter(f=>favEstado(f)===e).length;
+    const chip=(k,txt)=>`<button class="est-tab${_favFiltro===k?' on':''}" onclick="filtrarFav('${k}')">${txt} <span style="opacity:.6">${k==='todos'?all.length:cnt(k)}</span></button>`;
+    fbar.innerHTML=chip('todos','Todos')+FAV_ESTADO_ORDEN.map(k=>chip(k,`${FAV_ESTADOS[k].emoji} ${FAV_ESTADOS[k].n}`)).join('');
+  }
+
   if(!all.length){
     cont.innerHTML='<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:34px 10px;line-height:1.6">Aún no has guardado ningún diseño.<br>Crea o genera un contenido que te guste y pulsa <b style="color:var(--UI-A)">«＋ Guardar el diseño actual»</b>.</div>';
     return;
   }
-  cont.innerHTML=all.map(f=>{
+  const lista=all.filter(f=>_favFiltro==='todos'||favEstado(f)===_favFiltro);
+  if(!lista.length){
+    cont.innerHTML=`<div style="grid-column:1/-1;color:var(--UI-M);font-size:12px;text-align:center;padding:30px 10px;line-height:1.6">No hay diseños en <b style="color:var(--UI-T)">${FAV_ESTADOS[_favFiltro]?FAV_ESTADOS[_favFiltro].n:''}</b>.</div>`;
+    return;
+  }
+  cont.innerHTML=lista.map(f=>{
     const badge=f.nicho==='personal'?'👤 Personal':f.nicho==='productividad'?'🗂 Productividad':f.nicho==='fiscalidad'?'📊 Fiscalidad':f.nicho==='ia'?'🤖 IA':'🏗 Reformas';
     const nSl=(f.slides||[]).length;
     const fecha=f.fecha?new Date(f.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short'}):'';
+    const est=favEstado(f), em=FAV_ESTADOS[est];
+    const pub=(est==='publicado'&&f.fechaPub)?' · '+new Date(f.fechaPub).toLocaleDateString('es-ES',{day:'2-digit',month:'short'}):'';
     const thumb=f.thumb
       ? `<img src="${f.thumb}" alt="" style="width:100%;aspect-ratio:4/5;object-fit:cover;display:block">`
       : `<div style="width:100%;aspect-ratio:4/5;background:var(--UI-B);display:flex;align-items:center;justify-content:center;color:var(--UI-M);font-size:22px">🎨</div>`;
     return `<div class="fav-card">
-      <div class="fav-thumb" onclick="cargarFavorito('${f.id}')" title="Abrir este diseño">${thumb}</div>
+      <div class="fav-thumb" onclick="cargarFavorito('${f.id}')" title="Abrir este diseño">
+        <span class="fav-estado" style="background:${em.col}">${em.emoji} ${em.n}${pub}</span>
+        ${thumb}
+      </div>
       <div class="fav-meta">
         <div class="fav-name" title="${favEsc(f.nombre)}">${favEsc(f.nombre)}</div>
         <div class="fav-sub">${badge} · ${nSl} slide${nSl===1?'':'s'}${fecha?' · '+fecha:''}</div>
       </div>
+      <select class="fav-estsel" onchange="cambiarEstadoFav('${f.id}',this.value)" title="Estado en el pipeline">
+        ${FAV_ESTADO_ORDEN.map(k=>`<option value="${k}"${k===est?' selected':''}>${FAV_ESTADOS[k].emoji} ${FAV_ESTADOS[k].n}</option>`).join('')}
+      </select>
       <div class="fav-acts">
         <button onclick="cargarFavorito('${f.id}')">Abrir</button>
         <button onclick="renombrarFavorito('${f.id}')" title="Renombrar">✏️</button>

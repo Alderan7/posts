@@ -880,6 +880,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .fav-acts button{flex:1;border:1px solid var(--UI-B2);background:transparent;color:var(--UI-T);border-radius:4px;padding:5px 4px;font-size:9px;cursor:pointer;font-family:'Montserrat',sans-serif}
 .fav-acts button:first-child{flex:2;color:var(--UI-A);border-color:var(--UI-A);font-weight:600}
 .fav-acts button:hover{background:var(--UI-B2)}
+.fav-estado{position:absolute;top:6px;left:6px;z-index:1;color:#0d0d0d;font-family:'Montserrat',sans-serif;font-size:8px;font-weight:800;letter-spacing:.03em;padding:3px 6px;border-radius:5px;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.fav-estsel{margin:0 8px 6px;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);border-radius:5px;padding:4px 6px;font-size:10px;font-family:'Montserrat',sans-serif;cursor:pointer}
 #mediaLib.drag{box-shadow:inset 0 0 0 2px var(--UI-A);background:rgba(56,182,255,.06)}
 .mlib-top{
   padding:8px 8px 6px;border-bottom:1px solid var(--UI-B);
@@ -1276,6 +1278,9 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
         <input type="file" id="favImportFile" accept=".json,application/json" style="display:none" onchange="importarFavoritos(this.files)">
       </div>
       <div style="font-size:9px;color:var(--UI-M);margin-top:6px;line-height:1.5">Guarda el diseño completo (slides, fotos, copy y guion) en este navegador. La copia de seguridad los baja a un archivo por si cambias de navegador u ordenador.</div>
+    </div>
+    <div style="padding:10px 18px 0;flex-shrink:0">
+      <div id="favFiltro" style="display:flex;gap:6px;flex-wrap:wrap"></div>
     </div>
     <div class="resm-body">
       <div id="favGrid" class="fav-grid"></div>
@@ -2439,6 +2444,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=147"></script>
+<script src="app.js?v=148"></script>
 </body>
 </html>
