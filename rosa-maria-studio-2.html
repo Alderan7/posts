@@ -882,6 +882,11 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .fav-acts button:hover{background:var(--UI-B2)}
 .fav-estado{position:absolute;top:6px;left:6px;z-index:1;color:#0d0d0d;font-family:'Montserrat',sans-serif;font-size:8px;font-weight:800;letter-spacing:.03em;padding:3px 6px;border-radius:5px;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .fav-estsel{margin:0 8px 6px;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);border-radius:5px;padding:4px 6px;font-size:10px;font-family:'Montserrat',sans-serif;cursor:pointer}
+.fav-res{display:flex;gap:4px;margin:0 8px 6px}
+.fav-res label{flex:1;display:flex;align-items:center;gap:3px;background:var(--UI-B);border:1px solid var(--UI-B2);border-radius:5px;padding:3px 4px;font-size:10px;cursor:text}
+.fav-res input{width:100%;min-width:0;background:transparent;border:none;color:var(--UI-T);font-size:10px;font-family:'Montserrat',sans-serif;padding:1px 0;outline:none;-moz-appearance:textfield}
+.fav-res input::-webkit-outer-spin-button,.fav-res input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.fav-res label:focus-within{border-color:var(--UI-A)}
 #mediaLib.drag{box-shadow:inset 0 0 0 2px var(--UI-A);background:rgba(56,182,255,.06)}
 .mlib-top{
   padding:8px 8px 6px;border-bottom:1px solid var(--UI-B);
@@ -2444,6 +2449,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=148"></script>
+<script src="app.js?v=149"></script>
 </body>
 </html>

@@ -7354,6 +7354,55 @@ async function cambiarEstadoFav(id, estado){
 }
 function filtrarFav(estado){ _favFiltro=estado; renderFavoritos(); }
 
+// ── Cómo fue: los resultados reales de lo que publicaste ──────────
+// Sin esto el estudio genera pero no aprende. Los DMs pesan más que los
+// comentarios, y estos más que los guardados: lo que buscamos son clientes.
+const FAV_METRICAS=[
+  {k:'g', emoji:'🔖', n:'Guardados',  peso:1},
+  {k:'c', emoji:'💬', n:'Comentarios',peso:2},
+  {k:'d', emoji:'📩', n:'DMs',        peso:3}
+];
+async function guardarResultadoFav(id, campo, valor){
+  let all=[]; try{ all=await favGetAll(); }catch(e){ return; }
+  const f=all.find(x=>x.id===id); if(!f) return;
+  const n=parseInt(valor,10);
+  f.res=f.res||{};
+  f.res[campo]=(isNaN(n)||n<0)?0:n;
+  // No repintamos la lista: perderías el foco mientras rellenas los números.
+  try{ await favPut(f); }catch(e){ toast2('No se pudo guardar el resultado'); }
+}
+// Puntuación de un publicado, para saber qué te funcionó mejor.
+function _puntuaFav(f){
+  const r=(f&&f.res)||{};
+  return FAV_METRICAS.reduce((n,m)=>n+((parseInt(r[m.k],10)||0)*m.peso),0);
+}
+
+// Resumen del historial real para que el Radar NO proponga a ciegas: aprende
+// de lo que te funcionó y evita repetir lo ya publicado. Solo del nicho activo.
+// Devuelve {texto, nPub, nConDatos} — texto vacío si aún no hay historial.
+async function _historialParaRadar(){
+  let all=[];
+  try{ all=await favGetAll(); }catch(e){ return {texto:'',nPub:0,nConDatos:0}; }
+  const pub=all.filter(f=>favEstado(f)==='publicado' && f.nicho===_nicho);
+  if(!pub.length) return {texto:'',nPub:0,nConDatos:0};
+  const resumen=f=>{
+    const r=f.res||{};
+    const det=FAV_METRICAS.filter(m=>(parseInt(r[m.k],10)||0)>0)
+      .map(m=>`${parseInt(r[m.k],10)} ${m.n.toLowerCase()}`).join(', ');
+    return `- "${String(f.texto||f.nombre||'').replace(/\s+/g,' ').slice(0,150)}"${det?`  → ${det}`:''}`;
+  };
+  const conDatos=pub.filter(f=>_puntuaFav(f)>0).sort((a,b)=>_puntuaFav(b)-_puntuaFav(a));
+  let t='\n\n═══ HISTORIAL REAL DE ESTA CUENTA ═══\nEsto ya se publicó. Úsalo de verdad: propón en la línea de lo que funcionó, y NO repitas temas ya tratados.\n';
+  if(conDatos.length){
+    t+='\nLo que MEJOR funcionó (ordenado):\n'+conDatos.slice(0,3).map(resumen).join('\n')+'\n';
+    if(conDatos.length>=4) t+='\nLo que PEOR funcionó:\n'+conDatos.slice(-2).map(resumen).join('\n')+'\n';
+  }
+  const sinDatos=pub.filter(f=>_puntuaFav(f)===0);
+  if(sinDatos.length) t+='\nYa publicado (no repitas estos temas):\n'+sinDatos.slice(0,6).map(resumen).join('\n')+'\n';
+  t+='\nAl final, en "recomendacion", di en 1 frase qué patrón ves en lo que mejor funcionó.\n';
+  return {texto:t, nPub:pub.length, nConDatos:conDatos.length};
+}
+
 // ── Anti-repetición ──────────────────────────────────────────────
 // Similitud entre dos textos por solape de palabras con peso (índice de
 // Jaccard sobre palabras significativas). Rápido, sin IA. 0 = nada, 1 = igual.
@@ -8370,8 +8419,10 @@ async function radarViral(){
   const out=document.getElementById('estRadarOut');
   if(!hayIA()){ if(out) out.innerHTML='<div style="color:#ff9f43;font-size:12px;line-height:1.6">Sin IA ahora mismo. Vuelve a intentarlo en un rato, o usa 💡 200 ideas / 🔥 Plantillas (funcionan sin IA).</div>'; return; }
   const cfg=N();
+  // El Radar aprende: le pasamos qué publicaste ya y con qué resultados.
+  const hist=await _historialParaRadar();
   const contrato=`Eres estratega de contenido para Instagram del nicho "${cfg.nombre}". Cliente ideal: ${cfg.lector}. Objetivo de la marca: posicionar a Rosa María como referente en captación de clientes para este sector. Tono: ${cfg.tono}.
-IMPORTANTE: NO inventes "noticias de hoy" ni datos de actualidad que no puedas conocer. Básate en los DOLORES reales, objeciones frecuentes, deseos y comportamientos del cliente ideal, y en formatos que funcionan en Instagram para este nicho.
+IMPORTANTE: NO inventes "noticias de hoy" ni datos de actualidad que no puedas conocer. Básate en los DOLORES reales, objeciones frecuentes, deseos y comportamientos del cliente ideal, y en formatos que funcionan en Instagram para este nicho.${hist.texto}
 Dame 5 ideas de contenido de ALTO potencial (nada genérico; pensadas para atraer a ese cliente y generar conversaciones comerciales).
 Devuelve SOLO JSON:
 {"ideas":[{
@@ -8385,12 +8436,22 @@ Devuelve SOLO JSON:
 }],
  "recomendacion":"cuál de las 5 publicarías primero y por qué, 1-2 frases"}`;
   if(btn){ btn.disabled=true; btn.classList.add('loading'); }
-  if(out) out.innerHTML='<div style="color:var(--UI-A);font-size:12px">📡 Buscando ángulos de alto potencial…</div>';
+  if(out) out.innerHTML='<div style="color:var(--UI-A);font-size:12px">📡 '+(hist.nPub?`Leyendo tus ${hist.nPub} publicados y buscando ángulos…`:'Buscando ángulos de alto potencial…')+'</div>';
   try{
     const r=await iaJSON(contrato,{maxTokens:2000,temperature:0.9});
     _estIdeas=(Array.isArray(r.ideas)?r.ideas:[]).filter(x=>x&&x.tema).slice(0,5);
     if(!_estIdeas.length) throw new Error('sin ideas');
-    out.innerHTML=_estIdeas.map((it,i)=>`
+    // Aviso de qué historial ha usado (o de que aún no tiene con qué aprender)
+    const aprende = hist.nPub
+      ? `<div class="est-card" style="background:rgba(91,214,138,.08);border-color:#5BD68A">
+           <div class="est-mini" style="margin-top:0;color:#5BD68A">🧠 Aprendiendo de ti</div>
+           <p style="color:var(--UI-T)">Estas ideas tienen en cuenta tus <b>${hist.nPub} contenido${hist.nPub===1?'':'s'} publicado${hist.nPub===1?'':'s'}</b>${hist.nConDatos?` y los resultados de ${hist.nConDatos}`:', pero ninguno tiene resultados anotados todavía'}.</p>
+         </div>`
+      : `<div class="est-card" style="background:rgba(255,159,67,.08);border-color:#ff9f43">
+           <div class="est-mini" style="margin-top:0;color:#ff9f43">🧠 Todavía no aprende de ti</div>
+           <p style="color:var(--UI-M)">Marca diseños como <b style="color:var(--UI-T)">✅ Publicado</b> en ⭐ Diseños y anota cómo fueron (🔖 💬 📩). A partir de ahí el Radar propondrá en la línea de lo que te funciona.</p>
+         </div>`;
+    out.innerHTML=aprende+_estIdeas.map((it,i)=>`
       <div class="est-card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
           <h4>${favEsc(it.tema)}</h4>
@@ -8972,6 +9033,13 @@ async function renderFavoritos(){
       <select class="fav-estsel" onchange="cambiarEstadoFav('${f.id}',this.value)" title="Estado en el pipeline">
         ${FAV_ESTADO_ORDEN.map(k=>`<option value="${k}"${k===est?' selected':''}>${FAV_ESTADOS[k].emoji} ${FAV_ESTADOS[k].n}</option>`).join('')}
       </select>
+      ${est==='publicado'?`<div class="fav-res" title="Cómo fue: estos números alimentan al Radar">
+        ${FAV_METRICAS.map(m=>{
+          const v=(f.res||{})[m.k];
+          return `<label title="${m.n}">${m.emoji}<input type="number" min="0" placeholder="0" value="${v!=null?v:''}"
+            onchange="guardarResultadoFav('${f.id}','${m.k}',this.value)"></label>`;
+        }).join('')}
+      </div>`:''}
       <div class="fav-acts">
         <button onclick="cargarFavorito('${f.id}')">Abrir</button>
         <button onclick="renombrarFavorito('${f.id}')" title="Renombrar">✏️</button>
