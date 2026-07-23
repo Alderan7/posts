@@ -808,6 +808,8 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .gk-num{flex-shrink:0;width:22px;height:22px;border-radius:6px;background:rgba(56,182,255,.14);color:var(--UI-A);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif}
 .gk-mini{border:1px solid var(--UI-B2);background:transparent;color:var(--UI-T);border-radius:5px;padding:3px 7px;font-size:11px;cursor:pointer;line-height:1}
 .gk-mini:hover{border-color:var(--UI-A);color:var(--UI-A)}
+.gk-fuerza{display:inline-flex;gap:3px;align-items:center}
+.gk-fuerza i{display:inline-block;width:16px;height:4px;border-radius:2px}
 /* Selector de fotos del carrusel de obra */
 .obra-ph{position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;cursor:pointer;border:3px solid transparent;background:#111}
 .obra-ph img{width:100%;height:100%;object-fit:cover;display:block}
@@ -1349,13 +1351,33 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     <div class="resm-body">
       <!-- TAB GANCHOS -->
       <div class="est-panel" id="estPanel-ganchos">
-        <div style="font-size:11px;color:var(--UI-M);line-height:1.6;margin-bottom:12px">30 <b style="color:var(--UI-T)">ganchos virales</b> (la primera frase que para el scroll) que funcionan en cualquier nicho. Copia la plantilla y rellena los <span style="color:var(--UI-A);font-weight:700">[corchetes]</span> con tu tema, o pulsa <b style="color:var(--UI-T)">✨ Adaptar a mi nicho</b> y la IA los rellena por ti y te da 3 versiones listas para publicar.</div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-          <button class="btn btn-gen" id="ganchoSorpBtn" onclick="ganchoSorpresa()"><span class="spinner"></span>🎲 Sorpréndeme</button>
-          <span style="font-size:10px;color:var(--UI-M);line-height:1.4">Elige un gancho al azar del filtro activo y lo adapta a tu nicho.</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--UI-B)">
+          <button class="est-tab gk-sub on" data-gv="plantillas" onclick="ganchoVista('plantillas')">📋 30 plantillas</button>
+          <button class="est-tab gk-sub" data-gv="tipos" onclick="ganchoVista('tipos')">🧠 10 tipos de gancho</button>
         </div>
-        <div id="estGanchosFiltro" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
-        <div id="estGanchosOut" style="display:flex;flex-direction:column;gap:10px"></div>
+
+        <!-- VISTA A: las 30 plantillas para rellenar -->
+        <div id="ganchoVista-plantillas">
+          <div style="font-size:11px;color:var(--UI-M);line-height:1.6;margin-bottom:12px">30 <b style="color:var(--UI-T)">ganchos virales</b> (la primera frase que para el scroll) que funcionan en cualquier nicho. Copia la plantilla y rellena los <span style="color:var(--UI-A);font-weight:700">[corchetes]</span> con tu tema, o pulsa <b style="color:var(--UI-T)">✨ Adaptar a mi nicho</b> y la IA los rellena por ti y te da 3 versiones listas para publicar.</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+            <button class="btn btn-gen" id="ganchoSorpBtn" onclick="ganchoSorpresa()"><span class="spinner"></span>🎲 Sorpréndeme</button>
+            <span style="font-size:10px;color:var(--UI-M);line-height:1.4">Elige un gancho al azar del filtro activo y lo adapta a tu nicho.</span>
+          </div>
+          <div id="estGanchosFiltro" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
+          <div id="estGanchosOut" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+
+        <!-- VISTA B: los 10 tipos psicológicos, de más a menos potente -->
+        <div id="ganchoVista-tipos" style="display:none">
+          <div style="font-size:11px;color:var(--UI-M);line-height:1.6;margin-bottom:12px">Los <b style="color:var(--UI-T)">10 mecanismos</b> que hacen que alguien pare el scroll, ordenados <b style="color:var(--UI-T)">del más potente al más débil</b>. No son frases para rellenar: son el <i>porqué</i>. Cada uno trae por qué funciona, cómo se ejecuta y <b style="color:var(--UI-T)">un ejemplo en 20 sectores</b> (200 en total). Pulsa <b style="color:var(--UI-T)">✨ Ganchos así para mi nicho</b> y la IA escribe 3 con ese mecanismo para ti.</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+            <span style="font-size:10px;color:var(--UI-M);letter-spacing:.06em;text-transform:uppercase;font-weight:700">Ver ejemplos de</span>
+            <select id="tipoSectorSel" onchange="filtrarSectorTipos()"
+              style="background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:6px 8px;border-radius:5px;font-size:11px;font-family:'Montserrat',sans-serif"></select>
+            <span style="font-size:10px;color:var(--UI-M);line-height:1.4">Elige un sector y compara cómo suena el mismo mecanismo en los 10 tipos.</span>
+          </div>
+          <div id="estTiposOut" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
       </div>
       <!-- TAB RADAR -->
       <div class="est-panel on" id="estPanel-radar">
@@ -2382,6 +2404,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=142"></script>
+<script src="app.js?v=144"></script>
 </body>
 </html>

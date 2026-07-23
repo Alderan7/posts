@@ -7545,6 +7545,392 @@ function usarGanchoCopys(i,j){
   toast2('Gancho cargado en Copys — pulsa "Generar los 3 copys"');
 }
 
+/* ═══════════════════════════════════════════
+   🧠 LOS 10 TIPOS DE GANCHO — ordenados del MÁS potente al más débil.
+   No son plantillas para rellenar: son los MECANISMOS psicológicos que hacen
+   que alguien pare el scroll. Cada tipo trae por qué funciona, cómo se ejecuta
+   y ejemplos en 6 sectores. La IA los traduce al nicho activo.
+   ═══════════════════════════════════════════ */
+// Los 20 sectores de los ejemplos. El orden manda: cada array "ej" de un tipo
+// trae UN ejemplo por sector, en este mismo orden. Los 5 primeros son los
+// nichos de la app; luego los 6 originales; luego sectores de apoyo.
+const GANCHOS_SECTORES=['Reformas','Fiscalidad','Marketing','Inteligencia artificial','Productividad',
+  'Finanzas','Salud','Espiritualidad','Desarrollo personal','Relaciones','Dinero',
+  'Fitness','Nutrición','Belleza y estética','Inmobiliaria','E-commerce','Formación','Hostelería','Tecnología','Emprendimiento'];
+
+const GANCHOS_TIPOS=[
+  {emoji:'🔥',nombre:'Negativo / Alerta',fuerza:5,veredicto:'El más poderoso',
+   porque:'Activa la supervivencia mental. El cerebro está programado para detectar errores, peligro o pérdida antes que cualquier otra cosa: no quiere ganar, quiere evitar perder. Por eso detiene el scroll de inmediato.',
+   como:'Le dices a la persona «estás haciendo algo mal», «hay algo que te está perjudicando», «hay un error que no estás viendo». Su mente entra en: «necesito saber si soy yo».',
+   ej:['Este fallo en tu presupuesto de reforma te va a costar miles de euros y aún no lo ves.',
+       'Esta casilla mal puesta en tu declaración le está regalando dinero a Hacienda.',
+       'Esto que publicas cada semana está espantando a tus mejores clientes.',
+       'Estás usando la IA de una forma que está destruyendo la calidad de tu trabajo.',
+       'Esta costumbre diaria te está robando dos horas sin que te des cuenta.',
+       'Este error silencioso está destruyendo tus finanzas sin que lo notes.',
+       'Esto que haces todos los días está dañando tu cuerpo más de lo que crees.',
+       'Estás manifestando mal… y por eso no ves resultados.',
+       'Este hábito está saboteando tu crecimiento personal.',
+       'Esta actitud está arruinando tus relaciones sin que te des cuenta.',
+       'Este patrón mental te mantiene estancada económicamente.',
+       'Este ejercicio que repites mal cada semana te está destrozando la espalda.',
+       'Ese desayuno «sano» está saboteando tu energía toda la mañana.',
+       'Este gesto diario está envejeciendo tu piel más rápido de lo normal.',
+       'Este detalle del contrato te puede costar la vivienda y nadie te lo explica.',
+       'Esto que tienes en tu ficha de producto está tirando tus ventas a la basura.',
+       'Estudias así y por eso olvidas el 80% de lo que aprendes.',
+       'Esta decisión en tu carta te está comiendo el margen de cada mesa.',
+       'Esta configuración por defecto está exponiendo todos tus datos ahora mismo.',
+       'Esta decisión que parece prudente está matando tu negocio poco a poco.']},
+
+  {emoji:'⚡',nombre:'Identificación',fuerza:5,veredicto:'Conecta y retiene',
+   porque:'Aquí no asustas: conectas. La persona siente «eso soy yo», «así me siento». Y cuando alguien se siente visto, se queda.',
+   como:'Describes una situación específica que vive tu cliente ideal. No es genérico: es íntimo, real y cotidiano.',
+   ej:['Pediste tres presupuestos… y cada uno te dice una cosa distinta.',
+       'Pagas tus impuestos religiosamente… y aun así vives con miedo a una inspección.',
+       'Publicas todas las semanas… pero nadie te escribe.',
+       'Abres la IA con ganas… y no sabes ni qué pedirle.',
+       'Terminas el día agotada… y sientes que no hiciste nada importante.',
+       'Ganas dinero… pero sientes que nunca te alcanza.',
+       'Empiezas motivada… pero a los pocos días abandonas todo.',
+       'Intentas soltar… pero tu mente no deja de pensar en lo mismo.',
+       'Sabes lo que tienes que hacer… pero no lo haces.',
+       'Das todo por los demás… y sientes que no recibes lo mismo.',
+       'Quieres crecer económicamente… pero no sabes por dónde empezar.',
+       'Vas al gimnasio desde hace meses… y te ves exactamente igual.',
+       'Comes bien toda la semana… y el domingo lo tiras todo por la borda.',
+       'Tienes el baño lleno de productos… y la piel sigue igual.',
+       'Llevas meses buscando piso… y todo lo bueno vuela antes de que llames.',
+       'Te entran visitas cada día… pero el carrito se queda vacío.',
+       'Compraste el curso con toda la ilusión… y sigue sin abrir.',
+       'El local está lleno… y a fin de mes no queda nada.',
+       'Tienes mil herramientas… y ninguna te ha simplificado el día.',
+       'Trabajas más horas que nunca… y te sientes más lejos que nunca.']},
+
+  {emoji:'🧠',nombre:'Pregunta',fuerza:4,veredicto:'Activa el diálogo interno',
+   porque:'Activa el diálogo interno. No solo ven el vídeo: responden mentalmente.',
+   como:'Haces una pregunta que refleja una experiencia real de tu cliente.',
+   ej:['¿Te dieron un presupuesto cerrado… y acabó costando el doble?',
+       '¿Sabes de verdad cuánto te queda limpio después de impuestos?',
+       '¿Publicas cada semana y sigues esperando que alguien te escriba?',
+       '¿Usas la IA todos los días… y sigues tardando lo mismo?',
+       '¿Acabas el día ocupada pero sin haber avanzado en nada?',
+       '¿Te llega dinero… y desaparece sin saber en qué?',
+       '¿Te cuesta mantener hábitos saludables más de una semana?',
+       '¿Sientes que estás haciendo todo «bien»… pero no avanzas?',
+       '¿Te sientes estancada aunque sabes tu potencial?',
+       '¿Siempre terminas atrayendo el mismo tipo de persona?',
+       '¿Quieres generar más ingresos pero no sabes cómo?',
+       '¿Entrenas duro y el espejo no te devuelve ningún cambio?',
+       '¿Tienes hambre a media mañana por mucho que desayunes?',
+       '¿Gastas en cremas cada mes y no notas ninguna diferencia?',
+       '¿Llevas meses visitando pisos y ninguno te convence del todo?',
+       '¿Recibes visitas todos los días y casi ninguna compra?',
+       '¿Cuántos cursos has comprado y cuántos has terminado?',
+       '¿Llenas el local y aun así no llegas a fin de mes?',
+       '¿Cuánto tardarías en recuperarlo todo si mañana pierdes el móvil?',
+       '¿Tienes un negocio… o te has creado un trabajo peor pagado?']},
+
+  {emoji:'⚡',nombre:'Contraintuitivo',fuerza:4,veredicto:'Rompe creencias',
+   porque:'Rompe creencias. Dice algo que parece incorrecto… y por eso engancha.',
+   como:'Atacas una creencia popular. La persona piensa: «eso no tiene sentido… explícame».',
+   ej:['El presupuesto más barato casi siempre acaba siendo el más caro.',
+       'Facturar más puede dejarte menos dinero en el bolsillo.',
+       'Publicar más a menudo puede hundir tu alcance.',
+       'Automatizarlo todo con IA puede hacerte perder tiempo.',
+       'Organizarte mejor puede ser justo lo que te impide avanzar.',
+       'Ahorrar dinero puede estar frenando tu crecimiento.',
+       'Comer menos no siempre te hace bajar de peso.',
+       'Pensar positivo no siempre eleva tu energía.',
+       'Motivarte puede ser lo que te está estancando.',
+       'Amar demasiado puede destruir una relación.',
+       'Trabajar más no siempre te hace ganar más.',
+       'Entrenar todos los días puede frenar tus resultados.',
+       'Comer «sano» puede estar dejándote sin energía.',
+       'Usar más productos puede estropearte más la piel.',
+       'Comprar puede salirte mucho peor que alquilar.',
+       'Bajar el precio puede hacerte vender menos.',
+       'Estudiar más horas puede hacerte aprender menos.',
+       'Una carta más grande suele dar menos beneficio.',
+       'Cambiar de herramienta cada mes te hace ir más lento.',
+       'Decir que sí a todos los clientes puede arruinarte.']},
+
+  {emoji:'🧩',nombre:'Curiosidad',fuerza:4,veredicto:'El cerebro odia los vacíos',
+   porque:'El cerebro odia los vacíos. Si siente que hay algo que no sabe, quiere cerrarlo.',
+   como:'Dejas una información incompleta.',
+   ej:['Hay una partida del presupuesto de obra que casi nadie revisa…',
+       'Hay una deducción que la mayoría de autónomos no se aplica…',
+       'Hay un motivo por el que tus publicaciones no llegan…',
+       'Hay una forma de pedirle las cosas a la IA que lo cambia todo…',
+       'Hay una hora del día que decide cómo te va el resto…',
+       'Hay un error financiero que casi todos cometen…',
+       'Hay algo que haces después de comer que afecta tu cuerpo…',
+       'Hay una razón por la que no logras manifestar…',
+       'Hay un patrón que te está frenando y no lo ves…',
+       'Hay una señal que ignoras en tus relaciones…',
+       'Hay algo que estás haciendo que bloquea tu dinero…',
+       'Hay un detalle en tu técnica que anula todo el esfuerzo…',
+       'Hay un ingrediente escondido que te deja con hambre…',
+       'Hay un paso que te saltas y por eso no ves cambios…',
+       'Hay una cláusula que casi nadie lee y lo cambia todo…',
+       'Hay un punto exacto donde pierdes a casi todos tus clientes…',
+       'Hay una forma de estudiar que multiplica lo que retienes…',
+       'Hay un plato de tu carta que te está costando dinero…',
+       'Hay una opción activada por defecto que deberías apagar hoy…',
+       'Hay una decisión temprana que condena a la mayoría de negocios…']},
+
+  {emoji:'🎯',nombre:'Visual',fuerza:4,veredicto:'Impacto antes que palabras',
+   porque:'Aquí no empiezas con palabras: empiezas con impacto.',
+   como:'La imagen detiene el scroll antes que el mensaje. El primer fotograma es el gancho.',
+   ej:['Antes y después de la obra en el mismo encuadre',
+       'La factura real al lado de lo que queda tras impuestos',
+       'Un perfil vacío frente a otro lleno de mensajes',
+       'La misma tarea a mano y con IA, cronómetro a la vista',
+       'Escritorio caótico vs escritorio despejado',
+       'Mostrar ingresos antes vs después',
+       'Antes y después físico',
+       'Cambio emocional visible (llanto → paz)',
+       'Caos vs disciplina',
+       'Mensajes tóxicos vs relación sana',
+       'Estilo de vida transformado',
+       'Misma pose, misma luz, seis meses después',
+       'El plato de antes al lado del plato de ahora',
+       'Piel sin filtro al empezar y al terminar el tratamiento',
+       'El piso vacío y ese mismo piso ya vestido',
+       'Foto de producto casera vs foto profesional',
+       'Apuntes desordenados vs esquema final',
+       'Local vacío a las 13:00 y lleno a las 14:00',
+       'Pantalla llena de avisos vs pantalla limpia',
+       'El primer día del negocio y el de hoy']},
+
+  {emoji:'⚔️',nombre:'Desafío',fuerza:3,veredicto:'Activa el ego',
+   porque:'Activa el ego. La persona quiere comprobar si sabe o no.',
+   como:'Pones en duda su capacidad o su criterio, y quiere demostrarte lo contrario.',
+   ej:['Apuesto a que no sabes leer un presupuesto de obra.',
+       'Seguro que estás pagando más impuestos de los que te tocan.',
+       'Estoy segura de que no sabes quién es tu cliente ideal.',
+       'Dudo que sepas sacarle a la IA algo mejor que un texto genérico.',
+       'A ver si aguantas una semana sin abrir el móvil nada más despertarte.',
+       'Estoy segura de que estás manejando mal tu dinero.',
+       'A ver si puedes mantener este hábito 7 días.',
+       'Dudo que realmente estés alineada con tu energía.',
+       'No creo que tengas la disciplina para esto.',
+       'Apuesto a que no sabes poner límites.',
+       'Seguro estás cometiendo este error financiero.',
+       'Apuesto a que no aguantas este ejercicio 60 segundos.',
+       'A ver si eres capaz de leer bien una etiqueta.',
+       'Seguro que te estás saltando el paso que más importa.',
+       'Dudo que sepas cuánto vale de verdad tu casa.',
+       'Apuesto a que no sabes por qué abandonan tu carrito.',
+       'A ver si recuerdas mañana algo de lo que estudiaste hoy.',
+       'Seguro que no sabes cuánto te cuesta de verdad cada plato.',
+       'Dudo que tus contraseñas aguanten cinco minutos.',
+       'Apuesto a que no sabes cuánto vale una hora tuya.']},
+
+  {emoji:'🧱',nombre:'Autoridad',fuerza:2,veredicto:'Posiciona, pero no siempre retiene',
+   porque:'Posiciona tu criterio y da credibilidad, pero por sí solo no genera tensión: no siempre retiene.',
+   como:'Abres apoyándote en tu experiencia acumulada. Funciona mejor si lo combinas con otro gancho más fuerte.',
+   ej:['Después de ver cientos de obras por dentro…',
+       'Después de revisar cientos de declaraciones…',
+       'Después de gestionar cientos de campañas…',
+       'Después de probar todas las herramientas de IA que salen…',
+       'Después de rediseñar la agenda de tantas personas…',
+       'Después de analizar cientos de casos financieros…',
+       'Después de trabajar con muchas personas…',
+       'Después de años en este camino…',
+       'Después de acompañar a muchas mujeres…',
+       'Después de ver tantas relaciones fallar…',
+       'Después de generar ingresos en este nivel…',
+       'Después de entrenar a tantísima gente…',
+       'Después de diseñar tantos planes de alimentación…',
+       'Después de tratar tantos tipos de piel…',
+       'Después de cerrar tantas operaciones…',
+       'Después de auditar tantas tiendas online…',
+       'Después de enseñar a tantos alumnos…',
+       'Después de ver abrir y cerrar tantos locales…',
+       'Después de recuperar tantos sistemas caídos…',
+       'Después de levantar y hundir mis propios proyectos…']},
+
+  {emoji:'📖',nombre:'Storytelling',fuerza:4,veredicto:'Muy potente… pero difícil',
+   porque:'Muy potente cuando se ejecuta bien: la historia engancha por identificación y tensión. Pero es el más difícil de bordar.',
+   como:'Abres en el punto de máxima tensión de una historia real, no por el principio aburrido.',
+   ej:['La obra que casi me cuesta el negocio…',
+       'La carta de Hacienda que me cambió la forma de trabajar…',
+       'La campaña que perdí y me enseñó todo…',
+       'El día que la IA me hizo replantearme mi trabajo…',
+       'El día que borré mi lista de tareas…',
+       'Hace un año estaba endeudada…',
+       'Pensé que nunca iba a cambiar…',
+       'Toqué fondo antes de despertar…',
+       'El día que dejé de dudar…',
+       'La relación que me rompió…',
+       'El momento donde todo cambió económicamente…',
+       'El día que no pude subir dos pisos de escaleras…',
+       'El análisis que me obligó a cambiarlo todo…',
+       'El espejo que evité durante meses…',
+       'La casa que dejé escapar y aún recuerdo…',
+       'El día que vendí cero después de invertirlo todo…',
+       'El examen que suspendí y me cambió la vida…',
+       'El servicio que casi me hace cerrar…',
+       'El día que lo perdí todo por no tener copia…',
+       'El mes que no pude pagarme un sueldo…']},
+
+  {emoji:'🎬',nombre:'Vídeo listo',fuerza:1,veredicto:'El más débil',
+   porque:'El más débil. Solo muestras… sin tensión. No hay nada que el cerebro necesite resolver.',
+   como:'Anuncias lo que vas a enseñar y ya está. Úsalo solo con audiencia que ya te sigue y te quiere.',
+   ej:['Así queda una cocina terminada.',
+       'Así organizo mis facturas del trimestre.',
+       'Así preparo mis publicaciones de la semana.',
+       'Así uso la IA en mi día a día.',
+       'Así planifico mi semana.',
+       'Así organizo mis gastos.',
+       'Mi rutina saludable.',
+       'Mi rutina de meditación.',
+       'Mi día productivo.',
+       'Planes en pareja.',
+       'Cómo gano dinero online.',
+       'Mi rutina de entrenamiento.',
+       'Lo que como en un día.',
+       'Mi rutina de cuidado facial.',
+       'Visita a este piso.',
+       'Preparando los pedidos del día.',
+       'Así estudio yo.',
+       'Un día en mi cocina.',
+       'Mi setup de trabajo.',
+       'Un día en mi negocio.']}
+];
+// Patrón estructural de cada tipo (mismo orden que GANCHOS_TIPOS). Sin esto la
+// IA devuelve eslóganes genéricos en vez de aplicar el MECANISMO del gancho.
+const GANCHOS_PATRONES=[
+  'Señala un error o daño CONCRETO que la persona está cometiendo ahora mismo sin saberlo. Estructura: «Este/Esto [algo concreto y cotidiano] está [destruyendo/dañando/costándote] [lo que le importa] sin que te des cuenta».',
+  'Describe una escena cotidiana en dos tiempos separados por puntos suspensivos: «[lo que hace bien o con ilusión]… pero [la frustración real que siente]». Tiene que poder decir «eso soy yo».',
+  'Una pregunta cerrada que responda «sí» mentalmente, sobre una frustración concreta y cotidiana. Empieza por ¿ y termina en ?',
+  'Niega una creencia que todo el mundo da por buena en el sector. Estructura: «[lo que todos recomiendan] puede [consecuencia mala]» o «[X] no siempre [resultado esperado]».',
+  'Deja la información a medias y NO reveles cuál es. Estructura: «Hay [un error/una razón/un detalle/un paso] que [consecuencia]…». Termina siempre en puntos suspensivos.',
+  'Describe UNA imagen o contraste visual concreto para el primer fotograma del vídeo. No es una frase hablada: es lo que se VE. Sin verbos en primera persona.',
+  'Reta directamente su capacidad o su criterio para que quiera demostrarte lo contrario. Empieza por «Apuesto a que no sabes…», «Dudo que…», «A ver si aguantas…» o «Seguro que estás…».',
+  'Empieza por el volumen de tu experiencia y deja la frase abierta. Estructura: «Después de [cientos de casos / años / tantos clientes]…». Termina en puntos suspensivos.',
+  'Abre en el punto de MÁXIMA tensión de una historia real, en primera persona, sin contexto previo. Estructura: «El día que…», «La [cosa] que me…». Termina en puntos suspensivos.',
+  'Anuncia sin ningún misterio lo que vas a mostrar. Frase plana y corta: «Así [hago X]» o «Mi rutina de [X]». No añadas tensión ni curiosidad: este tipo es deliberadamente plano.'
+];
+let _tiposPintados=false, _tipoAdapt={};
+const _colFuerza=f=>f>=4?'#38B6FF':(f===3?'#ff9f43':'#ff6b6b');
+
+// Cambia entre las dos vistas de la pestaña Ganchos: 30 plantillas / 10 tipos.
+function ganchoVista(v){
+  document.querySelectorAll('#estPanel-ganchos .gk-sub').forEach(b=>b.classList.toggle('on', b.dataset.gv===v));
+  const p=document.getElementById('ganchoVista-plantillas'), t=document.getElementById('ganchoVista-tipos');
+  if(p) p.style.display = v==='plantillas' ? '' : 'none';
+  if(t) t.style.display = v==='tipos' ? '' : 'none';
+  if(v==='tipos') renderTiposGancho();
+}
+
+// Pinta las 10 tarjetas de tipo (una sola vez).
+function renderTiposGancho(){
+  if(_tiposPintados) return;
+  const cont=document.getElementById('estTiposOut'); if(!cont) return;
+  cont.innerHTML=GANCHOS_TIPOS.map((t,i)=>{
+    const col=_colFuerza(t.fuerza);
+    const barras=[1,2,3,4,5].map(n=>`<i style="background:${n<=t.fuerza?col:'var(--UI-B2)'}"></i>`).join('');
+    return `<div class="est-card" id="tipoCard-${i}">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <span class="gk-num">${i+1}</span>
+        <div style="flex:1">
+          <h4 style="margin:0 0 4px">${t.emoji} ${favEsc(t.nombre)}</h4>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span class="gk-fuerza">${barras}</span>
+            <span style="font-size:10px;font-weight:700;color:${col}">${favEsc(t.veredicto)}</span>
+          </div>
+        </div>
+      </div>
+      <div class="est-mini">Por qué funciona</div><p style="color:var(--UI-M)">${favEsc(t.porque)}</p>
+      <div class="est-mini">Cómo se hace</div><p style="color:var(--UI-M)">${favEsc(t.como)}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button class="est-act" onclick="toggleEjTipo(${i})" id="tipoEjBtn-${i}" style="border-color:var(--UI-B2);color:var(--UI-T)">👁 Ver ejemplos (${t.ej.length} sectores)</button>
+        <button class="est-act" onclick="adaptarTipo(${i})" id="tipoAdaptBtn-${i}"><span class="spinner"></span>✨ Ganchos así para mi nicho</button>
+      </div>
+      <div id="tipoEj-${i}" style="display:none;margin-top:10px;border-top:1px solid var(--UI-B2);padding-top:8px">
+        ${t.ej.map((txt,s)=>`<div class="tipo-linea" data-sec="${s}" style="display:flex;gap:10px;margin-top:7px">
+          <span style="flex-shrink:0;width:130px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--UI-A);padding-top:2px">${favEsc(GANCHOS_SECTORES[s]||'')}</span>
+          <span style="flex:1;font-family:'Montserrat',sans-serif;font-size:12px;color:var(--UI-T);line-height:1.5">${favEsc(txt)}</span>
+        </div>`).join('')}
+      </div>
+      <div id="tipoAdaptOut-${i}"></div>
+    </div>`;
+  }).join('');
+  _tiposPintados=true;
+  // Rellena el desplegable de sectores una sola vez
+  const sel=document.getElementById('tipoSectorSel');
+  if(sel && !sel.options.length){
+    sel.innerHTML='<option value="-1">Todos los sectores (20)</option>'+
+      GANCHOS_SECTORES.map((s,i)=>`<option value="${i}">${favEsc(s)}</option>`).join('');
+  }
+  filtrarSectorTipos();
+}
+function toggleEjTipo(i){
+  const d=document.getElementById('tipoEj-'+i), b=document.getElementById('tipoEjBtn-'+i);
+  if(!d) return;
+  const abierto=d.style.display!=='none';
+  d.style.display=abierto?'none':'block';
+  const n=(GANCHOS_TIPOS[i]?.ej||[]).length;
+  if(b) b.textContent=abierto?`👁 Ver ejemplos (${n} sectores)`:'🙈 Ocultar ejemplos';
+}
+// Muestra solo la línea del sector elegido. Si eliges uno concreto, abre todos
+// los bloques de ejemplo para poder comparar los 10 tipos de un vistazo.
+function filtrarSectorTipos(){
+  const sel=document.getElementById('tipoSectorSel');
+  const s=sel?parseInt(sel.value,10):-1;
+  document.querySelectorAll('#estTiposOut .tipo-linea').forEach(l=>{
+    l.style.display=(s<0||parseInt(l.dataset.sec,10)===s)?'flex':'none';
+  });
+  GANCHOS_TIPOS.forEach((t,i)=>{
+    const d=document.getElementById('tipoEj-'+i), b=document.getElementById('tipoEjBtn-'+i);
+    if(!d) return;
+    if(s>=0){ d.style.display='block'; if(b) b.textContent='🙈 Ocultar ejemplos'; }
+  });
+}
+
+// La IA escribe 3 ganchos de ESE tipo para el nicho activo.
+async function adaptarTipo(i){
+  const t=GANCHOS_TIPOS[i]; if(!t) return;
+  const out=document.getElementById('tipoAdaptOut-'+i);
+  const btn=document.getElementById('tipoAdaptBtn-'+i);
+  if(!hayIA()){ if(out) out.innerHTML='<div style="color:#ff9f43;font-size:11px;margin-top:8px">Sin IA ahora. Usa los ejemplos por sector como guía y adáptalos tú.</div>'; return; }
+  const cfg=N();
+  const contrato=`Eres copywriter de Instagram para el nicho "${cfg.nombre}". Cliente ideal: ${cfg.lector}. Tono: ${cfg.tono}.
+Escribe 3 GANCHOS (primera frase de un reel/post) del tipo "${t.nombre}".
+Por qué funciona este tipo: ${t.porque}
+Cómo se ejecuta: ${t.como}
+PATRÓN OBLIGATORIO (respétalo o el gancho no sirve): ${GANCHOS_PATRONES[i]}
+Ejemplos del MISMO tipo en otros sectores — copia el MECANISMO y la estructura, nunca el tema:
+${t.ej.slice(5,11).map(x=>'· '+x).join('\n')}
+Reglas: entre 8 y 20 palabras cada uno. Concretos y realistas para "${cfg.nombre}" (menciona algo propio del sector: su día a día, sus cifras, sus objeciones). Habla de tú. Sin corchetes ni huecos, sin emojis, sin hashtags. Los 3 deben ser CLARAMENTE del tipo "${t.nombre}" y distintos entre sí.
+Devuelve SOLO JSON válido, sin markdown: {"versiones":["gancho 1","gancho 2","gancho 3"]}`;
+  if(btn){ btn.disabled=true; btn.classList.add('loading'); }
+  if(out) out.innerHTML='<div style="color:var(--UI-A);font-size:11px;margin-top:8px">✨ Escribiendo ganchos de este tipo…</div>';
+  try{
+    const r=await iaJSON(contrato,{maxTokens:700,temperature:0.9});
+    const vs=(Array.isArray(r.versiones)?r.versiones:[]).filter(x=>x&&String(x).trim()).slice(0,3);
+    if(!vs.length) throw new Error('sin versiones');
+    _tipoAdapt[i]=vs;
+    out.innerHTML=`<div class="est-mini" style="color:var(--UI-A)">Para tu nicho</div>`+vs.map((v,j)=>`
+      <div style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;padding-top:8px;border-top:1px solid var(--UI-B2)">
+        <p style="flex:1;color:var(--UI-T);line-height:1.5">${favEsc(v)}</p>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+          <button class="gk-mini" onclick="copiar(_tipoAdapt[${i}][${j}])" title="Copiar">📋</button>
+          <button class="gk-mini" onclick="usarTipoCopys(${i},${j})" title="Escribir copys con este gancho">✍️</button>
+        </div>
+      </div>`).join('');
+  }catch(e){ if(out) out.innerHTML='<div style="color:#ff6b6b;font-size:11px;margin-top:8px">No se pudo: '+favEsc(e.message)+'</div>'; }
+  finally{ if(btn){ btn.disabled=false; btn.classList.remove('loading'); } }
+}
+function usarTipoCopys(i,j){
+  const v=(_tipoAdapt[i]||[])[j]; if(!v) return;
+  const ta=document.getElementById('estTema'); if(ta) ta.value=v;
+  estTab('copys');
+  toast2('Gancho cargado en Copys — pulsa "Generar los 3 copys"');
+}
+
 // 🖼 PASO 5 — Creativos de anuncio: diseña un Post (4:5) o Reel (portada 9:16)
 // con foto a partir del mensaje del anuncio, reusando el motor de diseño. Las
 // zonas seguras las respeta el propio layout (.SP feed / SPreel para el reel).
