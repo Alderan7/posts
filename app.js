@@ -477,6 +477,9 @@ function setNicho(v){
   const selTop = document.getElementById('nichoSel'); if(selTop) selTop.value = _nicho;
   const selPm  = document.getElementById('pmNicho');  if(selPm)  selPm.value  = _nicho;
   if(typeof actualizarAngulos==='function') actualizarAngulos();
+  // Los ganchos adaptados eran del nicho ANTERIOR: si se quedan en pantalla
+  // bajo el rótulo "Para tu nicho" engañan. Se limpian al cambiar de nicho.
+  if(typeof limpiarAdaptacionesGanchos==='function') limpiarAdaptacionesGanchos();
   _filtroPilarNicho='';   // forzar repoblar el filtro de pilares del banco
   if(typeof renderBanco==='function') renderBanco();
   if(typeof _pmIdeasOpen!=='undefined' && _pmIdeasOpen && typeof renderPmIdeas==='function') renderPmIdeas();
@@ -7396,6 +7399,7 @@ function estTab(t){
     if(bf && !bf.value.trim() && _adsTema) bf.value=_adsTema;
   }
   if(t==='ganchos') renderGanchos();
+  if(t==='carruseles') renderCarruseles();
 }
 
 /* ═══════════════════════════════════════════
@@ -7929,6 +7933,290 @@ function usarTipoCopys(i,j){
   const ta=document.getElementById('estTema'); if(ta) ta.value=v;
   estTab('copys');
   toast2('Gancho cargado en Copys — pulsa "Generar los 3 copys"');
+}
+
+/* ═══════════════════════════════════════════
+   🗂 CARRUSELES — las 7 estructuras que mejor funcionan + los 5 prompts.
+   Las estructuras se pueden DISEÑAR directamente con el motor de la app
+   (cada fórmula marca los slides). Los prompts se rellenan solos con tu nicho
+   y tu cliente ideal: los copias a ChatGPT o los ejecutas aquí mismo.
+   ═══════════════════════════════════════════ */
+const CARRUSEL_ESTRUCTURAS=[
+  {emoji:'🎯',n:'Problema → Verdad incómoda → Solución',
+   objetivo:'Hacer que la persona diga: «ok, esto me está pasando».',
+   ideal:['Autoridad','Educación','Venta indirecta','Contenido guardable'],
+   formula:['Hook','Problema visible','Verdad incómoda','Reencuadre','Solución','CTA'],
+   ejemplo:'Tus views NO son el problema. Tu contenido sí.'},
+
+  {emoji:'⚔️',n:'Esto vs Esto',
+   objetivo:'Generar comparación inmediata.',
+   ideal:['Viralidad','Shares','Polarización','Claridad'],
+   formula:['Hook','❌ La forma antigua','Lo que te cuesta','✅ La forma nueva','Lo que ganas','CTA'],
+   ejemplo:'☣️ Instagram intoxicado  vs  🔥 Instagram viral'},
+
+  {emoji:'📖',n:'Storytelling + Reflexión',
+   objetivo:'Conectar emocionalmente y posicionar autoridad.',
+   ideal:['Marca personal','Reels emocionales','Ventas high ticket'],
+   formula:['Historia','Conflicto','Reflexión','Lección','Aplicación al avatar','CTA'],
+   ejemplo:'Karol G / Starbucks / Edison / Sabrina Carpenter.'},
+
+  {emoji:'⚠️',n:'Error → Consecuencia → Reencuadre',
+   objetivo:'Golpear creencias.',
+   ideal:['Contenido educativo','Nichos competitivos','Hooks fuertes'],
+   formula:['Hook','El error que casi todos cometen','La consecuencia real','El reencuadre','Qué hacer en su lugar','CTA'],
+   ejemplo:'Publicar todos los días NO significa crecer.'},
+
+  {emoji:'🧩',n:'Sistema / Framework',
+   objetivo:'Posicionarte como estratega.',
+   ideal:['Vender mentorías','Clases','Frameworks','Autoridad'],
+   formula:['Hook','El sistema en una frase','Pieza 1','Pieza 2','Pieza 3','CTA'],
+   ejemplo:'Los 3 tipos de contenido que necesitas para vender.'},
+
+  {emoji:'📋',n:'Lista / Secreto / Recurso',
+   objetivo:'Generar comentarios y guardados.',
+   ideal:['Lead magnets','ManyChat','Crecimiento rápido'],
+   formula:['Hook con número','Punto 1','Punto 2','Punto 3','Punto 4','CTA a recurso'],
+   ejemplo:'5 hooks visuales que hacen que la gente deje de hacer scroll.'},
+
+  {emoji:'🔥',n:'Opinión polarizante',
+   objetivo:'Generar conversación.',
+   ideal:['Engagement','Autoridad','Posicionamiento fuerte'],
+   formula:['La opinión, sin rodeos','Por qué lo digo','El argumento','El matiz honesto','CTA a debate'],
+   ejemplo:'Los seguidores NO son un negocio.'}
+];
+
+// {TEMA} {AVATAR} {NICHO} {HISTORIA} se sustituyen solos antes de copiar.
+const CARRUSEL_PROMPTS=[
+  {emoji:'🎣',t:'Hooks virales',sub:'15 hooks emocionales sobre tu tema',
+   p:`Actúa como un estratega experto en marketing y copywriting para Instagram.
+Quiero que me des 15 hooks virales, emocionales y conversacionales sobre {TEMA}.
+
+Los hooks deben:
+- generar curiosidad inmediata
+- usar palabras que mi avatar realmente piensa
+- sentirse humanos, no corporativos
+- mezclar dolor + tensión + intriga
+- evitar frases genéricas tipo "3 tips"
+
+Mi avatar es:
+{AVATAR}
+
+Mi estilo de comunicación es:
+- conversacional
+- emocional
+- confrontador elegante
+- estratégico
+- fácil de entender
+
+Dame hooks estilo: "esto me está hablando a mí."`},
+
+  {emoji:'🗂',t:'Carrusel completo',sub:'El carrusel entero, slide a slide',
+   p:`Actúa como un copywriter experto en Instagram.
+Quiero que crees un carrusel viral sobre {TEMA}.
+
+Usa esta estructura:
+1. Hook fuerte
+2. Problema
+3. Verdad incómoda
+4. Reencuadre
+5. Solución
+6. Reflexión
+7. CTA irresistible
+
+El tono debe ser:
+- conversacional
+- emocional
+- fácil de leer
+- con frases cortas
+- usando palabras reales del avatar
+
+Mi avatar es:
+{AVATAR}
+
+NO quiero contenido genérico.
+Quiero que parezca escrito por una marca personal fuerte.`},
+
+  {emoji:'📖',t:'Storytelling viral',sub:'Convierte una historia real en guion',
+   p:`Convierte esta historia en un guion viral para Instagram:
+{HISTORIA}
+
+El guion debe:
+- empezar con un hook emocional
+- generar tensión
+- tener reflexión profunda
+- conectar con marca personal y negocios
+- hacer que el avatar se sienta identificado
+- terminar con CTA de conversión
+
+Mi avatar es:
+{AVATAR}
+
+Quiero un estilo: cinematográfico + conversacional + emocional.`},
+
+  {emoji:'💬',t:'Contenido que conecta y vende',sub:'Ideas que hacen decir «me está describiendo»',
+   p:`Dame ideas de contenido para Instagram que hagan que mi avatar diga:
+"me está describiendo"
+"eso me pasa"
+"necesitaba escuchar esto"
+
+Mi nicho es:
+{NICHO}
+
+Mi avatar es:
+{AVATAR}
+
+Quiero ideas que mezclen:
+- emociones
+- errores
+- historias
+- autoridad
+- ventas
+- percepción
+- identidad
+
+NO quiero ideas genéricas.
+Quiero contenido profundo pero fácil de consumir.`},
+
+  {emoji:'🎯',t:'CTAs irresistibles',sub:'15 llamadas a la acción que generan comentarios',
+   p:`Actúa como experto en copywriting y psicología de conversión.
+Dame 15 CTAs irresistibles para Instagram sobre {TEMA}.
+
+Los CTAs deben:
+- sentirse naturales
+- conversacionales
+- emocionales
+- generar urgencia interna
+- hacer sentir: "necesito comentar"
+
+Evita CTAs genéricos como: "link en bio."
+
+Quiero CTAs tipo: diagnóstico, acceso exclusivo, sistema, recurso oculto,
+plantilla, guía, clase, framework, prompts, auditoría, plan personalizado.`}
+];
+let _carPintado=false;
+
+function carruselVista(v){
+  document.querySelectorAll('#estPanel-carruseles .car-sub').forEach(b=>b.classList.toggle('on', b.dataset.cv===v));
+  const e=document.getElementById('carVista-estructuras'), p=document.getElementById('carVista-prompts');
+  if(e) e.style.display = v==='estructuras' ? '' : 'none';
+  if(p) p.style.display = v==='prompts' ? '' : 'none';
+}
+
+function renderCarruseles(){
+  if(_carPintado) return;
+  const ce=document.getElementById('carEstructurasOut');
+  if(ce) ce.innerHTML=CARRUSEL_ESTRUCTURAS.map((s,i)=>`
+    <div class="est-card">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <span class="gk-num">${i+1}</span>
+        <h4 style="flex:1;margin:0">${s.emoji} ${favEsc(s.n)}</h4>
+      </div>
+      <div class="est-mini">Objetivo</div><p style="color:var(--UI-M)">${favEsc(s.objetivo)}</p>
+      <div class="est-mini">Ideal para</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">${s.ideal.map(x=>`<span class="est-chip">${favEsc(x)}</span>`).join('')}</div>
+      <div class="est-mini">Fórmula · ${s.formula.length} slides</div>
+      <div class="car-flujo">${s.formula.map((f,k)=>`<span class="car-paso"><b>${k+1}</b>${favEsc(f)}</span>`).join('<i>↓</i>')}</div>
+      <div class="est-mini">Ejemplo</div><p style="color:var(--UI-T);font-weight:600">${favEsc(s.ejemplo)}</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px">
+        <input type="text" id="carTema-${i}" placeholder="¿Sobre qué tema? Ej: presupuestos de reforma"
+          style="flex:1;min-width:200px;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:8px 10px;border-radius:6px;font-size:12px;font-family:'Montserrat',sans-serif">
+        <button class="est-act" onclick="disenarConEstructura(${i})" id="carBtn-${i}" style="margin-top:0"><span class="spinner"></span>🎨 Diseñar carrusel así</button>
+      </div>
+      <div id="carStatus-${i}" style="font-size:11px;color:var(--UI-M);margin-top:8px;line-height:1.5"></div>
+    </div>`).join('');
+  renderPromptsCar();
+  _carPintado=true;
+}
+
+// Sustituye los huecos del prompt por tu nicho, tu cliente ideal y tu tema.
+function _promptRelleno(txt){
+  const cfg=N();
+  const tema=(document.getElementById('carPromptTema')?.value||'').trim()||'[ESCRIBE TU TEMA ARRIBA]';
+  const hist=(document.getElementById('carPromptHist')?.value||'').trim()||'[PEGA AQUÍ TU HISTORIA]';
+  return txt.replace(/\{TEMA\}/g,tema).replace(/\{AVATAR\}/g,cfg.lector)
+            .replace(/\{NICHO\}/g,cfg.nombre).replace(/\{HISTORIA\}/g,hist);
+}
+function renderPromptsCar(){
+  const cp=document.getElementById('carPromptsOut'); if(!cp) return;
+  cp.innerHTML=CARRUSEL_PROMPTS.map((p,i)=>`
+    <div class="est-card">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <span class="gk-num">${i+1}</span>
+        <div style="flex:1">
+          <h4 style="margin:0 0 2px">${p.emoji} ${favEsc(p.t)}</h4>
+          <div style="font-size:10px;color:var(--UI-M)">${favEsc(p.sub)}</div>
+        </div>
+      </div>
+      <div class="est-mini">Prompt listo (ya con tu nicho y tu cliente ideal)</div>
+      <p style="white-space:pre-wrap;color:var(--UI-M);font-size:11px;max-height:200px;overflow-y:auto;background:var(--UI-B);border:1px solid var(--UI-B2);border-radius:6px;padding:10px">${favEsc(_promptRelleno(p.p))}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button class="est-act" onclick="copiarPromptCar(${i})" style="border-color:var(--UI-B2);color:var(--UI-T)">📋 Copiar para ChatGPT</button>
+        <button class="est-act" onclick="ejecutarPromptCar(${i})" id="carPromptBtn-${i}"><span class="spinner"></span>⚡ Ejecutar aquí</button>
+      </div>
+      <div id="carPromptOut-${i}"></div>
+    </div>`).join('');
+}
+function copiarPromptCar(i){ const p=CARRUSEL_PROMPTS[i]; if(p) copiar(_promptRelleno(p.p)); }
+
+// Ejecuta el prompt con la IA de la app (sin salir a ChatGPT).
+async function ejecutarPromptCar(i){
+  const p=CARRUSEL_PROMPTS[i]; if(!p) return;
+  const out=document.getElementById('carPromptOut-'+i), btn=document.getElementById('carPromptBtn-'+i);
+  if(!hayIA()){ if(out) out.innerHTML='<div style="color:#ff9f43;font-size:11px;margin-top:8px">Sin IA ahora. Copia el prompt y pégalo en ChatGPT.</div>'; return; }
+  if(btn){ btn.disabled=true; btn.classList.add('loading'); }
+  if(out) out.innerHTML='<div style="color:var(--UI-A);font-size:11px;margin-top:8px">⚡ Trabajando…</div>';
+  try{
+    // Groq va fijado en response_format json_object: si el prompt no pide JSON
+    // devuelve HTTP 400. Por eso al EJECUTAR se envuelve la salida en JSON.
+    // El botón "Copiar para ChatGPT" sigue dando el prompt original sin tocar.
+    const contrato=_promptRelleno(p.p)+
+      `\n\n---\nFORMATO DE SALIDA: devuelve SOLO JSON válido, sin markdown, con esta forma exacta:\n{"resultado":["cada línea, punto o párrafo de tu respuesta como un elemento del array"]}`;
+    const r=await iaJSON(contrato,{maxTokens:2000,temperature:0.9});
+    const lineas=Array.isArray(r.resultado)?r.resultado:[String(r.resultado||'')];
+    const texto=lineas.filter(x=>x!=null&&String(x).trim()).join('\n');
+    if(!texto) throw new Error('la IA devolvió una respuesta vacía');
+    out.innerHTML=`<div class="est-mini" style="color:var(--UI-A)">Resultado</div>
+      <p style="white-space:pre-wrap;color:var(--UI-T);font-size:12px;max-height:320px;overflow-y:auto">${favEsc(texto)}</p>
+      <button class="est-act" onclick="copiar(this.previousElementSibling.innerText)" style="border-color:var(--UI-B2);color:var(--UI-T)">📋 Copiar resultado</button>`;
+  }catch(e){ if(out) out.innerHTML='<div style="color:#ff6b6b;font-size:11px;margin-top:8px">No se pudo: '+favEsc(e.message)+'</div>'; }
+  finally{ if(btn){ btn.disabled=false; btn.classList.remove('loading'); } }
+}
+
+// Monta el carrusel con el motor de diseño, forzando los slides de la fórmula.
+async function disenarConEstructura(i){
+  const s=CARRUSEL_ESTRUCTURAS[i]; if(!s) return;
+  const tema=(document.getElementById('carTema-'+i)?.value||'').trim();
+  const st=document.getElementById('carStatus-'+i), btn=document.getElementById('carBtn-'+i);
+  if(!tema){ if(st){ st.style.color='#ff9f43'; st.textContent='Escribe primero sobre qué tema quieres el carrusel.'; } return; }
+  if(!hayIA()){ if(st){ st.style.color='#ff9f43'; st.textContent='Sin IA ahora. Prueba en un rato.'; } return; }
+  const cfg=N(), n=s.formula.length;
+  const brief=`Carrusel de Instagram sobre "${tema}". Usa OBLIGATORIAMENTE la estructura "${s.n}": ${n} slides, uno por cada paso y EN ESTE ORDEN: ${s.formula.map((f,k)=>`${k+1}) ${f}`).join(', ')}. Objetivo del carrusel: ${s.objetivo}. Tono conversacional y emocional, frases cortas, palabras reales del cliente. Nada genérico.`;
+  if(btn){ btn.disabled=true; btn.classList.add('loading'); }
+  if(st){ st.style.color='#38B6FF'; st.textContent=`Diseñando los ${n} slides…`; }
+  try{
+    const {arr,out}=await pedirDisenoIA(brief,'carrusel',n,cfg,m=>{ if(st) st.textContent=m; });
+    aplicarDisenoIA(arr,out,'carrusel',n);
+    if(st){ st.style.color='#38B6FF'; st.textContent='✓ Carrusel creado.'; }
+    cerrarEstrategia();
+    if(typeof abrirTabEditar==='function') abrirTabEditar();
+    toast2(`🗂 Carrusel montado con la estructura «${s.n}» — ajústalo a tu gusto`);
+  }catch(e){ if(st){ st.style.color='#ff6b6b'; st.textContent='No se pudo: '+e.message; } }
+  finally{ if(btn){ btn.disabled=false; btn.classList.remove('loading'); } }
+}
+
+// Borra los ganchos que la IA adaptó al nicho anterior (en las DOS vistas) y
+// refresca la etiqueta de nicho del modal. La llama setNicho().
+function limpiarAdaptacionesGanchos(){
+  const habia = Object.keys(_ganchoAdapt).length || Object.keys(_tipoAdapt).length;
+  _ganchoAdapt={}; _tipoAdapt={};
+  GANCHOS_VIRALES.forEach((_,i)=>{ const d=document.getElementById('ganchoAdaptOut-'+i); if(d) d.innerHTML=''; });
+  GANCHOS_TIPOS.forEach((_,i)=>{ const d=document.getElementById('tipoAdaptOut-'+i); if(d) d.innerHTML=''; });
+  const nl=document.getElementById('estNicho'); if(nl) nl.textContent='Nicho: '+(N().nombre||getNicho());
+  // Los prompts de carrusel llevan dentro el nicho y el cliente ideal: repintar
+  if(_carPintado && typeof renderPromptsCar==='function') renderPromptsCar();
+  // Solo avisa si el modal está abierto y realmente había algo que borrar
+  if(habia && document.getElementById('estModal')?.classList.contains('on'))
+    toast2('Cambiaste de nicho — los ganchos adaptados se han limpiado');
 }
 
 // 🖼 PASO 5 — Creativos de anuncio: diseña un Post (4:5) o Reel (portada 9:16)

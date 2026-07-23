@@ -810,6 +810,10 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 .gk-mini:hover{border-color:var(--UI-A);color:var(--UI-A)}
 .gk-fuerza{display:inline-flex;gap:3px;align-items:center}
 .gk-fuerza i{display:inline-block;width:16px;height:4px;border-radius:2px}
+.car-flujo{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:5px}
+.car-flujo i{color:var(--UI-M);font-style:normal;font-size:11px}
+.car-paso{display:inline-flex;align-items:center;gap:5px;background:var(--UI-B);border:1px solid var(--UI-B2);border-radius:6px;padding:4px 9px;font-family:'Montserrat',sans-serif;font-size:11px;color:var(--UI-T)}
+.car-paso b{color:var(--UI-A);font-size:9px}
 /* Selector de fotos del carrusel de obra */
 .obra-ph{position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;cursor:pointer;border:3px solid transparent;background:#111}
 .obra-ph img{width:100%;height:100%;object-fit:cover;display:block}
@@ -1341,6 +1345,7 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
     </div>
     <div style="display:flex;gap:6px;padding:12px 18px;border-bottom:1px solid var(--UI-B);flex-shrink:0;flex-wrap:wrap">
       <button class="est-tab" data-t="ganchos" onclick="estTab('ganchos')">🎣 Ganchos</button>
+      <button class="est-tab" data-t="carruseles" onclick="estTab('carruseles')">🗂 Carruseles</button>
       <button class="est-tab on" data-t="radar" onclick="estTab('radar')">📡 1 · Radar</button>
       <button class="est-tab" data-t="copys" onclick="estTab('copys')">✍️ 2 · Copys</button>
       <button class="est-tab" data-t="crea" onclick="estTab('crea')">🎨 3 · Creatividad</button>
@@ -1377,6 +1382,36 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
             <span style="font-size:10px;color:var(--UI-M);line-height:1.4">Elige un sector y compara cómo suena el mismo mecanismo en los 10 tipos.</span>
           </div>
           <div id="estTiposOut" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+      </div>
+
+      <!-- TAB CARRUSELES -->
+      <div class="est-panel" id="estPanel-carruseles">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--UI-B)">
+          <button class="est-tab car-sub on" data-cv="estructuras" onclick="carruselVista('estructuras')">🧩 7 estructuras</button>
+          <button class="est-tab car-sub" data-cv="prompts" onclick="carruselVista('prompts')">✍️ 5 prompts</button>
+        </div>
+
+        <!-- VISTA A: las 7 estructuras -->
+        <div id="carVista-estructuras">
+          <div style="font-size:11px;color:var(--UI-M);line-height:1.6;margin-bottom:12px">Las <b style="color:var(--UI-T)">7 estructuras de carrusel</b> que más vistas, conexión y ventas generan. Cada una trae su objetivo, para qué es ideal, la <b style="color:var(--UI-T)">fórmula slide a slide</b> y un ejemplo. Escribe un tema y pulsa <b style="color:var(--UI-T)">🎨 Diseñar carrusel así</b>: el motor de la app lo monta siguiendo esa fórmula exacta.</div>
+          <div id="carEstructurasOut" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+
+        <!-- VISTA B: los 5 prompts -->
+        <div id="carVista-prompts" style="display:none">
+          <div style="font-size:11px;color:var(--UI-M);line-height:1.6;margin-bottom:12px">Los <b style="color:var(--UI-T)">5 prompts</b> para crear carruseles virales y de venta. Ya vienen <b style="color:var(--UI-T)">rellenos con tu nicho y tu cliente ideal</b>: solo escribe el tema. Cópialos a ChatGPT o ejecútalos aquí mismo con la IA de la app.</div>
+          <div style="margin-bottom:10px">
+            <div style="font-size:10px;color:var(--UI-M);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;font-weight:700">Tu tema</div>
+            <input type="text" id="carPromptTema" oninput="renderPromptsCar()" placeholder="Ej: por qué el boca a boca no llena tu agenda"
+              style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:9px 11px;border-radius:6px;font-size:12px;font-family:'Montserrat',sans-serif">
+          </div>
+          <div style="margin-bottom:14px">
+            <div style="font-size:10px;color:var(--UI-M);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;font-weight:700">Tu historia <span style="text-transform:none;letter-spacing:0;font-weight:400">(solo para el prompt 3 de storytelling)</span></div>
+            <textarea id="carPromptHist" rows="2" oninput="renderPromptsCar()" placeholder="Cuenta aquí en bruto lo que pasó; la IA lo convierte en guion."
+              style="width:100%;background:var(--UI-B);border:1px solid var(--UI-B2);color:var(--UI-T);padding:10px;border-radius:8px;font-size:12px;font-family:'Montserrat',sans-serif;line-height:1.5;resize:vertical"></textarea>
+          </div>
+          <div id="carPromptsOut" style="display:flex;flex-direction:column;gap:10px"></div>
         </div>
       </div>
       <!-- TAB RADAR -->
@@ -2404,6 +2439,6 @@ body{font-family:var(--F-SAN);background:var(--UI);color:var(--UI-T)}
 </div>
 
 <script src="config.local.js" onerror="/* opcional: sin config local se usan defaults/localStorage */"></script>
-<script src="app.js?v=144"></script>
+<script src="app.js?v=146"></script>
 </body>
 </html>
