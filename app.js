@@ -3234,6 +3234,14 @@ function _saturada(nombre, codigo){
   return e;
 }
 function _esTransitorio(codigo){ return codigo >= 500 && codigo <= 599; }
+// 4xx que no es 429: petición que ESA IA rechaza (formato que no admite, key
+// mala, modelo retirado…). Reintentar con la misma no sirve, pero OTRA sí puede
+// responder. Se marca para que la cascada salte a la siguiente en vez de abortar.
+function _cambiarProveedor(nombre, codigo, detalle){
+  const e = new Error(`${nombre} rechazó la petición (HTTP ${codigo})${detalle ? ': '+detalle : ''}`);
+  e.cambiarProveedor = true;
+  return e;
+}
 
 async function _respOpenAI(res, nombre){
   if(res.status === 429){
@@ -3242,7 +3250,10 @@ async function _respOpenAI(res, nombre){
     throw _sinCuota(nombre, espera ? 'vuelve en '+espera.trim() : (/per day|TPD/i.test(t) ? 'cuota diaria' : ''));
   }
   if(_esTransitorio(res.status)) throw _saturada(nombre, res.status);
-  if(!res.ok) throw new Error(`${nombre}: HTTP ${res.status}`);
+  if(!res.ok){
+    const t = await res.text().catch(()=> '');
+    throw _cambiarProveedor(nombre, res.status, (t.match(/"message"\s*:\s*"([^"]{0,140})/)||[])[1]);
+  }
   const c = (await res.json()).choices?.[0]?.message?.content;
   if(!c) throw new Error(`${nombre} no devolvió texto`);
   return c;
@@ -3253,8 +3264,11 @@ const IA_PROVEEDORES = {
     nombre:'Groq', key:getGroqKey,
     llamar: async (prompt, o)=> _respOpenAI(await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getGroqKey()},
-      body: JSON.stringify({ model:'llama-3.3-70b-versatile', temperature:o.temperature, max_tokens:o.maxTokens,
-        response_format:{type:'json_object'}, messages:[{role:'user',content:prompt}] })
+      // OJO: Groq exige que el prompt contenga la palabra "json" cuando se pide
+      // response_format json_object; si no, responde 400. Por eso solo se envía
+      // en modo JSON (o.json), no cuando se pide texto libre.
+      body: JSON.stringify(Object.assign({ model:'llama-3.3-70b-versatile', temperature:o.temperature, max_tokens:o.maxTokens,
+        messages:[{role:'user',content:prompt}] }, o.json ? {response_format:{type:'json_object'}} : {}))
     }), 'Groq')
   },
   gemini: {
@@ -3275,7 +3289,8 @@ const IA_PROVEEDORES = {
               // porque Gemini no reserva el máximo contra su cuota (Groq sí).
               thinkingConfig: { thinkingBudget: 0 },
               maxOutputTokens: o.maxTokens + 512,
-              responseMimeType: 'application/json'
+              // Solo forzamos JSON si se ha pedido; en texto libre estorba.
+              responseMimeType: o.json ? 'application/json' : 'text/plain'
             } })
         });
         if(res.status === 429){
@@ -3287,7 +3302,10 @@ const IA_PROVEEDORES = {
           ultimo = _saturada('Gemini', res.status);
           continue;                                  // prueba el otro modelo
         }
-        if(!res.ok) throw new Error('Gemini: HTTP '+res.status);
+        if(!res.ok){                                 // 400/403…: prueba el otro modelo y si no, otra IA
+          ultimo = _cambiarProveedor('Gemini', res.status);
+          continue;
+        }
         const c = (await res.json()).candidates?.[0];
         if(c?.finishReason === 'MAX_TOKENS') throw new Error('Gemini: respuesta cortada (pide un guion más corto)');
         const t = c?.content?.parts?.[0]?.text;
@@ -3315,8 +3333,8 @@ const IA_PROVEEDORES = {
       for(const modelo of IA_PROVEEDORES.openrouter.modelos){
         const res = await fetch('https://openrouter.ai/api/v1/chat/completions',{
           method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getOpenRouterKey()},
-          body: JSON.stringify({ model:modelo, temperature:o.temperature, max_tokens:o.maxTokens,
-            response_format:{type:'json_object'}, messages:[{role:'user',content:prompt}] })
+          body: JSON.stringify(Object.assign({ model:modelo, temperature:o.temperature, max_tokens:o.maxTokens,
+            messages:[{role:'user',content:prompt}] }, o.json ? {response_format:{type:'json_object'}} : {}))
         });
         if(res.status === 429){                    // ese modelo está saturado: prueba el siguiente
           ultimo = _sinCuota('OpenRouter', modelo.split('/')[1]);
@@ -3326,12 +3344,16 @@ const IA_PROVEEDORES = {
           ultimo = _saturada('OpenRouter', res.status);
           continue;
         }
-        if(!res.ok) throw new Error(`OpenRouter: HTTP ${res.status}`);
+        if(!res.ok){                               // modelo retirado, petición rechazada…: prueba el siguiente
+          ultimo = _cambiarProveedor('OpenRouter', res.status, modelo.split('/')[1]);
+          continue;
+        }
         const c = (await res.json()).choices?.[0]?.message?.content;
-        // Si el modelo se pone a "pensar" en vez de dar JSON, se prueba otro
-        if(!c || !c.includes('{')){
+        // En modo JSON: si el modelo se pone a "pensar" en vez de dar JSON, otro.
+        // En texto libre basta con que haya respondido algo.
+        if(!c || (o.json && !c.includes('{'))){
           ultimo = _saturada('OpenRouter', 0);
-          ultimo.message = `OpenRouter: ${modelo.split('/')[1]} no devolvió JSON`;
+          ultimo.message = `OpenRouter: ${modelo.split('/')[1]} no devolvió ${o.json?'JSON':'texto'}`;
           continue;
         }
         return c;
@@ -3343,8 +3365,14 @@ const IA_PROVEEDORES = {
 const IA_ORDEN = ['groq','gemini','openrouter'];
 
 // Devuelve el TEXTO de la IA. Va probando por orden hasta que una responda.
+// opts.json=true  → se pide salida JSON al proveedor (lo usa iaJSON).
+// opts.json=false → TEXTO LIBRE. Antes esto no existía: los tres proveedores
+// iban fijados a JSON y cualquier prompt normal moría con un HTTP 400.
 async function iaTexto(prompt, opts={}){
-  const o = { maxTokens: opts.maxTokens || 1200, temperature: (opts.temperature ?? 0.85) };
+  const o = { maxTokens: opts.maxTokens || 1200, temperature: (opts.temperature ?? 0.85), json: opts.json === true };
+  // Red de seguridad: Groq devuelve 400 si pides json_object y la palabra "json"
+  // no aparece en el prompt. Así ningún contrato futuro puede caer en la trampa.
+  if(o.json && !/json/i.test(prompt)) prompt += '\n\nResponde ÚNICAMENTE con JSON válido.';
   const forzada = getIA();
   const orden = (forzada === 'auto') ? IA_ORDEN : [forzada];
   const listas = orden.filter(id => IA_PROVEEDORES[id] && IA_PROVEEDORES[id].key());
@@ -3362,14 +3390,15 @@ async function iaTexto(prompt, opts={}){
         return t;
       }catch(e){
         ultimoError = e;
-        // Error real (key mala, red, JSON roto…): no tiene sentido seguir probando
-        if(!e.sinCuota && !e.transitorio) throw e;
+        // Error irrecuperable de verdad (red caída, JSON roto…): no seguimos.
+        // Un 4xx SÍ merece probar otra IA: lo rechaza esa, no todas.
+        if(!e.sinCuota && !e.transitorio && !e.cambiarProveedor) throw e;
         if(e.transitorio && intento === 0){
           console.warn(`[IA] ${p.nombre} saturada → reintento`);
           await new Promise(r=>setTimeout(r, 1500));
           continue;                      // mismo proveedor, segunda oportunidad
         }
-        console.warn(`[IA] ${p.nombre} ${e.sinCuota ? 'sin cuota' : 'saturada'} → siguiente IA`);
+        console.warn(`[IA] ${p.nombre} ${e.sinCuota ? 'sin cuota' : (e.cambiarProveedor ? 'rechazó la petición' : 'saturada')} → siguiente IA`);
         break;                           // pasar al siguiente proveedor
       }
     }
@@ -3398,7 +3427,7 @@ function _extraerJSON(texto){
   throw new Error('La IA no devolvió un JSON válido');
 }
 async function iaJSON(prompt, opts){
-  return _extraerJSON(await iaTexto(prompt, opts));
+  return _extraerJSON(await iaTexto(prompt, Object.assign({}, opts, {json:true})));
 }
 
 // Motor: pide el diseño a la IA, sanea y descarga fotos. Devuelve {arr,out}.
@@ -8166,14 +8195,9 @@ async function ejecutarPromptCar(i){
   if(btn){ btn.disabled=true; btn.classList.add('loading'); }
   if(out) out.innerHTML='<div style="color:var(--UI-A);font-size:11px;margin-top:8px">⚡ Trabajando…</div>';
   try{
-    // Groq va fijado en response_format json_object: si el prompt no pide JSON
-    // devuelve HTTP 400. Por eso al EJECUTAR se envuelve la salida en JSON.
-    // El botón "Copiar para ChatGPT" sigue dando el prompt original sin tocar.
-    const contrato=_promptRelleno(p.p)+
-      `\n\n---\nFORMATO DE SALIDA: devuelve SOLO JSON válido, sin markdown, con esta forma exacta:\n{"resultado":["cada línea, punto o párrafo de tu respuesta como un elemento del array"]}`;
-    const r=await iaJSON(contrato,{maxTokens:2000,temperature:0.9});
-    const lineas=Array.isArray(r.resultado)?r.resultado:[String(r.resultado||'')];
-    const texto=lineas.filter(x=>x!=null&&String(x).trim()).join('\n');
+    // Texto libre: el prompt va tal cual, sin envolverlo en JSON (la cascada ya
+    // admite texto plano). Es el MISMO prompt que copias para ChatGPT.
+    const texto=(await iaTexto(_promptRelleno(p.p),{maxTokens:2000,temperature:0.9})).trim();
     if(!texto) throw new Error('la IA devolvió una respuesta vacía');
     out.innerHTML=`<div class="est-mini" style="color:var(--UI-A)">Resultado</div>
       <p style="white-space:pre-wrap;color:var(--UI-T);font-size:12px;max-height:320px;overflow-y:auto">${favEsc(texto)}</p>
